@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react';
 
-import { ThemeProvider } from "./theme-provider";
+import { ThemeProvider } from './theme-provider';
 
 interface AppProvidersProps {
   children: ReactNode;
@@ -10,12 +10,7 @@ interface AppProvidersProps {
 
 export function AppProviders({ children }: AppProvidersProps) {
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-    >
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       {children}
     </ThemeProvider>
   );
