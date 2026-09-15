@@ -16,12 +16,30 @@ export const GET = async (request: NextRequest) => {
   }
 
   try {
-    await oauthLogin({
+    const authData = await oauthLogin({
       provider: 'kakao',
       authorizationCode: code,
     });
+    const response = NextResponse.redirect(new URL('/', request.url));
+    const isProduction = process.env.NODE_ENV === 'production';
 
-    return NextResponse.redirect(new URL('/', request.url));
+    response.cookies.set('accessToken', authData.accessToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: authData.accessTokenExpiresIn,
+      ...(isProduction ? { domain: 'meety.kro.kr' } : {}),
+    });
+    response.cookies.set('refreshToken', authData.refreshToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax',
+      path: '/api/auth',
+      maxAge: authData.refreshTokenExpiresIn,
+    });
+
+    return response;
   } catch {
     return redirectWithOAuthError(request);
   }

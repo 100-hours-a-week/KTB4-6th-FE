@@ -8,6 +8,8 @@ export interface OAuthLoginData {
   userId: number;
   accessToken: string;
   refreshToken: string;
+  accessTokenExpiresIn: number;
+  refreshTokenExpiresIn: number;
 }
 
 export interface OAuthLoginResponse {
