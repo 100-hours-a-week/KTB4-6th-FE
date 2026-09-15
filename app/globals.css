@@ -8,7 +8,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-display);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -48,7 +48,44 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* Meety 브랜드 컬러 (docs/design-system.md 기준) */
+@theme {
+  --color-brand-50: #f4f7fa;
+  --color-brand-100: #e6ecf3;
+  --color-brand-200: #cbd8e6;
+  --color-brand-300: #a6bad1;
+  --color-brand-400: #7a94b5;
+  --color-brand-500: #52739c;
+  --color-brand-600: #2f4c74;
+  --color-brand-700: #26405f;
+  --color-brand-800: #1f3555;
+  --color-brand-900: #142238;
+
+  --color-cool-50: #f6f8fa;
+  --color-cool-100: #eef1f4;
+  --color-cool-200: #e2e6eb;
+  --color-cool-300: #cbd1d8;
+  --color-cool-400: #a3abb5;
+  --color-cool-500: #6b7685;
+  --color-cool-600: #4a5462;
+  --color-cool-700: #343c47;
+  --color-cool-800: #232a33;
+  --color-cool-900: #161e2b;
+
+  /* 카카오 로그인 버튼은 카카오 브랜드 가이드 컬러를 그대로 사용 */
+  --color-kakao: #fee500;
+
+  --color-success: #1f7a4d;
+  --color-success-bg: #e8f4ee;
+  --color-danger: #c0453c;
+  --color-danger-bg: #fbebe9;
+}
+
 :root {
+  /* 한글 UI 텍스트: Pretendard Variable(CDN, app/layout.tsx에서 로드). Inter/Geist는 한글 글리프가 없어 대체함. */
+  --font-sans:
+    'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto,
+    'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
