@@ -1,12 +1,12 @@
 'use client';
 
 import { Copy } from 'lucide-react';
+import { useCopyToClipboard } from '@/shared/lib';
 import { OnboardingActionButton } from './OnboardingActionButton';
 
 interface InviteCodeCompleteScreenProps {
   inviteCode?: string;
   isRegenerating?: boolean;
-  onCopy?: () => void;
   onMoveToTeamSpace?: () => void;
   onRegenerate?: () => void;
   status?: 'success' | 'error';
@@ -15,15 +15,19 @@ interface InviteCodeCompleteScreenProps {
 export const InviteCodeCompleteScreen = ({
   inviteCode = 'K7M2Q9PX',
   isRegenerating = false,
-  onCopy,
   onMoveToTeamSpace,
   onRegenerate,
   status = 'success',
 }: InviteCodeCompleteScreenProps) => {
   const isSuccess = status === 'success';
+  const { copyStatus, copyToClipboard } = useCopyToClipboard();
+
+  const handleCopy = async () => {
+    await copyToClipboard(inviteCode);
+  };
 
   return (
-    <main className="flex min-h-[844px] flex-1 flex-col bg-white px-7 pt-32 pb-9">
+    <main className="relative flex min-h-[844px] flex-1 flex-col bg-white px-7 pt-32 pb-9">
       <section>
         <div className="inline-flex items-center gap-2 rounded-lg bg-success-bg px-3 py-2 text-sm font-semibold text-success">
           <span aria-hidden="true" className="size-2 rounded-full bg-success" />
@@ -63,8 +67,9 @@ export const InviteCodeCompleteScreen = ({
               </p>
               <button
                 type="button"
-                onClick={onCopy}
-                className="mx-auto mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-brand-200 bg-white px-5 text-sm font-semibold text-brand-600 transition-colors hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-300"
+                disabled={copyStatus === 'copying'}
+                onClick={() => void handleCopy()}
+                className="mx-auto mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-brand-200 bg-white px-5 text-sm font-semibold text-brand-600 transition-colors hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-300 disabled:pointer-events-none disabled:opacity-60"
               >
                 <Copy className="size-4" aria-hidden="true" />
                 코드 복사하기
@@ -93,6 +98,17 @@ export const InviteCodeCompleteScreen = ({
           </OnboardingActionButton>
         ) : null}
       </div>
+
+      {copyStatus === 'success' || copyStatus === 'error' ? (
+        <div
+          role={copyStatus === 'error' ? 'alert' : 'status'}
+          className="absolute right-7 bottom-28 left-7 rounded-xl bg-cool-900 px-4 py-3 text-center text-sm font-medium text-white shadow-lg"
+        >
+          {copyStatus === 'success'
+            ? '초대 코드가 복사되었습니다.'
+            : '초대 코드 복사에 실패했습니다. 다시 시도해주세요.'}
+        </div>
+      ) : null}
     </main>
   );
 };
