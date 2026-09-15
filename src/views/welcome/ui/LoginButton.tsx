@@ -26,6 +26,16 @@ export const LoginButton = ({
     router.replace('/');
   };
 
+  const handleKakaoLogin = () => {
+    const params = new URLSearchParams({
+      client_id: process.env.NEXT_PUBLIC_KAKAO_REST_API_KEY ?? '',
+      redirect_uri: process.env.NEXT_PUBLIC_KAKAO_REDIRECT_URI ?? '',
+      response_type: 'code',
+    });
+
+    window.location.href = `https://kauth.kakao.com/oauth/authorize?${params.toString()}`;
+  };
+
   if (authState === 'authenticated') {
     return (
       <>
@@ -50,6 +60,7 @@ export const LoginButton = ({
         type="button"
         aria-label="카카오 로그인"
         className="mx-auto block w-full max-w-[300px] overflow-hidden rounded-[12px] transition-[filter] hover:brightness-95 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-300 active:brightness-90"
+        onClick={handleKakaoLogin}
       >
         <Image
           src="/kakao_login_medium_wide.png"

@@ -1,6 +1,6 @@
 import { LoginButton } from './LoginButton';
 
-interface HomePageProps {
+interface WelcomePageProps {
   /** 디자인 확인용 prop. 실제 인증 상태 연동은 추후 기능 구현 단계에서 처리. */
   authState?: 'unauthenticated' | 'authenticated';
   isTeamSpaceSheetInitiallyOpen?: boolean;
@@ -8,10 +8,10 @@ interface HomePageProps {
 
 const FEATURES = ['실시간 녹취와 자동 요약', '태스크 생성과 담당자 배정', 'AI 회의 코칭과 리포트'];
 
-export const HomePage = ({
+export const WelcomePage = ({
   authState = 'unauthenticated',
   isTeamSpaceSheetInitiallyOpen = false,
-}: HomePageProps) => {
+}: WelcomePageProps) => {
   return (
     <div className="flex flex-1 flex-col bg-white px-6 pt-20 pb-10">
       <div className="flex flex-col items-start gap-5">

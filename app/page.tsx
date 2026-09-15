@@ -1,13 +1,11 @@
-import { HomePage } from '@/views/home';
+import { WelcomePage } from '@/views/welcome';
 
-interface HomeProps {
+interface WelcomeProps {
   searchParams: Promise<{ teamSpace?: string | string[] }>;
 }
 
-export default async function Home({ searchParams }: HomeProps) {
+export default async function Welcome({ searchParams }: WelcomeProps) {
   const { teamSpace } = await searchParams;
 
-  return (
-    <HomePage authState="authenticated" isTeamSpaceSheetInitiallyOpen={teamSpace === 'start'} />
-  );
+  return <WelcomePage />;
 }
