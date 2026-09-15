@@ -1,12 +1,12 @@
 'use client';
 
 import type { FormEvent } from 'react';
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getInviteCodeError, INVITE_CODE_LENGTH } from '../model/validation';
 import { OnboardingActionButton } from './OnboardingActionButton';
 import { OnboardingLayout } from './OnboardingLayout';
 import { OnboardingTextField } from './OnboardingTextField';
+import { useTeamSpaceOnboardingStore } from '../model/useTeamSpaceOnboardingStore';
 
 interface InviteCodeFormProps {
   errorMessage?: string;
@@ -70,7 +70,8 @@ export const InviteCodeForm = ({
 
 export const InviteCodeScreen = () => {
   const router = useRouter();
-  const [inviteCode, setInviteCode] = useState('');
+  const inviteCode = useTeamSpaceOnboardingStore((state) => state.join.inviteCode);
+  const setInviteCode = useTeamSpaceOnboardingStore((state) => state.setInviteCode);
 
   return (
     <InviteCodeForm

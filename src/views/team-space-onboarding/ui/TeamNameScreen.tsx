@@ -1,12 +1,12 @@
 'use client';
 
 import type { FormEvent } from 'react';
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getNameError, NAME_MAX_LENGTH } from '../model/validation';
 import { OnboardingActionButton } from './OnboardingActionButton';
 import { OnboardingLayout } from './OnboardingLayout';
 import { OnboardingTextField } from './OnboardingTextField';
+import { useTeamSpaceOnboardingStore } from '../model/useTeamSpaceOnboardingStore';
 
 interface TeamNameFormProps {
   errorMessage?: string;
@@ -89,7 +89,8 @@ export const TeamNameForm = ({
 
 export const TeamNameScreen = () => {
   const router = useRouter();
-  const [teamName, setTeamName] = useState('');
+  const teamName = useTeamSpaceOnboardingStore((state) => state.create.teamName);
+  const setTeamName = useTeamSpaceOnboardingStore((state) => state.setTeamName);
 
   return (
     <TeamNameForm

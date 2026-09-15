@@ -1,12 +1,12 @@
 'use client';
 
 import type { FormEvent } from 'react';
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getNameError, NAME_MAX_LENGTH } from '../model/validation';
 import { OnboardingActionButton } from './OnboardingActionButton';
 import { OnboardingLayout } from './OnboardingLayout';
 import { OnboardingTextField } from './OnboardingTextField';
+import { useTeamSpaceOnboardingStore } from '../model/useTeamSpaceOnboardingStore';
 
 export type OnboardingFlow = 'join' | 'create';
 
@@ -83,7 +83,13 @@ interface NicknameScreenProps {
 
 export const NicknameScreen = ({ flow, onComplete }: NicknameScreenProps) => {
   const router = useRouter();
-  const [nickname, setNickname] = useState('');
+  const nickname = useTeamSpaceOnboardingStore((state) =>
+    flow === 'join' ? state.join.nickname : state.create.nickname,
+  );
+
+  const setNickname = useTeamSpaceOnboardingStore((state) =>
+    flow === 'join' ? state.setJoinNickname : state.setCreateNickname,
+  );
 
   const handleSubmit = async () => {
     await onComplete?.(nickname);
