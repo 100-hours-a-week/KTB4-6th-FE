@@ -1,7 +1,7 @@
 import { LoginButton } from './LoginButton';
 
 interface WelcomePageProps {
-  /** 디자인 확인용 prop. 실제 인증 상태 연동은 추후 기능 구현 단계에서 처리. */
+  /** 서버에서 Access Token 쿠키를 기준으로 확인한 인증 상태. */
   authState?: 'unauthenticated' | 'authenticated';
   isTeamSpaceSheetInitiallyOpen?: boolean;
 }
