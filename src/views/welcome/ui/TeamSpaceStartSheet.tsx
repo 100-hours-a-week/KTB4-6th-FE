@@ -31,13 +31,13 @@ export const TeamSpaceStartSheet = ({ isOpen, onClose }: TeamSpaceStartSheetProp
 
         <div className="mt-7 flex flex-col gap-3">
           <Link
-            href="/team-space/join"
+            href="/teams/join"
             className="flex h-14 items-center justify-center rounded-2xl border border-brand-600 bg-white text-base font-semibold text-brand-600 transition-colors hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-300 active:bg-brand-100"
           >
             초대코드로 참여하기
           </Link>
           <Link
-            href="/team-space/create"
+            href="/teams/create"
             className="flex h-14 items-center justify-center rounded-2xl bg-brand-600 text-base font-semibold text-white transition-colors hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-300 active:bg-brand-800"
           >
             팀 스페이스 생성하기

@@ -96,7 +96,7 @@ export const TeamNameScreen = () => {
     <TeamNameForm
       value={teamName}
       onChange={setTeamName}
-      onSubmit={() => router.push('/team-space/create/nickname')}
+      onSubmit={() => router.push('/teams/create/nickname')}
     />
   );
 };

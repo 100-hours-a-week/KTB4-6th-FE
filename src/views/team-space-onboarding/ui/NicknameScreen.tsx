@@ -43,7 +43,7 @@ export const NicknameForm = ({
   return (
     <form className="contents" noValidate onSubmit={handleSubmit}>
       <OnboardingLayout
-        backHref={isCreateFlow ? '/team-space/create' : '/team-space/join'}
+        backHref={isCreateFlow ? '/teams/create' : '/teams/join'}
         step={2}
         totalSteps={isCreateFlow ? 3 : 2}
         title="이름을 설정해주세요"
@@ -95,7 +95,7 @@ export const NicknameScreen = ({ flow, onComplete }: NicknameScreenProps) => {
     await onComplete?.(nickname);
 
     if (flow === 'create') {
-      router.push('/team-space/create/invite');
+      router.push('/teams/create/invite');
     }
   };
 
