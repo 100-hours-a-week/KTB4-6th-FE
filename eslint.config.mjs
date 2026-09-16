@@ -4,7 +4,7 @@ import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTs from 'eslint-config-next/typescript';
 import eslintConfigPrettier from 'eslint-config-prettier/flat';
 
-const publicApi = 'index.{ts,tsx}';
+const publicApi = 'index{,.server}.{ts,tsx}';
 
 const publicApiOf = (types) => ({
   to: {

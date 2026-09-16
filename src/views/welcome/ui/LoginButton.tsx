@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { getActiveTeam } from '@/features/team-space/api/get-active-team';
+import { startKakaoLogin } from '@/features/auth';
+import { useStartTeamSpace } from '@/features/team-space';
 import { TeamSpaceStartSheet } from './TeamSpaceStartSheet';
 
 interface LoginButtonProps {
@@ -20,45 +21,13 @@ export const LoginButton = ({
 }: LoginButtonProps) => {
   const router = useRouter();
   const [isTeamSpaceSheetOpen, setIsTeamSpaceSheetOpen] = useState(isTeamSpaceSheetInitiallyOpen);
-  const [isCheckingActiveTeam, setIsCheckingActiveTeam] = useState(false);
-  const [activeTeamError, setActiveTeamError] = useState<string | null>(null);
+  const { isCheckingActiveTeam, activeTeamError, startTeamSpace } = useStartTeamSpace(() => {
+    setIsTeamSpaceSheetOpen(true);
+  });
 
   const handleCloseTeamSpaceSheet = () => {
     setIsTeamSpaceSheetOpen(false);
     router.replace('/');
-  };
-
-  const handleKakaoLogin = () => {
-    const params = new URLSearchParams({
-      client_id: process.env.NEXT_PUBLIC_KAKAO_REST_API_KEY ?? '',
-      redirect_uri: process.env.NEXT_PUBLIC_KAKAO_REDIRECT_URI ?? '',
-      response_type: 'code',
-    });
-
-    window.location.href = `https://kauth.kakao.com/oauth/authorize?${params.toString()}`;
-  };
-
-  const handleTeamSpaceStart = async () => {
-    if (isCheckingActiveTeam) return;
-
-    setIsCheckingActiveTeam(true);
-    setActiveTeamError(null);
-
-    try {
-      const activeTeam = await getActiveTeam();
-
-      if (activeTeam.hasActiveTeam) {
-        // TODO: 홈 페이지 구현 시 GET /api/v1/home/{teamId} 조회 후
-        // /teams/{teamId}로 이동합니다. teamId는 activeTeam.teamId를 사용합니다.
-        return;
-      }
-
-      setIsTeamSpaceSheetOpen(true);
-    } catch {
-      setActiveTeamError('팀 스페이스 정보를 불러오지 못했습니다.');
-    } finally {
-      setIsCheckingActiveTeam(false);
-    }
   };
 
   if (authState === 'authenticated') {
@@ -67,7 +36,7 @@ export const LoginButton = ({
         <div className="flex flex-col items-center gap-3">
           <button
             type="button"
-            onClick={handleTeamSpaceStart}
+            onClick={() => void startTeamSpace()}
             disabled={isCheckingActiveTeam}
             className="flex h-14 w-full items-center justify-center rounded-2xl bg-brand-600 text-base font-semibold text-white transition-colors hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-300 active:bg-brand-800"
           >
@@ -92,7 +61,7 @@ export const LoginButton = ({
         type="button"
         aria-label="카카오 로그인"
         className="mx-auto block w-full max-w-[300px] overflow-hidden rounded-[12px] transition-[filter] hover:brightness-95 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-300 active:brightness-90"
-        onClick={handleKakaoLogin}
+        onClick={startKakaoLogin}
       >
         <Image
           src="/kakao_login_medium_wide.png"

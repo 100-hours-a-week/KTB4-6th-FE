@@ -2,11 +2,14 @@
 
 import type { FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { getInviteCodeError, INVITE_CODE_LENGTH } from '../model/validation';
+import {
+  getInviteCodeError,
+  INVITE_CODE_LENGTH,
+  useTeamSpaceOnboardingStore,
+} from '@/features/team-space';
 import { OnboardingActionButton } from './OnboardingActionButton';
 import { OnboardingLayout } from './OnboardingLayout';
 import { OnboardingTextField } from './OnboardingTextField';
-import { useTeamSpaceOnboardingStore } from '../model/useTeamSpaceOnboardingStore';
 
 interface InviteCodeFormProps {
   errorMessage?: string;

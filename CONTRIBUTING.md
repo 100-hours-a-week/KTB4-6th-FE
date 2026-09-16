@@ -1,5 +1,9 @@
 # Contributing
 
+## 아키텍처
+
+레이어별 책임과 코드 배치 기준은 [`docs/architecture.md`](docs/architecture.md)를 따른다.
+
 ## 코드 컨벤션
 
 ### TypeScript

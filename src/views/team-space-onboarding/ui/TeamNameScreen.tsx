@@ -2,11 +2,10 @@
 
 import type { FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { getNameError, NAME_MAX_LENGTH } from '../model/validation';
+import { getNameError, NAME_MAX_LENGTH, useTeamSpaceOnboardingStore } from '@/features/team-space';
 import { OnboardingActionButton } from './OnboardingActionButton';
 import { OnboardingLayout } from './OnboardingLayout';
 import { OnboardingTextField } from './OnboardingTextField';
-import { useTeamSpaceOnboardingStore } from '../model/useTeamSpaceOnboardingStore';
 
 interface TeamNameFormProps {
   errorMessage?: string;
