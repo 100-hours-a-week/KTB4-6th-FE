@@ -77,7 +77,7 @@ export const InviteCodeScreen = () => {
     <InviteCodeForm
       value={inviteCode}
       onChange={setInviteCode}
-      onSubmit={() => router.push('/team-space/join/nickname')}
+      onSubmit={() => router.push('/teams/join/nickname')}
     />
   );
 };
