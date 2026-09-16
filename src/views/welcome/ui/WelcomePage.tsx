@@ -4,6 +4,7 @@ interface WelcomePageProps {
   /** 서버에서 Access Token 쿠키를 기준으로 확인한 인증 상태. */
   authState?: 'unauthenticated' | 'authenticated';
   isTeamSpaceSheetInitiallyOpen?: boolean;
+  loginError?: string;
 }
 
 const FEATURES = ['실시간 녹취와 자동 요약', '태스크 생성과 담당자 배정', 'AI 회의 코칭과 리포트'];
@@ -11,6 +12,7 @@ const FEATURES = ['실시간 녹취와 자동 요약', '태스크 생성과 담�
 export const WelcomePage = ({
   authState = 'unauthenticated',
   isTeamSpaceSheetInitiallyOpen = false,
+  loginError,
 }: WelcomePageProps) => {
   return (
     <div className="flex flex-1 flex-col bg-white px-6 pt-20 pb-10">
@@ -43,6 +45,7 @@ export const WelcomePage = ({
       <LoginButton
         authState={authState}
         isTeamSpaceSheetInitiallyOpen={isTeamSpaceSheetInitiallyOpen}
+        loginError={loginError}
       />
     </div>
   );

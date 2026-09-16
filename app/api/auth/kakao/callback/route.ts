@@ -8,11 +8,11 @@ export const GET = async (request: NextRequest) => {
   const errorDescription = searchParams.get('error_description');
 
   if (error !== null || errorDescription !== null) {
-    return redirectWithOAuthError(request);
+    return redirectWithOAuthError(request, error === 'access_denied' ? 'cancelled' : 'failed');
   }
 
   if (!code) {
-    return redirectWithOAuthError(request);
+    return redirectWithOAuthError(request, 'failed');
   }
 
   try {
@@ -41,13 +41,13 @@ export const GET = async (request: NextRequest) => {
 
     return response;
   } catch {
-    return redirectWithOAuthError(request);
+    return redirectWithOAuthError(request, 'failed');
   }
 };
 
-const redirectWithOAuthError = (request: NextRequest) => {
+const redirectWithOAuthError = (request: NextRequest, error: 'cancelled' | 'failed') => {
   const redirectUrl = new URL('/', request.url);
-  redirectUrl.searchParams.set('error', 'oauth');
+  redirectUrl.searchParams.set('loginError', error);
 
   return NextResponse.redirect(redirectUrl);
 };

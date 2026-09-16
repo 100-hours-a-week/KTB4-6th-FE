@@ -10,11 +10,13 @@ interface LoginButtonProps {
   /** 서버에서 Access Token 쿠키 존재 여부로 확인한 인증 상태. */
   authState?: 'unauthenticated' | 'authenticated';
   isTeamSpaceSheetInitiallyOpen?: boolean;
+  loginError?: string;
 }
 
 export const LoginButton = ({
   authState = 'unauthenticated',
   isTeamSpaceSheetInitiallyOpen = false,
+  loginError,
 }: LoginButtonProps) => {
   const router = useRouter();
   const [isTeamSpaceSheetOpen, setIsTeamSpaceSheetOpen] = useState(isTeamSpaceSheetInitiallyOpen);
@@ -100,6 +102,14 @@ export const LoginButton = ({
           className="h-auto w-full"
         />
       </button>
+      {loginError ? (
+        <p
+          role="alert"
+          className="w-full max-w-[300px] rounded-xl bg-danger-bg px-4 py-3 text-center text-sm text-danger"
+        >
+          {loginError}
+        </p>
+      ) : null}
       <p className="text-xs text-cool-500">
         계속하면 서비스 이용약관 및{' '}
         <a href="#" className="underline underline-offset-2">
