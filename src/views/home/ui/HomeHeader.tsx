@@ -1,10 +1,15 @@
 import { Menu } from 'lucide-react';
 
-export const HomeHeader = () => (
+interface HomeHeaderProps {
+  onMenuClick: () => void;
+}
+
+export const HomeHeader = ({ onMenuClick }: HomeHeaderProps) => (
   <header className="flex items-center px-5 py-4">
     <button
       type="button"
       aria-label="메뉴 열기"
+      onClick={onMenuClick}
       className="flex size-9 items-center justify-center rounded-full text-cool-900 transition-colors hover:bg-cool-100"
     >
       <Menu className="size-5" strokeWidth={2} />
