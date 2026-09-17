@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { AppToastProvider } from '@/shared/ui';
 
 import { ThemeProvider } from './theme-provider';
 
@@ -11,7 +12,7 @@ interface AppProvidersProps {
 export function AppProviders({ children }: AppProvidersProps) {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-      {children}
+      <AppToastProvider>{children}</AppToastProvider>
     </ThemeProvider>
   );
 }
