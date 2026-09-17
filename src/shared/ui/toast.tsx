@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Toast } from '@base-ui/react/toast';
-import { cn } from '@/shared/lib';
+import { cn, useAppFrameElement } from '@/shared/lib';
 
 export type AppToastVariant = 'success' | 'danger' | 'neutral';
 
@@ -16,11 +16,8 @@ interface AppToastProviderProps {
 
 // 설계서 지시사항: 토스트 배경은 하나로 통일하고, 성공/실패는 좌측 점(dot) 색상으로만 구분한다.
 export const AppToastProvider = ({ children }: AppToastProviderProps) => {
-  // 390px 모바일 프레임(app/layout.tsx의 #app-frame) 안에만 토스트가 보이도록 포털 대상을 지정한다.
-  // 서버에서는 document가 없어 null이고, 클라이언트 첫 렌더 시점엔 프레임이 이미 마크업에 존재하므로 바로 찾을 수 있다.
-  const [frame] = useState<HTMLElement | null>(() =>
-    typeof document === 'undefined' ? null : document.getElementById('app-frame'),
-  );
+  // 390px 모바일 프레임 안에만 토스트가 보이도록 포털 대상을 지정한다.
+  const frame = useAppFrameElement();
 
   return (
     <Toast.Provider>
