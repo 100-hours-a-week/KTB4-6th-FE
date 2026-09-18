@@ -6,6 +6,7 @@ import { TeamDeleteAction } from './TeamDeleteAction';
 import { TeamInfoSection } from './TeamInfoSection';
 import { TeamLeaveAction } from './TeamLeaveAction';
 import { TeamManagementContentSkeleton } from './TeamManagementContentSkeleton';
+import { TeamManagementErrorState } from './TeamManagementErrorState';
 import { TeamManagementHeader } from './TeamManagementHeader';
 
 interface TeamManagementPageProps {
@@ -23,6 +24,8 @@ export const TeamManagementPage = ({ role, status }: TeamManagementPageProps) =>
       <div className="flex-1 overflow-y-auto">
         {status === 'loading' ? (
           <TeamManagementContentSkeleton />
+        ) : status === 'error' ? (
+          <TeamManagementErrorState />
         ) : (
           <>
             <TeamInfoSection role={role} team={mockTeamInfo} />
