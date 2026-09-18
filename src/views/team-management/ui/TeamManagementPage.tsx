@@ -1,4 +1,6 @@
+import { mockTeamInfo } from '../model/mock';
 import type { TeamMemberRole } from '../model/types';
+import { TeamInfoSection } from './TeamInfoSection';
 import { TeamManagementHeader } from './TeamManagementHeader';
 
 interface TeamManagementPageProps {
@@ -11,7 +13,8 @@ export const TeamManagementPage = ({ role }: TeamManagementPageProps) => {
       <TeamManagementHeader />
 
       <div className="flex-1 overflow-y-auto">
-        {/* 팀 정보 카드 / 참여자 목록 / 차단 목록: 서브 이슈 2에서 채움 */}
+        <TeamInfoSection role={role} team={mockTeamInfo} />
+        {/* 참여자 목록 / 차단 목록: 서브 이슈 2에서 이어서 채움 */}
       </div>
 
       <footer className="shrink-0">
