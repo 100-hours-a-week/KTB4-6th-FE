@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { oauthLogin } from '@/features/auth/index.server';
+import { setAuthCookies } from './auth-cookies';
 
 export const kakaoOAuthCallback = async (request: NextRequest) => {
   const searchParams = request.nextUrl.searchParams;
@@ -21,23 +22,7 @@ export const kakaoOAuthCallback = async (request: NextRequest) => {
       authorizationCode: code,
     });
     const response = NextResponse.redirect(new URL('/', request.url));
-    const isProduction = process.env.NODE_ENV === 'production';
-
-    response.cookies.set('accessToken', authData.accessToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: authData.accessTokenExpiresIn,
-      ...(isProduction ? { domain: 'meety.kro.kr' } : {}),
-    });
-    response.cookies.set('refreshToken', authData.refreshToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'lax',
-      path: '/api/auth',
-      maxAge: authData.refreshTokenExpiresIn,
-    });
+    setAuthCookies(response, authData);
 
     return response;
   } catch {

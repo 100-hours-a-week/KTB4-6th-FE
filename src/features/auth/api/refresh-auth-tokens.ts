@@ -2,6 +2,13 @@ import 'server-only';
 
 import type { TokenRefreshData, TokenRefreshRequest, TokenRefreshResponse } from '../model/types';
 
+export class TokenRefreshApiError extends Error {
+  constructor(readonly status: number) {
+    super('토큰 재발급 API 요청에 실패했습니다.');
+    this.name = 'TokenRefreshApiError';
+  }
+}
+
 export const refreshAuthTokens = async ({
   refreshToken,
 }: TokenRefreshRequest): Promise<TokenRefreshData> => {
@@ -19,9 +26,14 @@ export const refreshAuthTokens = async ({
     body: JSON.stringify({ refreshToken } satisfies TokenRefreshRequest),
     cache: 'no-store',
   });
+
+  if (!response.ok) {
+    throw new TokenRefreshApiError(response.status);
+  }
+
   const result = (await response.json()) as TokenRefreshResponse;
 
-  if (!response.ok || !result.success || !result.data) {
+  if (!result.success || !result.data) {
     throw new Error('토큰 재발급 API 요청에 실패했습니다.');
   }
 

@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { logout } from '@/features/auth/index.server';
+import { clearAuthCookies } from './auth-cookies';
 
 export const logoutHandler = async (request: NextRequest) => {
   const accessToken = request.cookies.get('accessToken')?.value;
@@ -25,25 +26,4 @@ export const logoutHandler = async (request: NextRequest) => {
       { status: 502 },
     );
   }
-};
-
-// 브라우저에 있는 쿠키 삭제
-const clearAuthCookies = (response: NextResponse) => {
-  const isProduction = process.env.NODE_ENV === 'production';
-
-  response.cookies.set('accessToken', '', {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 0,
-    ...(isProduction ? { domain: 'meety.kro.kr' } : {}),
-  });
-  response.cookies.set('refreshToken', '', {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: 'lax',
-    path: '/api/auth',
-    maxAge: 0,
-  });
 };
