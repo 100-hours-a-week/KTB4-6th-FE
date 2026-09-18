@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { logout } from '@/features/auth/index.server';
+import { logout, LogoutApiError } from '@/features/auth/index.server';
 import { clearAuthCookies } from './auth-cookies';
 
 export const logoutHandler = async (request: NextRequest) => {
@@ -20,7 +20,14 @@ export const logoutHandler = async (request: NextRequest) => {
     const response = NextResponse.json({ success: true });
     clearAuthCookies(response);
     return response;
-  } catch {
+  } catch (error) {
+    if (error instanceof LogoutApiError && error.status === 401) {
+      return NextResponse.json(
+        { success: false, error: '인증이 만료되었습니다.' },
+        { status: 401 },
+      );
+    }
+
     return NextResponse.json(
       { success: false, error: '로그아웃에 실패했습니다. 다시 시도해 주세요.' },
       { status: 502 },

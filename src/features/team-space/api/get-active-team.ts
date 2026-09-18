@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { apiClient } from '@/shared/api';
 
 import type { ActiveTeamData, ActiveTeamResponse } from '../model/types';
 
@@ -10,9 +10,7 @@ export const getActiveTeam = async (): Promise<ActiveTeamData> => {
     throw new Error('NEXT_PUBLIC_ACTIVE_TEAM_API_URL 환경변수가 설정되지 않았습니다.');
   }
 
-  const response = await axios.get<ActiveTeamResponse>(endpoint, {
-    withCredentials: true,
-  });
+  const response = await apiClient.get<ActiveTeamResponse>(endpoint);
   const result = response.data;
 
   if (!result.success || !result.data) {
