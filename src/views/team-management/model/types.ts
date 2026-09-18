@@ -5,3 +5,11 @@ export interface TeamInfo {
   inviteCode: string;
   creditBalance: number;
 }
+
+export interface Participant {
+  id: string;
+  name: string;
+  avatarInitial: string;
+  isTeamLeader: boolean;
+  isMe: boolean;
+}
