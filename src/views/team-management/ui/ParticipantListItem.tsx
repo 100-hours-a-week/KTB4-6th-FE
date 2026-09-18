@@ -1,13 +1,14 @@
 'use client';
 
 import { Menu } from '@base-ui/react/menu';
-import { Crown, MoreVertical } from 'lucide-react';
+import { Crown, MoreVertical, UserX } from 'lucide-react';
 import { useAppFrameElement } from '@/shared/lib';
 import { Badge } from '@/shared/ui';
 import type { Participant } from '../model/types';
 
 interface ParticipantListItemProps {
   onDelegateClick: (participant: Participant) => void;
+  onKickClick: (participant: Participant) => void;
   order: number;
   participant: Participant;
   showManageAction: boolean;
@@ -15,6 +16,7 @@ interface ParticipantListItemProps {
 
 export const ParticipantListItem = ({
   onDelegateClick,
+  onKickClick,
   order,
   participant,
   showManageAction,
@@ -59,6 +61,13 @@ export const ParticipantListItem = ({
                 >
                   <Crown className="size-4" strokeWidth={2} />
                   팀장 위임
+                </Menu.Item>
+                <Menu.Item
+                  onClick={() => onKickClick(participant)}
+                  className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-danger outline-none select-none data-highlighted:bg-danger-bg"
+                >
+                  <UserX className="size-4" strokeWidth={2} />
+                  강퇴하기
                 </Menu.Item>
               </Menu.Popup>
             </Menu.Positioner>

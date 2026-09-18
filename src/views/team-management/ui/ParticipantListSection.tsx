@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { Participant, TeamMemberRole } from '../model/types';
 import { LeaderDelegateDialog } from './LeaderDelegateDialog';
+import { MemberKickDialog } from './MemberKickDialog';
 import { ParticipantListItem } from './ParticipantListItem';
 
 interface ParticipantListSectionProps {
@@ -12,6 +13,7 @@ interface ParticipantListSectionProps {
 
 export const ParticipantListSection = ({ role, participants }: ParticipantListSectionProps) => {
   const [delegateTarget, setDelegateTarget] = useState<Participant | null>(null);
+  const [kickTarget, setKickTarget] = useState<Participant | null>(null);
 
   return (
     <section className="mt-6 px-5">
@@ -28,6 +30,7 @@ export const ParticipantListSection = ({ role, participants }: ParticipantListSe
             participant={participant}
             showManageAction={role === 'leader' && !participant.isMe}
             onDelegateClick={setDelegateTarget}
+            onKickClick={setKickTarget}
           />
         ))}
       </ul>
@@ -38,6 +41,14 @@ export const ParticipantListSection = ({ role, participants }: ParticipantListSe
           if (!open) setDelegateTarget(null);
         }}
         participantName={delegateTarget?.name ?? ''}
+      />
+
+      <MemberKickDialog
+        isOpen={kickTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setKickTarget(null);
+        }}
+        participantName={kickTarget?.name ?? ''}
       />
     </section>
   );
