@@ -1,4 +1,5 @@
 import type { TeamMemberRole } from '../model/types';
+import { TeamManagementHeader } from './TeamManagementHeader';
 
 interface TeamManagementPageProps {
   role: TeamMemberRole;
@@ -7,7 +8,7 @@ interface TeamManagementPageProps {
 export const TeamManagementPage = ({ role }: TeamManagementPageProps) => {
   return (
     <div className="flex min-h-[844px] flex-1 flex-col bg-cool-50">
-      <header className="shrink-0" />
+      <TeamManagementHeader />
 
       <div className="flex-1 overflow-y-auto">
         {/* 팀 정보 카드 / 참여자 목록 / 차단 목록: 서브 이슈 2에서 채움 */}
