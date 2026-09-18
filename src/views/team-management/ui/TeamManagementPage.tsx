@@ -35,7 +35,13 @@ export const TeamManagementPage = ({ role, status }: TeamManagementPageProps) =>
         )}
       </div>
 
-      <footer className="shrink-0">{isLeader ? <TeamDeleteAction /> : <TeamLeaveAction />}</footer>
+      <footer className="shrink-0">
+        {isLeader ? (
+          <TeamDeleteAction />
+        ) : (
+          <TeamLeaveAction hasActiveMeeting={mockTeamInfo.hasActiveMeeting} />
+        )}
+      </footer>
     </div>
   );
 };
