@@ -2,6 +2,13 @@ import 'server-only';
 
 import type { LogoutRequest, LogoutResponse } from '../model/types';
 
+export class LogoutApiError extends Error {
+  constructor(readonly status: number) {
+    super('로그아웃 API 요청에 실패했습니다.');
+    this.name = 'LogoutApiError';
+  }
+}
+
 export const logout = async ({ accessToken, refreshToken }: LogoutRequest): Promise<void> => {
   const apiBaseUrl = process.env.API_BASE_URL;
 
@@ -22,9 +29,13 @@ export const logout = async ({ accessToken, refreshToken }: LogoutRequest): Prom
     return;
   }
 
+  if (!response.ok) {
+    throw new LogoutApiError(response.status);
+  }
+
   const result = (await response.json()) as LogoutResponse;
 
-  if (!response.ok || !result.success) {
+  if (!result.success) {
     throw new Error('로그아웃 API 요청에 실패했습니다.');
   }
 };
