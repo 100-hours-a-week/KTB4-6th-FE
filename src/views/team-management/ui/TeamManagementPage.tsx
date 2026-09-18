@@ -2,7 +2,9 @@ import { mockBlockedMembers, mockParticipants, mockTeamInfo } from '../model/moc
 import type { TeamMemberRole } from '../model/types';
 import { BlockedListSection } from './BlockedListSection';
 import { ParticipantListSection } from './ParticipantListSection';
+import { TeamDeleteAction } from './TeamDeleteAction';
 import { TeamInfoSection } from './TeamInfoSection';
+import { TeamLeaveAction } from './TeamLeaveAction';
 import { TeamManagementHeader } from './TeamManagementHeader';
 
 interface TeamManagementPageProps {
@@ -22,13 +24,7 @@ export const TeamManagementPage = ({ role }: TeamManagementPageProps) => {
         {isLeader && <BlockedListSection blockedMembers={mockBlockedMembers} />}
       </div>
 
-      <footer className="shrink-0">
-        {role === 'leader' ? (
-          <div />
-        ) : (
-          <div /> // 팀장: 팀 삭제하기 / 팀원: 나가기 — 서브 이슈 2에서 채움
-        )}
-      </footer>
+      <footer className="shrink-0">{isLeader ? <TeamDeleteAction /> : <TeamLeaveAction />}</footer>
     </div>
   );
 };
