@@ -22,10 +22,16 @@ export const BlockedListSection = ({ blockedMembers }: BlockedListSectionProps) 
       <span className="text-sm text-cool-500">{blockedMembers.length}명</span>
     </div>
 
-    <ul className="mt-2">
-      {blockedMembers.map((member, index) => (
-        <BlockedListItem key={member.id} order={index + 1} member={member} />
-      ))}
-    </ul>
+    {blockedMembers.length === 0 ? (
+      <div className="mt-3 flex min-h-24 flex-col items-center justify-center rounded-2xl border border-dashed border-cool-200 bg-white px-4 text-center">
+        <p className="text-sm text-cool-500">차단된 참여자가 없어요.</p>
+      </div>
+    ) : (
+      <ul className="mt-2">
+        {blockedMembers.map((member, index) => (
+          <BlockedListItem key={member.id} order={index + 1} member={member} />
+        ))}
+      </ul>
+    )}
   </section>
 );

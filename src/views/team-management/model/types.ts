@@ -1,5 +1,7 @@
 export type TeamMemberRole = 'leader' | 'member';
 
+export type TeamPageStatus = 'loading' | 'error' | 'success';
+
 export interface TeamInfo {
   name: string;
   inviteCode: string;

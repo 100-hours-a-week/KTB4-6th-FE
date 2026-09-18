@@ -1,8 +1,7 @@
 'use client';
 
 import { Copy, Users } from 'lucide-react';
-import { useCopyToClipboard } from '@/shared/lib';
-import { useAppToast } from '@/shared/ui';
+import { useCopyInviteCode } from '@/entities/invite-code';
 import type { TeamSummary } from '../model/types';
 
 interface TeamSummaryCardProps {
@@ -10,17 +9,10 @@ interface TeamSummaryCardProps {
 }
 
 export const TeamSummaryCard = ({ team }: TeamSummaryCardProps) => {
-  const { copyToClipboard } = useCopyToClipboard();
-  const { showToast } = useAppToast();
+  const { copyInviteCode } = useCopyInviteCode();
 
-  const handleCopyInviteCode = async () => {
-    const isSuccess = await copyToClipboard(team.inviteCode);
-
-    if (isSuccess) {
-      showToast('초대 코드가 복사되었습니다', 'success');
-    } else {
-      showToast('초대 코드 복사에 실패했습니다.\n다시 시도해주세요.', 'danger');
-    }
+  const handleCopyInviteCode = () => {
+    void copyInviteCode(team.inviteCode);
   };
 
   return (
