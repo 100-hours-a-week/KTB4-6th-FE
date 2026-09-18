@@ -2,6 +2,7 @@
 
 import { Copy, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
+import { useCopyInviteCode } from '@/entities/invite-code';
 import { useAppToast } from '@/shared/ui';
 import { teamManagementToastMessages } from '../model/toast-messages';
 import type { TeamInfo, TeamMemberRole } from '../model/types';
@@ -16,6 +17,7 @@ export const TeamInfoSection = ({ role, team }: TeamInfoSectionProps) => {
   const isLeader = role === 'leader';
   const [teamName, setTeamName] = useState(team.name);
   const { showToast } = useAppToast();
+  const { copyInviteCode } = useCopyInviteCode();
 
   const handleSaveTeamName = (name: string) => {
     setTeamName(name);
@@ -44,6 +46,7 @@ export const TeamInfoSection = ({ role, team }: TeamInfoSectionProps) => {
               <button
                 type="button"
                 aria-label="초대 코드 복사"
+                onClick={() => void copyInviteCode(team.inviteCode)}
                 className="flex size-7 items-center justify-center rounded-full text-cool-500 transition-colors hover:bg-cool-100 hover:text-cool-900"
               >
                 <Copy className="size-3.5" strokeWidth={2} />
