@@ -5,6 +5,7 @@ export const mockTeamInfo: TeamInfo = {
   name: '프로덕트디자인팀',
   inviteCode: 'K7M2Q9PX',
   creditBalance: 300,
+  hasActiveMeeting: false,
 };
 
 // 팀장이 최상단, 나머지는 최근 참여순으로 이미 정렬된 상태를 가정한다.

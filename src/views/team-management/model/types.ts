@@ -6,6 +6,7 @@ export interface TeamInfo {
   name: string;
   inviteCode: string;
   creditBalance: number;
+  hasActiveMeeting: boolean;
 }
 
 export interface Participant {
