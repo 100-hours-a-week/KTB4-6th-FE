@@ -13,3 +13,9 @@ export interface Participant {
   isTeamLeader: boolean;
   isMe: boolean;
 }
+
+export interface BlockedMember {
+  id: string;
+  name: string;
+  avatarInitial: string;
+}

@@ -1,4 +1,4 @@
-import type { Participant, TeamInfo } from './types';
+import type { BlockedMember, Participant, TeamInfo } from './types';
 
 // UI 목업용 더미 데이터. 실제 팀 정보 연동은 서브 이슈 5(데이터 연결)에서 진행한다.
 export const mockTeamInfo: TeamInfo = {
@@ -19,4 +19,10 @@ export const mockParticipants: Participant[] = [
   { id: 'p8', name: '윤아름', avatarInitial: '윤', isTeamLeader: false, isMe: false },
   { id: 'p9', name: '장동건', avatarInitial: '장', isTeamLeader: false, isMe: false },
   { id: 'p10', name: '서지수', avatarInitial: '서', isTeamLeader: false, isMe: false },
+];
+
+export const mockBlockedMembers: BlockedMember[] = [
+  { id: 'b1', name: '강태오', avatarInitial: '강' },
+  { id: 'b2', name: '임수정', avatarInitial: '임' },
+  { id: 'b3', name: '조인성', avatarInitial: '조' },
 ];
