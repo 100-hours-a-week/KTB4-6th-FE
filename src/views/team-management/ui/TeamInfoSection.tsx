@@ -1,5 +1,11 @@
-import { Copy, Pencil, RefreshCw } from 'lucide-react';
+'use client';
+
+import { Copy, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
+import { useAppToast } from '@/shared/ui';
+import { teamManagementToastMessages } from '../model/toast-messages';
 import type { TeamInfo, TeamMemberRole } from '../model/types';
+import { TeamNameField } from './TeamNameField';
 
 interface TeamInfoSectionProps {
   role: TeamMemberRole;
@@ -8,21 +14,18 @@ interface TeamInfoSectionProps {
 
 export const TeamInfoSection = ({ role, team }: TeamInfoSectionProps) => {
   const isLeader = role === 'leader';
+  const [teamName, setTeamName] = useState(team.name);
+  const { showToast } = useAppToast();
+
+  const handleSaveTeamName = (name: string) => {
+    setTeamName(name);
+    const { text, variant } = teamManagementToastMessages.teamNameUpdateSuccess;
+    showToast(text, variant);
+  };
 
   return (
     <section className="px-5 pt-5">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold tracking-[-0.02em] text-cool-900">{team.name}</h1>
-        {isLeader && (
-          <button
-            type="button"
-            aria-label="팀명 수정"
-            className="flex size-8 items-center justify-center rounded-full text-cool-500 transition-colors hover:bg-cool-100 hover:text-cool-900"
-          >
-            <Pencil className="size-4" strokeWidth={2} />
-          </button>
-        )}
-      </div>
+      <TeamNameField isEditable={isLeader} name={teamName} onSave={handleSaveTeamName} />
 
       <div className="mt-4 grid grid-cols-[1.6fr_1fr] gap-3">
         <div className="rounded-xl border border-cool-100 bg-white px-4 py-3">
