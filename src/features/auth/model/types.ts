@@ -17,3 +17,14 @@ export interface OAuthLoginResponse {
   data: OAuthLoginData | null;
   error: unknown | null;
 }
+
+export interface LogoutRequest {
+  accessToken: string;
+  refreshToken: string;
+}
+
+export interface LogoutResponse {
+  success: boolean;
+  data: unknown | null;
+  error: unknown | null;
+}
