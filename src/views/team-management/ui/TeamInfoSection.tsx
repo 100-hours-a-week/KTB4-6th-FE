@@ -6,6 +6,7 @@ import { useCopyInviteCode } from '@/entities/invite-code';
 import { useAppToast } from '@/shared/ui';
 import { teamManagementToastMessages } from '../model/toast-messages';
 import type { TeamInfo, TeamMemberRole } from '../model/types';
+import { InviteCodeRegenerateDialog } from './InviteCodeRegenerateDialog';
 import { TeamNameField } from './TeamNameField';
 
 interface TeamInfoSectionProps {
@@ -16,6 +17,7 @@ interface TeamInfoSectionProps {
 export const TeamInfoSection = ({ role, team }: TeamInfoSectionProps) => {
   const isLeader = role === 'leader';
   const [teamName, setTeamName] = useState(team.name);
+  const [isRegenerateDialogOpen, setIsRegenerateDialogOpen] = useState(false);
   const { showToast } = useAppToast();
   const { copyInviteCode } = useCopyInviteCode();
 
@@ -38,6 +40,7 @@ export const TeamInfoSection = ({ role, team }: TeamInfoSectionProps) => {
                 <button
                   type="button"
                   aria-label="초대 코드 재생성"
+                  onClick={() => setIsRegenerateDialogOpen(true)}
                   className="flex size-7 items-center justify-center rounded-full text-cool-500 transition-colors hover:bg-cool-100 hover:text-cool-900"
                 >
                   <RefreshCw className="size-3.5" strokeWidth={2} />
@@ -61,6 +64,11 @@ export const TeamInfoSection = ({ role, team }: TeamInfoSectionProps) => {
           <p className="mt-1 text-lg font-bold text-cool-900">{team.creditBalance} 크레딧</p>
         </div>
       </div>
+
+      <InviteCodeRegenerateDialog
+        isOpen={isRegenerateDialogOpen}
+        onOpenChange={setIsRegenerateDialogOpen}
+      />
     </section>
   );
 };
