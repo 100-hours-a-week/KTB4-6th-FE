@@ -6,12 +6,8 @@ export interface ToastMessage {
 }
 
 // 확인된 토스트 문구 모음. 실제 노출 트리거는 서브 이슈 4(동작 연결)·5(데이터 연결)에서 연결한다.
+// 초대 코드 복사 결과 문구는 entities/invite-code의 useCopyInviteCode가 직접 노출하므로 여기 두지 않는다.
 export const teamManagementToastMessages: Record<string, ToastMessage> = {
-  inviteCodeCopySuccess: { text: '초대 코드가 복사되었습니다', variant: 'success' },
-  inviteCodeCopyFailure: {
-    text: '초대 코드 복사에 실패했습니다. 다시 시도해주세요.',
-    variant: 'danger',
-  },
   inviteCodeRegenerateLimitExceeded: {
     text: '초대코드 재생성 횟수를 초과했습니다.',
     variant: 'danger',
