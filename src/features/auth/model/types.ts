@@ -18,6 +18,23 @@ export interface OAuthLoginResponse {
   error: unknown | null;
 }
 
+export interface TokenRefreshRequest {
+  refreshToken: string;
+}
+
+export interface TokenRefreshData {
+  accessToken: string;
+  refreshToken: string;
+  accessTokenExpiresIn: number;
+  refreshTokenExpiresIn: number;
+}
+
+export interface TokenRefreshResponse {
+  success: boolean;
+  data: TokenRefreshData | null;
+  error: unknown | null;
+}
+
 export interface LogoutRequest {
   accessToken: string;
   refreshToken: string;
