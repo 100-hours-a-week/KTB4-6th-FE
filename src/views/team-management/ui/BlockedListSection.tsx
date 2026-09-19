@@ -2,7 +2,7 @@
 
 import { Info } from 'lucide-react';
 import { useState } from 'react';
-import { releaseTeamBlock, useTeamBlocksData } from '@/features/team-management';
+import { useReleaseTeamBlock, useTeamBlocksData } from '@/features/team-management';
 import { useAppToast } from '@/shared/ui';
 import { mapBlockedMembers } from '../model/map-team-management-data';
 import { teamManagementToastMessages } from '../model/toast-messages';
@@ -15,26 +15,26 @@ interface BlockedListSectionProps {
 }
 
 export const BlockedListSection = ({ teamId }: BlockedListSectionProps) => {
-  const { status, blocks, removeBlock } = useTeamBlocksData(teamId);
+  const { status, blocks } = useTeamBlocksData(teamId);
   const [releaseTarget, setReleaseTarget] = useState<BlockedMember | null>(null);
   const { showToast } = useAppToast();
+  const releaseTeamBlockMutation = useReleaseTeamBlock(teamId);
 
   const blockedMembers = mapBlockedMembers(blocks);
 
-  const handleReleaseConfirm = async () => {
+  const handleReleaseConfirm = () => {
     if (!releaseTarget) return;
 
-    const blockId = Number(releaseTarget.id);
-
-    try {
-      await releaseTeamBlock(teamId, blockId);
-      removeBlock(blockId);
-      const { text, variant } = teamManagementToastMessages.blockReleaseSuccess;
-      showToast(text, variant);
-    } catch {
-      const { text, variant } = teamManagementToastMessages.blockReleaseFailure;
-      showToast(text, variant);
-    }
+    releaseTeamBlockMutation.mutate(Number(releaseTarget.id), {
+      onSuccess: () => {
+        const { text, variant } = teamManagementToastMessages.blockReleaseSuccess;
+        showToast(text, variant);
+      },
+      onError: () => {
+        const { text, variant } = teamManagementToastMessages.blockReleaseFailure;
+        showToast(text, variant);
+      },
+    });
   };
 
   return (
@@ -80,7 +80,7 @@ export const BlockedListSection = ({ teamId }: BlockedListSectionProps) => {
 
       <BlockReleaseDialog
         isOpen={releaseTarget !== null}
-        onConfirm={() => void handleReleaseConfirm()}
+        onConfirm={handleReleaseConfirm}
         onOpenChange={(open) => {
           if (!open) setReleaseTarget(null);
         }}
