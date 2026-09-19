@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getTeamCredits } from '../api/get-team-credits';
 import { getTeamDetail } from '../api/get-team-detail';
 import { getTeamMembers } from '../api/get-team-members';
+import { teamKeys } from './query-keys';
 import type { TeamCreditsData, TeamDetailData, TeamMemberData } from './types';
 
 export type TeamManagementRequestStatus = 'loading' | 'error' | 'success';
@@ -22,49 +23,41 @@ interface UseTeamManagementDataResult {
 }
 
 export const useTeamManagementData = (teamId: number): UseTeamManagementDataResult => {
-  const [status, setStatus] = useState<TeamManagementRequestStatus>('loading');
-  const [data, setData] = useState<TeamManagementData | null>(null);
-  const [reloadCount, setReloadCount] = useState(0);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    let ignore = false;
+  const teamQuery = useQuery({
+    queryKey: teamKeys.detail(teamId),
+    queryFn: () => getTeamDetail(teamId),
+  });
+  const membersQuery = useQuery({
+    queryKey: teamKeys.members(teamId),
+    queryFn: () => getTeamMembers(teamId),
+  });
+  const creditsQuery = useQuery({
+    queryKey: teamKeys.credits(teamId),
+    queryFn: () => getTeamCredits(teamId),
+  });
 
-    const load = async () => {
-      try {
-        const [team, members, credits] = await Promise.all([
-          getTeamDetail(teamId),
-          getTeamMembers(teamId),
-          getTeamCredits(teamId),
-        ]);
+  const queries = [teamQuery, membersQuery, creditsQuery];
+  const status: TeamManagementRequestStatus = queries.some((query) => query.isPending)
+    ? 'loading'
+    : queries.some((query) => query.isError)
+      ? 'error'
+      : 'success';
 
-        if (ignore) return;
-        setData({ team, members, credits });
-        setStatus('success');
-      } catch {
-        if (!ignore) setStatus('error');
-      }
-    };
-
-    void load();
-
-    return () => {
-      ignore = true;
-    };
-  }, [teamId, reloadCount]);
+  const data: TeamManagementData | null =
+    teamQuery.data && membersQuery.data && creditsQuery.data
+      ? { team: teamQuery.data, members: membersQuery.data, credits: creditsQuery.data }
+      : null;
 
   const refetch = () => {
-    setStatus('loading');
-    setReloadCount((count) => count + 1);
+    void queryClient.invalidateQueries({ queryKey: teamKeys.detail(teamId) });
+    void queryClient.invalidateQueries({ queryKey: teamKeys.members(teamId) });
   };
 
   const removeMember = (teamMemberId: number) => {
-    setData((prev) =>
-      prev
-        ? {
-            ...prev,
-            members: prev.members.filter((member) => member.teamMemberId !== teamMemberId),
-          }
-        : prev,
+    queryClient.setQueryData<TeamMemberData[]>(teamKeys.members(teamId), (members) =>
+      members?.filter((member) => member.teamMemberId !== teamMemberId),
     );
   };
 
