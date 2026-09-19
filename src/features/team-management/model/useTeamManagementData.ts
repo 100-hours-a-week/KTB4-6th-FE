@@ -17,11 +17,14 @@ export interface TeamManagementData {
 interface UseTeamManagementDataResult {
   status: TeamManagementRequestStatus;
   data: TeamManagementData | null;
+  refetch: () => void;
+  removeMember: (teamMemberId: number) => void;
 }
 
 export const useTeamManagementData = (teamId: number): UseTeamManagementDataResult => {
   const [status, setStatus] = useState<TeamManagementRequestStatus>('loading');
   const [data, setData] = useState<TeamManagementData | null>(null);
+  const [reloadCount, setReloadCount] = useState(0);
 
   useEffect(() => {
     let ignore = false;
@@ -47,7 +50,23 @@ export const useTeamManagementData = (teamId: number): UseTeamManagementDataResu
     return () => {
       ignore = true;
     };
-  }, [teamId]);
+  }, [teamId, reloadCount]);
 
-  return { status, data };
+  const refetch = () => {
+    setStatus('loading');
+    setReloadCount((count) => count + 1);
+  };
+
+  const removeMember = (teamMemberId: number) => {
+    setData((prev) =>
+      prev
+        ? {
+            ...prev,
+            members: prev.members.filter((member) => member.teamMemberId !== teamMemberId),
+          }
+        : prev,
+    );
+  };
+
+  return { status, data, refetch, removeMember };
 };

@@ -67,3 +67,16 @@ export interface RegenerateInvitationCodeResponse {
   data: InvitationCodeData | null;
   error: ApiErrorPayload | null;
 }
+
+export interface BlockedMemberData {
+  blockId: number;
+  userId: number;
+  displayName: string;
+  createdAt: string;
+}
+
+export interface TeamBlocksResponse {
+  success: boolean;
+  data: { blocks: BlockedMemberData[] } | null;
+  error: ApiErrorPayload | null;
+}

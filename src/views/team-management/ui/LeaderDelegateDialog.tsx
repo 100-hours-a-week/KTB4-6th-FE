@@ -6,12 +6,14 @@ import { useAppFrameElement } from '@/shared/lib';
 
 interface LeaderDelegateDialogProps {
   isOpen: boolean;
+  onConfirm: () => void;
   onOpenChange: (open: boolean) => void;
   participantName: string;
 }
 
 export const LeaderDelegateDialog = ({
   isOpen,
+  onConfirm,
   onOpenChange,
   participantName,
 }: LeaderDelegateDialogProps) => {
@@ -38,7 +40,10 @@ export const LeaderDelegateDialog = ({
             <AlertDialog.Close className="h-11 flex-1 rounded-xl border border-cool-200 text-sm font-semibold text-cool-700 transition-colors hover:bg-cool-50">
               취소
             </AlertDialog.Close>
-            <AlertDialog.Close className="h-11 flex-1 rounded-xl bg-cool-900 text-sm font-semibold text-white transition-colors hover:bg-cool-900/90">
+            <AlertDialog.Close
+              onClick={onConfirm}
+              className="h-11 flex-1 rounded-xl bg-cool-900 text-sm font-semibold text-white transition-colors hover:bg-cool-900/90"
+            >
               위임하기
             </AlertDialog.Close>
           </div>

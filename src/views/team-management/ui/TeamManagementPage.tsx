@@ -1,6 +1,5 @@
 'use client';
 
-import { mockBlockedMembers } from '../model/mock';
 import { useTeamManagementPageData } from '../model/useTeamManagementPageData';
 import { BlockedListSection } from './BlockedListSection';
 import { ParticipantListSection } from './ParticipantListSection';
@@ -16,7 +15,8 @@ interface TeamManagementPageProps {
 }
 
 export const TeamManagementPage = ({ teamId }: TeamManagementPageProps) => {
-  const { status, role, team, participants } = useTeamManagementPageData(teamId);
+  const { status, role, team, participants, refetch, removeParticipant } =
+    useTeamManagementPageData(teamId);
   const isLeader = role === 'leader';
 
   return (
@@ -31,8 +31,14 @@ export const TeamManagementPage = ({ teamId }: TeamManagementPageProps) => {
         ) : (
           <>
             <TeamInfoSection role={role} team={team} teamId={teamId} />
-            <ParticipantListSection role={role} participants={participants} />
-            {isLeader && <BlockedListSection blockedMembers={mockBlockedMembers} />}
+            <ParticipantListSection
+              role={role}
+              participants={participants}
+              teamId={teamId}
+              onLeaderDelegated={refetch}
+              onMemberKicked={removeParticipant}
+            />
+            {isLeader && <BlockedListSection teamId={teamId} />}
           </>
         )}
       </div>
@@ -40,9 +46,9 @@ export const TeamManagementPage = ({ teamId }: TeamManagementPageProps) => {
       {status === 'success' && role && team && (
         <footer className="shrink-0">
           {isLeader ? (
-            <TeamDeleteAction hasActiveMeeting={team.hasActiveMeeting} />
+            <TeamDeleteAction hasActiveMeeting={team.hasActiveMeeting} teamId={teamId} />
           ) : (
-            <TeamLeaveAction hasActiveMeeting={team.hasActiveMeeting} />
+            <TeamLeaveAction hasActiveMeeting={team.hasActiveMeeting} teamId={teamId} />
           )}
         </footer>
       )}

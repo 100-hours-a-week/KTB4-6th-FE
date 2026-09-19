@@ -1,5 +1,5 @@
-import type { TeamManagementData } from '@/features/team-management';
-import type { Participant, TeamInfo, TeamMemberRole } from './types';
+import type { BlockedMemberData, TeamManagementData } from '@/features/team-management';
+import type { BlockedMember, Participant, TeamInfo, TeamMemberRole } from './types';
 
 // TODO: 회의 도메인 API가 나오면 실제 값으로 교체. 현재 팀 API 스펙에는 없어 하드코딩.
 const HAS_ACTIVE_MEETING_PLACEHOLDER = false;
@@ -36,3 +36,10 @@ export const mapTeamManagementData = ({
     participants,
   };
 };
+
+export const mapBlockedMembers = (blocks: BlockedMemberData[]): BlockedMember[] =>
+  blocks.map((block) => ({
+    id: String(block.blockId),
+    name: block.displayName,
+    avatarInitial: block.displayName.charAt(0),
+  }));
