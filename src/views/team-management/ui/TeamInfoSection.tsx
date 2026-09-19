@@ -3,8 +3,8 @@
 import { Copy, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import {
-  RegenerateInvitationCodeApiError,
   regenerateInvitationCode,
+  TeamManagementApiError,
   updateTeamName,
 } from '@/features/team-management';
 import { useCopyInviteCode } from '@/entities/invite-code';
@@ -48,7 +48,7 @@ export const TeamInfoSection = ({ role, team, teamId }: TeamInfoSectionProps) =>
       showToast(text, variant);
     } catch (error) {
       const isLimitExceeded =
-        error instanceof RegenerateInvitationCodeApiError &&
+        error instanceof TeamManagementApiError &&
         error.code === 'INVITATION_CODE_REGENERATION_LIMIT_EXCEEDED';
       const { text, variant } = isLimitExceeded
         ? teamManagementToastMessages.inviteCodeRegenerateLimitExceeded
