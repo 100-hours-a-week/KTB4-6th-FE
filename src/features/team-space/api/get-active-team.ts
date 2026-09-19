@@ -3,14 +3,7 @@ import { apiClient } from '@/shared/api';
 import type { ActiveTeamData, ActiveTeamResponse } from '../model/types';
 
 export const getActiveTeam = async (): Promise<ActiveTeamData> => {
-  // API 명세 확정 후 팀 소속 여부 조회 주소를 이 환경변수에 연결합니다.
-  const endpoint = process.env.NEXT_PUBLIC_ACTIVE_TEAM_API_URL;
-
-  if (!endpoint) {
-    throw new Error('NEXT_PUBLIC_ACTIVE_TEAM_API_URL 환경변수가 설정되지 않았습니다.');
-  }
-
-  const response = await apiClient.get<ActiveTeamResponse>(endpoint);
+  const response = await apiClient.get<ActiveTeamResponse>('/api/v1/teams/me');
   const result = response.data;
 
   if (!result.success || !result.data) {
