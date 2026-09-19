@@ -1,13 +1,13 @@
-export { delegateTeamLeader } from './api/delegate-team-leader';
 export { deleteTeam } from './api/delete-team';
 export { getTeamBlocks } from './api/get-team-blocks';
 export { getTeamCredits } from './api/get-team-credits';
 export { getTeamDetail } from './api/get-team-detail';
 export { getTeamMembers } from './api/get-team-members';
-export { kickTeamMember } from './api/kick-team-member';
 export { leaveTeam } from './api/leave-team';
 export { releaseTeamBlock } from './api/release-team-block';
 export { TeamManagementApiError } from './model/errors';
+export { useDelegateTeamLeader } from './model/useDelegateTeamLeader';
+export { useKickTeamMember } from './model/useKickTeamMember';
 export { useRegenerateInvitationCode } from './model/useRegenerateInvitationCode';
 export type {
   TeamManagementData,

@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { getTeamCredits } from '../api/get-team-credits';
 import { getTeamDetail } from '../api/get-team-detail';
 import { getTeamMembers } from '../api/get-team-members';
@@ -18,13 +18,9 @@ export interface TeamManagementData {
 interface UseTeamManagementDataResult {
   status: TeamManagementRequestStatus;
   data: TeamManagementData | null;
-  refetch: () => void;
-  removeMember: (teamMemberId: number) => void;
 }
 
 export const useTeamManagementData = (teamId: number): UseTeamManagementDataResult => {
-  const queryClient = useQueryClient();
-
   const teamQuery = useQuery({
     queryKey: teamKeys.detail(teamId),
     queryFn: () => getTeamDetail(teamId),
@@ -50,16 +46,5 @@ export const useTeamManagementData = (teamId: number): UseTeamManagementDataResu
       ? { team: teamQuery.data, members: membersQuery.data, credits: creditsQuery.data }
       : null;
 
-  const refetch = () => {
-    void queryClient.invalidateQueries({ queryKey: teamKeys.detail(teamId) });
-    void queryClient.invalidateQueries({ queryKey: teamKeys.members(teamId) });
-  };
-
-  const removeMember = (teamMemberId: number) => {
-    queryClient.setQueryData<TeamMemberData[]>(teamKeys.members(teamId), (members) =>
-      members?.filter((member) => member.teamMemberId !== teamMemberId),
-    );
-  };
-
-  return { status, data, refetch, removeMember };
+  return { status, data };
 };
