@@ -13,6 +13,18 @@ export const teamManagementToastMessages: Record<string, ToastMessage> = {
     variant: 'danger',
   },
   teamNameUpdateSuccess: { text: '팀 이름이 변경되었습니다', variant: 'success' },
+  teamNameUpdateFailure: {
+    text: '팀 이름 변경에 실패했습니다. 다시 시도해주세요.',
+    variant: 'danger',
+  },
+  inviteCodeRegenerateSuccess: {
+    text: '초대 코드가 재생성되었습니다.',
+    variant: 'success',
+  },
+  inviteCodeRegenerateFailure: {
+    text: '초대 코드 재생성에 실패했습니다. 다시 시도해주세요.',
+    variant: 'danger',
+  },
   memberKickFailure: {
     text: '사용자 강퇴에 실패했습니다. 다시 시도해주세요.',
     variant: 'danger',

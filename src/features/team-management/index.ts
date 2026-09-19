@@ -1,6 +1,11 @@
 export { getTeamCredits } from './api/get-team-credits';
 export { getTeamDetail } from './api/get-team-detail';
 export { getTeamMembers } from './api/get-team-members';
+export {
+  RegenerateInvitationCodeApiError,
+  regenerateInvitationCode,
+} from './api/regenerate-invitation-code';
+export { updateTeamName } from './api/update-team-name';
 export type {
   TeamManagementData,
   TeamManagementRequestStatus,
@@ -8,7 +13,9 @@ export type {
 export { useTeamManagementData } from './model/useTeamManagementData';
 export type {
   ApiTeamMemberRole,
+  InvitationCodeData,
   TeamCreditsData,
   TeamDetailData,
   TeamMemberData,
+  UpdateTeamNameData,
 } from './model/types';
