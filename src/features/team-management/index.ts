@@ -1,4 +1,5 @@
 export { delegateTeamLeader } from './api/delegate-team-leader';
+export { deleteTeam } from './api/delete-team';
 export { getTeamBlocks } from './api/get-team-blocks';
 export { getTeamCredits } from './api/get-team-credits';
 export { getTeamDetail } from './api/get-team-detail';

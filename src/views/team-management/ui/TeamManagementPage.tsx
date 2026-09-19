@@ -46,7 +46,7 @@ export const TeamManagementPage = ({ teamId }: TeamManagementPageProps) => {
       {status === 'success' && role && team && (
         <footer className="shrink-0">
           {isLeader ? (
-            <TeamDeleteAction hasActiveMeeting={team.hasActiveMeeting} />
+            <TeamDeleteAction hasActiveMeeting={team.hasActiveMeeting} teamId={teamId} />
           ) : (
             <TeamLeaveAction hasActiveMeeting={team.hasActiveMeeting} teamId={teamId} />
           )}
