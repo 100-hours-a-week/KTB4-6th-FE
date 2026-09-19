@@ -37,6 +37,11 @@ export const teamManagementToastMessages: Record<string, ToastMessage> = {
     text: '팀장 권한 부여에 실패했습니다. 다시 시도해주세요.',
     variant: 'danger',
   },
+  teamLeaveSuccess: { text: '팀 나가기가 완료되었습니다.', variant: 'success' },
+  teamLeaveFailure: {
+    text: '팀 나가기에 실패했습니다. 다시 시도해주세요.',
+    variant: 'danger',
+  },
   teamDeleteBlockedByActiveMeeting: {
     text: '현재 진행 중인 회의가 있어 팀을 삭제할 수 없습니다.',
     variant: 'danger',

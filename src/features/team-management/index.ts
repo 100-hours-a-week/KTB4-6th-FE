@@ -4,6 +4,7 @@ export { getTeamCredits } from './api/get-team-credits';
 export { getTeamDetail } from './api/get-team-detail';
 export { getTeamMembers } from './api/get-team-members';
 export { kickTeamMember } from './api/kick-team-member';
+export { leaveTeam } from './api/leave-team';
 export { regenerateInvitationCode } from './api/regenerate-invitation-code';
 export { releaseTeamBlock } from './api/release-team-block';
 export { updateTeamName } from './api/update-team-name';
