@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { delegateTeamLeader } from '@/features/team-management';
+import { delegateTeamLeader, kickTeamMember } from '@/features/team-management';
 import { useAppToast } from '@/shared/ui';
-import { teamManagementToastMessages } from '../model/toast-messages';
+import { getMemberKickSuccessToast, teamManagementToastMessages } from '../model/toast-messages';
 import type { Participant, TeamMemberRole } from '../model/types';
 import { LeaderDelegateDialog } from './LeaderDelegateDialog';
 import { MemberKickDialog } from './MemberKickDialog';
@@ -14,6 +14,7 @@ interface ParticipantListSectionProps {
   participants: Participant[];
   teamId: number;
   onLeaderDelegated: () => void;
+  onMemberKicked: (teamMemberId: number) => void;
 }
 
 export const ParticipantListSection = ({
@@ -21,6 +22,7 @@ export const ParticipantListSection = ({
   participants,
   teamId,
   onLeaderDelegated,
+  onMemberKicked,
 }: ParticipantListSectionProps) => {
   const [delegateTarget, setDelegateTarget] = useState<Participant | null>(null);
   const [kickTarget, setKickTarget] = useState<Participant | null>(null);
@@ -36,6 +38,20 @@ export const ParticipantListSection = ({
       showToast(text, variant);
     } catch {
       const { text, variant } = teamManagementToastMessages.leaderDelegateFailure;
+      showToast(text, variant);
+    }
+  };
+
+  const handleKickConfirm = async () => {
+    if (!kickTarget) return;
+
+    try {
+      await kickTeamMember(teamId, Number(kickTarget.id));
+      onMemberKicked(Number(kickTarget.id));
+      const { text, variant } = getMemberKickSuccessToast(kickTarget.name);
+      showToast(text, variant);
+    } catch {
+      const { text, variant } = teamManagementToastMessages.memberKickFailure;
       showToast(text, variant);
     }
   };
@@ -71,6 +87,7 @@ export const ParticipantListSection = ({
 
       <MemberKickDialog
         isOpen={kickTarget !== null}
+        onConfirm={() => void handleKickConfirm()}
         onOpenChange={(open) => {
           if (!open) setKickTarget(null);
         }}

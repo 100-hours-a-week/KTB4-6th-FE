@@ -18,6 +18,7 @@ interface UseTeamManagementDataResult {
   status: TeamManagementRequestStatus;
   data: TeamManagementData | null;
   refetch: () => void;
+  removeMember: (teamMemberId: number) => void;
 }
 
 export const useTeamManagementData = (teamId: number): UseTeamManagementDataResult => {
@@ -56,5 +57,16 @@ export const useTeamManagementData = (teamId: number): UseTeamManagementDataResu
     setReloadCount((count) => count + 1);
   };
 
-  return { status, data, refetch };
+  const removeMember = (teamMemberId: number) => {
+    setData((prev) =>
+      prev
+        ? {
+            ...prev,
+            members: prev.members.filter((member) => member.teamMemberId !== teamMemberId),
+          }
+        : prev,
+    );
+  };
+
+  return { status, data, refetch, removeMember };
 };
