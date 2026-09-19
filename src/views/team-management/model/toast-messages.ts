@@ -42,6 +42,10 @@ export const teamManagementToastMessages: Record<string, ToastMessage> = {
     variant: 'danger',
   },
   teamDeleteFailure: { text: '팀 삭제가 실패했습니다. 다시 시도해주세요.', variant: 'danger' },
+  blockReleaseSuccess: {
+    text: '차단이 해제되었습니다.',
+    variant: 'success',
+  },
   blockReleaseFailure: {
     text: '차단 해제에 실패했습니다. 다시 시도해주세요.',
     variant: 'danger',

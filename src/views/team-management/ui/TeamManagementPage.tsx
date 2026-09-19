@@ -1,6 +1,5 @@
 'use client';
 
-import { mockBlockedMembers } from '../model/mock';
 import { useTeamManagementPageData } from '../model/useTeamManagementPageData';
 import { BlockedListSection } from './BlockedListSection';
 import { ParticipantListSection } from './ParticipantListSection';
@@ -39,7 +38,7 @@ export const TeamManagementPage = ({ teamId }: TeamManagementPageProps) => {
               onLeaderDelegated={refetch}
               onMemberKicked={removeParticipant}
             />
-            {isLeader && <BlockedListSection blockedMembers={mockBlockedMembers} />}
+            {isLeader && <BlockedListSection teamId={teamId} />}
           </>
         )}
       </div>
