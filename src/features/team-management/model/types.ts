@@ -1,5 +1,10 @@
 export type ApiTeamMemberRole = 'LEADER' | 'MEMBER';
 
+export interface ApiErrorPayload {
+  code: string;
+  message: string;
+}
+
 export interface TeamDetailData {
   teamId: number;
   name: string;
@@ -13,7 +18,7 @@ export interface TeamDetailData {
 export interface TeamDetailResponse {
   success: boolean;
   data: TeamDetailData | null;
-  error: { code: string; message: string } | null;
+  error: ApiErrorPayload | null;
 }
 
 export interface TeamMemberData {
@@ -25,7 +30,7 @@ export interface TeamMemberData {
 export interface TeamMembersResponse {
   success: boolean;
   data: { members: TeamMemberData[] } | null;
-  error: { code: string; message: string } | null;
+  error: ApiErrorPayload | null;
 }
 
 export interface TeamCreditsData {
@@ -36,5 +41,29 @@ export interface TeamCreditsData {
 export interface TeamCreditsResponse {
   success: boolean;
   data: TeamCreditsData | null;
-  error: { code: string; message: string } | null;
+  error: ApiErrorPayload | null;
+}
+
+export interface UpdateTeamNameData {
+  teamId: number;
+  name: string;
+  updatedAt: string;
+}
+
+export interface UpdateTeamNameResponse {
+  success: boolean;
+  data: UpdateTeamNameData | null;
+  error: ApiErrorPayload | null;
+}
+
+export interface InvitationCodeData {
+  invitationCodeId: number;
+  code: string;
+  createdAt: string;
+}
+
+export interface RegenerateInvitationCodeResponse {
+  success: boolean;
+  data: InvitationCodeData | null;
+  error: ApiErrorPayload | null;
 }

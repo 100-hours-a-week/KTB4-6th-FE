@@ -30,7 +30,7 @@ export const TeamManagementPage = ({ teamId }: TeamManagementPageProps) => {
           <TeamManagementErrorState />
         ) : (
           <>
-            <TeamInfoSection role={role} team={team} />
+            <TeamInfoSection role={role} team={team} teamId={teamId} />
             <ParticipantListSection role={role} participants={participants} />
             {isLeader && <BlockedListSection blockedMembers={mockBlockedMembers} />}
           </>
