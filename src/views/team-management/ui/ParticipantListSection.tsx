@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { delegateTeamLeader, kickTeamMember } from '@/features/team-management';
+import { useDelegateTeamLeader, useKickTeamMember } from '@/features/team-management';
 import { useAppToast } from '@/shared/ui';
 import { getMemberKickSuccessToast, teamManagementToastMessages } from '../model/toast-messages';
 import type { Participant, TeamMemberRole } from '../model/types';
@@ -13,47 +13,49 @@ interface ParticipantListSectionProps {
   role: TeamMemberRole;
   participants: Participant[];
   teamId: number;
-  onLeaderDelegated: () => void;
-  onMemberKicked: (teamMemberId: number) => void;
 }
 
 export const ParticipantListSection = ({
   role,
   participants,
   teamId,
-  onLeaderDelegated,
-  onMemberKicked,
 }: ParticipantListSectionProps) => {
   const [delegateTarget, setDelegateTarget] = useState<Participant | null>(null);
   const [kickTarget, setKickTarget] = useState<Participant | null>(null);
   const { showToast } = useAppToast();
+  const delegateTeamLeaderMutation = useDelegateTeamLeader(teamId);
+  const kickTeamMemberMutation = useKickTeamMember(teamId);
 
-  const handleDelegateConfirm = async () => {
+  const handleDelegateConfirm = () => {
     if (!delegateTarget) return;
 
-    try {
-      await delegateTeamLeader(teamId, Number(delegateTarget.id));
-      onLeaderDelegated();
-      const { text, variant } = teamManagementToastMessages.leaderDelegateSuccess;
-      showToast(text, variant);
-    } catch {
-      const { text, variant } = teamManagementToastMessages.leaderDelegateFailure;
-      showToast(text, variant);
-    }
+    delegateTeamLeaderMutation.mutate(Number(delegateTarget.id), {
+      onSuccess: () => {
+        const { text, variant } = teamManagementToastMessages.leaderDelegateSuccess;
+        showToast(text, variant);
+      },
+      onError: () => {
+        const { text, variant } = teamManagementToastMessages.leaderDelegateFailure;
+        showToast(text, variant);
+      },
+    });
   };
 
-  const handleKickConfirm = async () => {
+  const handleKickConfirm = () => {
     if (!kickTarget) return;
 
-    try {
-      await kickTeamMember(teamId, Number(kickTarget.id));
-      onMemberKicked(Number(kickTarget.id));
-      const { text, variant } = getMemberKickSuccessToast(kickTarget.name);
-      showToast(text, variant);
-    } catch {
-      const { text, variant } = teamManagementToastMessages.memberKickFailure;
-      showToast(text, variant);
-    }
+    const target = kickTarget;
+
+    kickTeamMemberMutation.mutate(Number(target.id), {
+      onSuccess: () => {
+        const { text, variant } = getMemberKickSuccessToast(target.name);
+        showToast(text, variant);
+      },
+      onError: () => {
+        const { text, variant } = teamManagementToastMessages.memberKickFailure;
+        showToast(text, variant);
+      },
+    });
   };
 
   return (
@@ -78,7 +80,7 @@ export const ParticipantListSection = ({
 
       <LeaderDelegateDialog
         isOpen={delegateTarget !== null}
-        onConfirm={() => void handleDelegateConfirm()}
+        onConfirm={handleDelegateConfirm}
         onOpenChange={(open) => {
           if (!open) setDelegateTarget(null);
         }}
@@ -87,7 +89,7 @@ export const ParticipantListSection = ({
 
       <MemberKickDialog
         isOpen={kickTarget !== null}
-        onConfirm={() => void handleKickConfirm()}
+        onConfirm={handleKickConfirm}
         onOpenChange={(open) => {
           if (!open) setKickTarget(null);
         }}

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { leaveTeam } from '@/features/team-management';
+import { useLeaveTeam } from '@/features/team-management';
 import { useAppToast } from '@/shared/ui';
 import { teamManagementToastMessages } from '../model/toast-messages';
 import { TeamLeaveDialog } from './TeamLeaveDialog';
@@ -16,17 +16,20 @@ export const TeamLeaveAction = ({ hasActiveMeeting, teamId }: TeamLeaveActionPro
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const router = useRouter();
   const { showToast } = useAppToast();
+  const leaveTeamMutation = useLeaveTeam(teamId);
 
-  const handleLeaveConfirm = async () => {
-    try {
-      await leaveTeam(teamId);
-      router.replace('/');
-      const { text, variant } = teamManagementToastMessages.teamLeaveSuccess;
-      showToast(text, variant);
-    } catch {
-      const { text, variant } = teamManagementToastMessages.teamLeaveFailure;
-      showToast(text, variant);
-    }
+  const handleLeaveConfirm = () => {
+    leaveTeamMutation.mutate(undefined, {
+      onSuccess: () => {
+        router.replace('/');
+        const { text, variant } = teamManagementToastMessages.teamLeaveSuccess;
+        showToast(text, variant);
+      },
+      onError: () => {
+        const { text, variant } = teamManagementToastMessages.teamLeaveFailure;
+        showToast(text, variant);
+      },
+    });
   };
 
   return (
@@ -42,7 +45,7 @@ export const TeamLeaveAction = ({ hasActiveMeeting, teamId }: TeamLeaveActionPro
       <TeamLeaveDialog
         hasActiveMeeting={hasActiveMeeting}
         isOpen={isDialogOpen}
-        onConfirm={() => void handleLeaveConfirm()}
+        onConfirm={handleLeaveConfirm}
         onOpenChange={setIsDialogOpen}
       />
     </div>

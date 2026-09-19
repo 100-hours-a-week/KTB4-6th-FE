@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { deleteTeam } from '@/features/team-management';
+import { useDeleteTeam } from '@/features/team-management';
 import { useAppToast } from '@/shared/ui';
 import { teamManagementToastMessages } from '../model/toast-messages';
 import { TeamDeleteDialog } from './TeamDeleteDialog';
@@ -16,6 +16,7 @@ export const TeamDeleteAction = ({ hasActiveMeeting, teamId }: TeamDeleteActionP
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const router = useRouter();
   const { showToast } = useAppToast();
+  const deleteTeamMutation = useDeleteTeam(teamId);
 
   const handleClick = () => {
     if (hasActiveMeeting) {
@@ -27,16 +28,18 @@ export const TeamDeleteAction = ({ hasActiveMeeting, teamId }: TeamDeleteActionP
     setIsDialogOpen(true);
   };
 
-  const handleDeleteConfirm = async () => {
-    try {
-      await deleteTeam(teamId);
-      router.replace('/');
-      const { text, variant } = teamManagementToastMessages.teamDeleteSuccess;
-      showToast(text, variant);
-    } catch {
-      const { text, variant } = teamManagementToastMessages.teamDeleteFailure;
-      showToast(text, variant);
-    }
+  const handleDeleteConfirm = () => {
+    deleteTeamMutation.mutate(undefined, {
+      onSuccess: () => {
+        router.replace('/');
+        const { text, variant } = teamManagementToastMessages.teamDeleteSuccess;
+        showToast(text, variant);
+      },
+      onError: () => {
+        const { text, variant } = teamManagementToastMessages.teamDeleteFailure;
+        showToast(text, variant);
+      },
+    });
   };
 
   return (
@@ -51,7 +54,7 @@ export const TeamDeleteAction = ({ hasActiveMeeting, teamId }: TeamDeleteActionP
 
       <TeamDeleteDialog
         isOpen={isDialogOpen}
-        onConfirm={() => void handleDeleteConfirm()}
+        onConfirm={handleDeleteConfirm}
         onOpenChange={setIsDialogOpen}
       />
     </div>
