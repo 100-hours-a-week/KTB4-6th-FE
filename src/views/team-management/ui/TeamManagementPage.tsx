@@ -16,7 +16,7 @@ interface TeamManagementPageProps {
 }
 
 export const TeamManagementPage = ({ teamId }: TeamManagementPageProps) => {
-  const { status, role, team, participants } = useTeamManagementPageData(teamId);
+  const { status, role, team, participants, refetch } = useTeamManagementPageData(teamId);
   const isLeader = role === 'leader';
 
   return (
@@ -31,7 +31,12 @@ export const TeamManagementPage = ({ teamId }: TeamManagementPageProps) => {
         ) : (
           <>
             <TeamInfoSection role={role} team={team} teamId={teamId} />
-            <ParticipantListSection role={role} participants={participants} />
+            <ParticipantListSection
+              role={role}
+              participants={participants}
+              teamId={teamId}
+              onLeaderDelegated={refetch}
+            />
             {isLeader && <BlockedListSection blockedMembers={mockBlockedMembers} />}
           </>
         )}

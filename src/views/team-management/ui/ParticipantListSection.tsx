@@ -1,6 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { delegateTeamLeader } from '@/features/team-management';
+import { useAppToast } from '@/shared/ui';
+import { teamManagementToastMessages } from '../model/toast-messages';
 import type { Participant, TeamMemberRole } from '../model/types';
 import { LeaderDelegateDialog } from './LeaderDelegateDialog';
 import { MemberKickDialog } from './MemberKickDialog';
@@ -9,11 +12,33 @@ import { ParticipantListItem } from './ParticipantListItem';
 interface ParticipantListSectionProps {
   role: TeamMemberRole;
   participants: Participant[];
+  teamId: number;
+  onLeaderDelegated: () => void;
 }
 
-export const ParticipantListSection = ({ role, participants }: ParticipantListSectionProps) => {
+export const ParticipantListSection = ({
+  role,
+  participants,
+  teamId,
+  onLeaderDelegated,
+}: ParticipantListSectionProps) => {
   const [delegateTarget, setDelegateTarget] = useState<Participant | null>(null);
   const [kickTarget, setKickTarget] = useState<Participant | null>(null);
+  const { showToast } = useAppToast();
+
+  const handleDelegateConfirm = async () => {
+    if (!delegateTarget) return;
+
+    try {
+      await delegateTeamLeader(teamId, Number(delegateTarget.id));
+      onLeaderDelegated();
+      const { text, variant } = teamManagementToastMessages.leaderDelegateSuccess;
+      showToast(text, variant);
+    } catch {
+      const { text, variant } = teamManagementToastMessages.leaderDelegateFailure;
+      showToast(text, variant);
+    }
+  };
 
   return (
     <section className="mt-6 px-5">
@@ -37,6 +62,7 @@ export const ParticipantListSection = ({ role, participants }: ParticipantListSe
 
       <LeaderDelegateDialog
         isOpen={delegateTarget !== null}
+        onConfirm={() => void handleDelegateConfirm()}
         onOpenChange={(open) => {
           if (!open) setDelegateTarget(null);
         }}

@@ -9,16 +9,17 @@ interface UseTeamManagementPageDataResult {
   role: TeamMemberRole | null;
   team: TeamInfo | null;
   participants: Participant[];
+  refetch: () => void;
 }
 
 export const useTeamManagementPageData = (teamId: number): UseTeamManagementPageDataResult => {
-  const { status, data } = useTeamManagementData(teamId);
+  const { status, data, refetch } = useTeamManagementData(teamId);
 
   if (status !== 'success' || !data) {
-    return { status, role: null, team: null, participants: [] };
+    return { status, role: null, team: null, participants: [], refetch };
   }
 
   const { role, team, participants } = mapTeamManagementData(data);
 
-  return { status: 'success', role, team, participants };
+  return { status: 'success', role, team, participants, refetch };
 };

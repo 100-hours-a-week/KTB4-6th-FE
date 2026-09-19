@@ -29,6 +29,10 @@ export const teamManagementToastMessages: Record<string, ToastMessage> = {
     text: '사용자 강퇴에 실패했습니다. 다시 시도해주세요.',
     variant: 'danger',
   },
+  leaderDelegateSuccess: {
+    text: '팀장 권한이 위임되었습니다.',
+    variant: 'success',
+  },
   leaderDelegateFailure: {
     text: '팀장 권한 부여에 실패했습니다. 다시 시도해주세요.',
     variant: 'danger',
