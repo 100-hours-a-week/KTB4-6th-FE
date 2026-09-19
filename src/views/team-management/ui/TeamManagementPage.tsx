@@ -1,5 +1,7 @@
-import { mockBlockedMembers, mockParticipants, mockTeamInfo } from '../model/mock';
-import type { TeamMemberRole, TeamPageStatus } from '../model/types';
+'use client';
+
+import { mockBlockedMembers } from '../model/mock';
+import { useTeamManagementPageData } from '../model/useTeamManagementPageData';
 import { BlockedListSection } from './BlockedListSection';
 import { ParticipantListSection } from './ParticipantListSection';
 import { TeamDeleteAction } from './TeamDeleteAction';
@@ -10,11 +12,11 @@ import { TeamManagementErrorState } from './TeamManagementErrorState';
 import { TeamManagementHeader } from './TeamManagementHeader';
 
 interface TeamManagementPageProps {
-  role: TeamMemberRole;
-  status: TeamPageStatus;
+  teamId: number;
 }
 
-export const TeamManagementPage = ({ role, status }: TeamManagementPageProps) => {
+export const TeamManagementPage = ({ teamId }: TeamManagementPageProps) => {
+  const { status, role, team, participants } = useTeamManagementPageData(teamId);
   const isLeader = role === 'leader';
 
   return (
@@ -24,24 +26,26 @@ export const TeamManagementPage = ({ role, status }: TeamManagementPageProps) =>
       <div className="flex-1 overflow-y-auto">
         {status === 'loading' ? (
           <TeamManagementContentSkeleton />
-        ) : status === 'error' ? (
+        ) : status === 'error' || !role || !team ? (
           <TeamManagementErrorState />
         ) : (
           <>
-            <TeamInfoSection role={role} team={mockTeamInfo} />
-            <ParticipantListSection role={role} participants={mockParticipants} />
+            <TeamInfoSection role={role} team={team} />
+            <ParticipantListSection role={role} participants={participants} />
             {isLeader && <BlockedListSection blockedMembers={mockBlockedMembers} />}
           </>
         )}
       </div>
 
-      <footer className="shrink-0">
-        {isLeader ? (
-          <TeamDeleteAction hasActiveMeeting={mockTeamInfo.hasActiveMeeting} />
-        ) : (
-          <TeamLeaveAction hasActiveMeeting={mockTeamInfo.hasActiveMeeting} />
-        )}
-      </footer>
+      {status === 'success' && role && team && (
+        <footer className="shrink-0">
+          {isLeader ? (
+            <TeamDeleteAction hasActiveMeeting={team.hasActiveMeeting} />
+          ) : (
+            <TeamLeaveAction hasActiveMeeting={team.hasActiveMeeting} />
+          )}
+        </footer>
+      )}
     </div>
   );
 };
