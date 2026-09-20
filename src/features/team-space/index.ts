@@ -1,3 +1,4 @@
+export { createTeam } from './api/create-team';
 export { getActiveTeam } from './api/get-active-team';
 export { useStartTeamSpace } from './model/useStartTeamSpace';
 export { useTeamSpaceOnboardingStore } from './model/useTeamSpaceOnboardingStore';
