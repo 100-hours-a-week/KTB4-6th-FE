@@ -9,6 +9,7 @@ interface AuthCookieTokens {
 
 export const setAuthCookies = (response: NextResponse, tokens: AuthCookieTokens) => {
   const isProduction = process.env.NODE_ENV === 'production';
+  const cookieDomain = process.env.AUTH_COOKIE_DOMAIN;
 
   response.cookies.set('accessToken', tokens.accessToken, {
     httpOnly: true,
@@ -16,7 +17,7 @@ export const setAuthCookies = (response: NextResponse, tokens: AuthCookieTokens)
     sameSite: 'lax',
     path: '/',
     maxAge: tokens.accessTokenExpiresIn,
-    ...(isProduction ? { domain: 'meety.kro.kr' } : {}),
+    ...(isProduction && cookieDomain ? { domain: cookieDomain } : {}),
   });
   response.cookies.set('refreshToken', tokens.refreshToken, {
     httpOnly: true,
