@@ -18,11 +18,14 @@ interface HomePageProps {
 
 export const HomePage = ({ teamId }: HomePageProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { data: home, isFetching, isError } = useHome({ isEnabled: true });
+  const { data: home, dataUpdatedAt, isFetching, isError, refetch } = useHome({ isEnabled: true });
 
   useRedirectToActiveTeam({
     activeTeamId: home?.team.teamId,
-    isSettled: !isFetching && !isError,
+    dataUpdatedAt,
+    isError,
+    isFetching,
+    refetch,
     urlTeamId: teamId,
   });
 
