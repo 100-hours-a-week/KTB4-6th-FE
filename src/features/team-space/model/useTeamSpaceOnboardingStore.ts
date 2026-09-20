@@ -1,6 +1,11 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+interface CreatedTeamResult {
+  teamId: number;
+  invitationCode: string;
+}
+
 interface TeamSpaceOnboardingState {
   join: {
     inviteCode: string;
@@ -9,12 +14,14 @@ interface TeamSpaceOnboardingState {
   create: {
     teamName: string;
     nickname: string;
+    result: CreatedTeamResult | null;
   };
 
   setInviteCode: (inviteCode: string) => void;
   setJoinNickname: (nickname: string) => void;
   setTeamName: (teamName: string) => void;
   setCreateNickname: (nickname: string) => void;
+  setCreateResult: (result: CreatedTeamResult) => void;
 
   resetJoin: () => void;
   resetCreate: () => void;
@@ -28,6 +35,7 @@ const initialJoinState = {
 const initialCreateState = {
   teamName: '',
   nickname: '',
+  result: null,
 };
 
 export const useTeamSpaceOnboardingStore = create<TeamSpaceOnboardingState>()(
@@ -54,6 +62,11 @@ export const useTeamSpaceOnboardingStore = create<TeamSpaceOnboardingState>()(
       setCreateNickname: (nickname) =>
         set((state) => ({
           create: { ...state.create, nickname },
+        })),
+
+      setCreateResult: (result) =>
+        set((state) => ({
+          create: { ...state.create, result },
         })),
 
       resetJoin: () => set({ join: initialJoinState }),
