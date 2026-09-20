@@ -1,34 +1,40 @@
 'use client';
 
-import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import { createTeam } from '../api/create-team';
 import { useTeamSpaceOnboardingStore } from './useTeamSpaceOnboardingStore';
 
 export const useCreateTeamSpace = () => {
   const setCreateResult = useTeamSpaceOnboardingStore((state) => state.setCreateResult);
-  const [isCreating, setIsCreating] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
+
+  const mutation = useMutation({
+    mutationFn: createTeam,
+    onSuccess: (team) => {
+      setCreateResult({ teamId: team.teamId, invitationCode: team.invitationCode });
+    },
+  });
 
   const createTeamSpace = async (name: string, displayName: string) => {
-    if (isCreating) return false;
-
-    setIsCreating(true);
-    setCreateError(null);
+    if (mutation.isPending) return false;
 
     try {
-      const team = await createTeam({ name, displayName });
-
-      setCreateResult({ teamId: team.teamId, invitationCode: team.invitationCode });
+      await mutation.mutateAsync({ name, displayName });
       return true;
-    } catch (error) {
-      setCreateError(error instanceof Error ? error.message : '팀 스페이스를 생성하지 못했습니다.');
+    } catch {
       return false;
-    } finally {
-      setIsCreating(false);
     }
   };
 
-  const clearCreateError = () => setCreateError(null);
+  const clearCreateError = () => {
+    if (mutation.isError) {
+      mutation.reset();
+    }
+  };
 
-  return { isCreating, createError, createTeamSpace, clearCreateError };
+  return {
+    isCreating: mutation.isPending,
+    createError: mutation.error?.message ?? null,
+    createTeamSpace,
+    clearCreateError,
+  };
 };
