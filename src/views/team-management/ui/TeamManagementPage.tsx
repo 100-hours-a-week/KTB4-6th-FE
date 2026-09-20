@@ -1,25 +1,50 @@
-import type { TeamMemberRole } from '../model/types';
+'use client';
+
+import { useTeamManagementPageData } from '../model/useTeamManagementPageData';
+import { BlockedListSection } from './BlockedListSection';
+import { ParticipantListSection } from './ParticipantListSection';
+import { TeamDeleteAction } from './TeamDeleteAction';
+import { TeamInfoSection } from './TeamInfoSection';
+import { TeamLeaveAction } from './TeamLeaveAction';
+import { TeamManagementContentSkeleton } from './TeamManagementContentSkeleton';
+import { TeamManagementErrorState } from './TeamManagementErrorState';
+import { TeamManagementHeader } from './TeamManagementHeader';
 
 interface TeamManagementPageProps {
-  role: TeamMemberRole;
+  teamId: number;
 }
 
-export const TeamManagementPage = ({ role }: TeamManagementPageProps) => {
+export const TeamManagementPage = ({ teamId }: TeamManagementPageProps) => {
+  const { status, role, team, participants } = useTeamManagementPageData(teamId);
+  const isLeader = role === 'leader';
+
   return (
     <div className="flex min-h-[844px] flex-1 flex-col bg-cool-50">
-      <header className="shrink-0" />
+      <TeamManagementHeader />
 
       <div className="flex-1 overflow-y-auto">
-        {/* 팀 정보 카드 / 참여자 목록 / 차단 목록: 서브 이슈 2에서 채움 */}
+        {status === 'loading' ? (
+          <TeamManagementContentSkeleton />
+        ) : status === 'error' || !role || !team ? (
+          <TeamManagementErrorState />
+        ) : (
+          <>
+            <TeamInfoSection role={role} team={team} teamId={teamId} />
+            <ParticipantListSection role={role} participants={participants} teamId={teamId} />
+            {isLeader && <BlockedListSection teamId={teamId} />}
+          </>
+        )}
       </div>
 
-      <footer className="shrink-0">
-        {role === 'leader' ? (
-          <div />
-        ) : (
-          <div /> // 팀장: 팀 삭제하기 / 팀원: 나가기 — 서브 이슈 2에서 채움
-        )}
-      </footer>
+      {status === 'success' && role && team && (
+        <footer className="shrink-0">
+          {isLeader ? (
+            <TeamDeleteAction hasActiveMeeting={team.hasActiveMeeting} teamId={teamId} />
+          ) : (
+            <TeamLeaveAction hasActiveMeeting={team.hasActiveMeeting} teamId={teamId} />
+          )}
+        </footer>
+      )}
     </div>
   );
 };

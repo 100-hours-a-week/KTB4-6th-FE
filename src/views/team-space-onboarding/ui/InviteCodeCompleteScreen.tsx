@@ -1,7 +1,7 @@
 'use client';
 
 import { Copy } from 'lucide-react';
-import { useCopyToClipboard } from '@/shared/lib';
+import { useCopyInviteCode } from '@/entities/invite-code';
 import { OnboardingActionButton } from './OnboardingActionButton';
 
 interface InviteCodeCompleteScreenProps {
@@ -20,14 +20,14 @@ export const InviteCodeCompleteScreen = ({
   status = 'success',
 }: InviteCodeCompleteScreenProps) => {
   const isSuccess = status === 'success';
-  const { copyStatus, copyToClipboard } = useCopyToClipboard();
+  const { copyInviteCode, copyStatus } = useCopyInviteCode();
 
   const handleCopy = async () => {
-    await copyToClipboard(inviteCode);
+    await copyInviteCode(inviteCode);
   };
 
   return (
-    <main className="relative flex min-h-[844px] flex-1 flex-col bg-white px-7 pt-32 pb-9">
+    <main className="flex min-h-[844px] flex-1 flex-col bg-white px-7 pt-32 pb-9">
       <section>
         <div className="inline-flex items-center gap-2 rounded-lg bg-success-bg px-3 py-2 text-sm font-semibold text-success">
           <span aria-hidden="true" className="size-2 rounded-full bg-success" />
@@ -98,17 +98,6 @@ export const InviteCodeCompleteScreen = ({
           </OnboardingActionButton>
         ) : null}
       </div>
-
-      {copyStatus === 'success' || copyStatus === 'error' ? (
-        <div
-          role={copyStatus === 'error' ? 'alert' : 'status'}
-          className="absolute right-7 bottom-28 left-7 rounded-xl bg-cool-900 px-4 py-3 text-center text-sm font-medium text-white shadow-lg"
-        >
-          {copyStatus === 'success'
-            ? '초대 코드가 복사되었습니다.'
-            : '초대 코드 복사에 실패했습니다. 다시 시도해주세요.'}
-        </div>
-      ) : null}
     </main>
   );
 };

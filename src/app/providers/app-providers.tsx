@@ -1,6 +1,7 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppToastProvider } from '@/shared/ui';
 
 import { ThemeProvider } from './theme-provider';
@@ -12,10 +13,20 @@ interface AppProvidersProps {
 
 export function AppProviders({ children }: AppProvidersProps) {
   useAuthRetryInterceptor();
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: { refetchOnWindowFocus: false, retry: false },
+        },
+      }),
+  );
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-      <AppToastProvider>{children}</AppToastProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <AppToastProvider>{children}</AppToastProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
