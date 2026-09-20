@@ -9,11 +9,11 @@ export const kakaoOAuthCallback = async (request: NextRequest) => {
   const errorDescription = searchParams.get('error_description');
 
   if (error !== null || errorDescription !== null) {
-    return redirectWithOAuthError(request, error === 'access_denied' ? 'cancelled' : 'failed');
+    return redirectWithOAuthError(error === 'access_denied' ? 'cancelled' : 'failed');
   }
 
   if (!code) {
-    return redirectWithOAuthError(request, 'failed');
+    return redirectWithOAuthError('failed');
   }
 
   try {
@@ -21,18 +21,27 @@ export const kakaoOAuthCallback = async (request: NextRequest) => {
       provider: 'kakao',
       authorizationCode: code,
     });
-    const response = NextResponse.redirect(new URL('/', request.url));
+    const response = new NextResponse(null, {
+      status: 303,
+      headers: {
+        Location: '/',
+      },
+    });
     setAuthCookies(response, authData);
 
     return response;
   } catch {
-    return redirectWithOAuthError(request, 'failed');
+    return redirectWithOAuthError('failed');
   }
 };
 
-const redirectWithOAuthError = (request: NextRequest, error: 'cancelled' | 'failed') => {
-  const redirectUrl = new URL('/', request.url);
-  redirectUrl.searchParams.set('loginError', error);
+const redirectWithOAuthError = (error: 'cancelled' | 'failed') =>
+  createSameOriginRedirect(`/?loginError=${error}`);
 
-  return NextResponse.redirect(redirectUrl);
-};
+const createSameOriginRedirect = (location: string) =>
+  new NextResponse(null, {
+    status: 303,
+    headers: {
+      Location: location,
+    },
+  });
