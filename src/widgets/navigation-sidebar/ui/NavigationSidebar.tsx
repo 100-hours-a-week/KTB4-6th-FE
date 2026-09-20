@@ -2,8 +2,8 @@
 
 import { Drawer } from '@base-ui/react/drawer';
 import { Home, ListChecks, Radio, Users, X } from 'lucide-react';
+import { useTeamCredits } from '@/features/team-management';
 import { useAppFrameElement } from '@/shared/lib';
-import { mockMeetingListCount, mockSidebarCredit } from '../model/mock';
 import { NoActiveMeetingDialog } from './NoActiveMeetingDialog';
 import { SidebarMoreMenu } from './SidebarMoreMenu';
 import { SidebarNavItem } from './SidebarNavItem';
@@ -11,13 +11,20 @@ import { SidebarNavItem } from './SidebarNavItem';
 interface NavigationSidebarProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  teamId: number;
   teamName: string;
 }
 
 // 트리거(햄버거 버튼)가 HomeHeader라는 다른 컴포넌트에 있어서 컨트롤드로 연다/닫는다.
 // isOpen/onOpenChange는 부모(HomePage)가 들고 있는 상태를 그대로 받는다.
-export const NavigationSidebar = ({ isOpen, onOpenChange, teamName }: NavigationSidebarProps) => {
+export const NavigationSidebar = ({
+  isOpen,
+  onOpenChange,
+  teamId,
+  teamName,
+}: NavigationSidebarProps) => {
   const frame = useAppFrameElement();
+  const { data: credits } = useTeamCredits(teamId);
   const teamNameCharacters = Array.from(teamName);
   const displayTeamName =
     teamNameCharacters.length > 8 ? `${teamNameCharacters.slice(0, 8).join('')}…` : teamName;
@@ -47,7 +54,7 @@ export const NavigationSidebar = ({ isOpen, onOpenChange, teamName }: Navigation
             </div>
 
             <div className="mt-4 rounded-xl bg-cool-50 px-4 py-3">
-              <span className="text-lg font-bold text-cool-900">{mockSidebarCredit}</span>
+              <span className="text-lg font-bold text-cool-900">{credits?.balance ?? '-'}</span>
               <span className="ml-1 text-sm text-cool-500">크레딧</span>
             </div>
 
@@ -69,7 +76,6 @@ export const NavigationSidebar = ({ isOpen, onOpenChange, teamName }: Navigation
               <SidebarNavItem
                 icon={<ListChecks className="size-5" strokeWidth={2} />}
                 label="회의 목록"
-                trailing={<span className="text-sm text-cool-500">{mockMeetingListCount}</span>}
               />
             </nav>
 
