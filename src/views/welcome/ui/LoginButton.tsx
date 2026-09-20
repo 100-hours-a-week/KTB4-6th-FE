@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { startKakaoLogin } from '@/features/auth';
+import { useHome } from '@/features/home';
 import { useStartTeamSpace } from '@/features/team-space';
 import { TeamSpaceStartSheet } from './TeamSpaceStartSheet';
 
@@ -21,9 +22,29 @@ export const LoginButton = ({
 }: LoginButtonProps) => {
   const router = useRouter();
   const [isTeamSpaceSheetOpen, setIsTeamSpaceSheetOpen] = useState(isTeamSpaceSheetInitiallyOpen);
-  const { isCheckingActiveTeam, activeTeamError, startTeamSpace } = useStartTeamSpace(() => {
-    setIsTeamSpaceSheetOpen(true);
-  });
+  const { isCheckingActiveTeam, hasActiveTeam, hasActiveTeamError, startTeamSpace } =
+    useStartTeamSpace({
+      isEnabled: authState === 'authenticated',
+      onNoActiveTeam: () => {
+        setIsTeamSpaceSheetOpen(true);
+      },
+    });
+  const homeQuery = useHome({ isEnabled: hasActiveTeam });
+
+  const isStarting = isCheckingActiveTeam || (homeQuery.isFetching && !homeQuery.data);
+  const hasStartError = hasActiveTeamError || (homeQuery.isError && !homeQuery.isFetching);
+
+  const handleStart = async () => {
+    const hasTeam = await startTeamSpace();
+
+    if (!hasTeam) return;
+
+    const home = homeQuery.data ?? (await homeQuery.refetch()).data;
+
+    if (home) {
+      router.push(`/teams/${home.team.teamId}`);
+    }
+  };
 
   const handleCloseTeamSpaceSheet = () => {
     setIsTeamSpaceSheetOpen(false);
@@ -36,15 +57,15 @@ export const LoginButton = ({
         <div className="flex flex-col items-center gap-3">
           <button
             type="button"
-            onClick={() => void startTeamSpace()}
-            disabled={isCheckingActiveTeam}
+            onClick={() => void handleStart()}
+            disabled={isStarting}
             className="flex h-14 w-full items-center justify-center rounded-2xl bg-brand-600 text-base font-semibold text-white transition-colors hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-300 active:bg-brand-800"
           >
-            {isCheckingActiveTeam ? '팀 스페이스 확인 중...' : '팀 스페이스 시작하기'}
+            {isStarting ? '팀 스페이스 확인 중...' : '팀 스페이스 시작하기'}
           </button>
-          {activeTeamError ? (
+          {hasStartError ? (
             <p role="alert" className="text-xs text-red-500">
-              {activeTeamError}
+              팀 스페이스 정보를 불러오지 못했습니다.
             </p>
           ) : (
             <p className="text-xs text-cool-500">참여 중인 팀 스페이스를 확인합니다</p>

@@ -2,7 +2,13 @@
 
 import type { FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { getNameError, NAME_MAX_LENGTH, useTeamSpaceOnboardingStore } from '@/features/team-space';
+import {
+  getNameError,
+  NAME_MAX_LENGTH,
+  useCreateTeamSpace,
+  useJoinTeamSpace,
+  useTeamSpaceOnboardingStore,
+} from '@/features/team-space';
 import { OnboardingActionButton } from './OnboardingActionButton';
 import { OnboardingLayout } from './OnboardingLayout';
 import { OnboardingTextField } from './OnboardingTextField';
@@ -67,7 +73,8 @@ export const NicknameForm = ({
           maxLength={NAME_MAX_LENGTH}
           placeholder="이름을 입력해주세요"
           helperText="2자 이상 10자 이하"
-          errorMessage={errorMessage ?? validationError}
+          errorMessage={validationError}
+          submitError={errorMessage}
           onChange={onChange}
         />
       </OnboardingLayout>
@@ -77,10 +84,9 @@ export const NicknameForm = ({
 
 interface NicknameScreenProps {
   flow: OnboardingFlow;
-  onComplete?: (nickname: string) => void | Promise<void>;
 }
 
-export const NicknameScreen = ({ flow, onComplete }: NicknameScreenProps) => {
+export const NicknameScreen = ({ flow }: NicknameScreenProps) => {
   const router = useRouter();
   const nickname = useTeamSpaceOnboardingStore((state) =>
     flow === 'join' ? state.join.nickname : state.create.nickname,
@@ -89,16 +95,48 @@ export const NicknameScreen = ({ flow, onComplete }: NicknameScreenProps) => {
   const setNickname = useTeamSpaceOnboardingStore((state) =>
     flow === 'join' ? state.setJoinNickname : state.setCreateNickname,
   );
+  const teamName = useTeamSpaceOnboardingStore((state) => state.create.teamName);
+  const inviteCode = useTeamSpaceOnboardingStore((state) => state.join.inviteCode);
+  const resetJoin = useTeamSpaceOnboardingStore((state) => state.resetJoin);
+  const { isCreating, createError, createTeamSpace, clearCreateError } = useCreateTeamSpace();
+  const { isJoining, joinError, joinTeamSpace, clearJoinError } = useJoinTeamSpace();
+
+  const isSubmitting = flow === 'create' ? isCreating : isJoining;
+  const submitError = flow === 'create' ? createError : joinError;
+
+  const handleChange = (value: string) => {
+    clearCreateError();
+    clearJoinError();
+    setNickname(value);
+  };
 
   const handleSubmit = async () => {
-    await onComplete?.(nickname);
-
     if (flow === 'create') {
-      router.push('/teams/create/invite');
+      const isCreated = await createTeamSpace(teamName, nickname);
+
+      if (isCreated) {
+        router.push('/teams/create/invite');
+      }
+
+      return;
+    }
+
+    const teamId = await joinTeamSpace(inviteCode, nickname);
+
+    if (teamId !== null) {
+      router.push(`/teams/${teamId}`);
+      resetJoin();
     }
   };
 
   return (
-    <NicknameForm flow={flow} value={nickname} onChange={setNickname} onSubmit={handleSubmit} />
+    <NicknameForm
+      flow={flow}
+      value={nickname}
+      errorMessage={submitError ?? undefined}
+      isSubmitting={isSubmitting}
+      onChange={handleChange}
+      onSubmit={handleSubmit}
+    />
   );
 };
