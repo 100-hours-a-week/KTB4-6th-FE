@@ -35,3 +35,19 @@ export interface CreateTeamResponse {
   data: CreateTeamData | null;
   error: ApiErrorPayload | null;
 }
+
+export interface JoinTeamRequest {
+  invitationCode: string;
+  displayName: string;
+}
+
+export interface JoinTeamData {
+  hasActiveTeam: boolean;
+  teamId: number;
+}
+
+export interface JoinTeamResponse {
+  success: boolean;
+  data: JoinTeamData | null;
+  error: ApiErrorPayload | null;
+}
