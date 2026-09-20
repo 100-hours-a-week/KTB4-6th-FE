@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { Drawer } from '@base-ui/react/drawer';
 import { Home, ListChecks, Radio, Users, X } from 'lucide-react';
+import { useActiveMeeting } from '@/features/home';
 import { useTeamCredits } from '@/features/team-management';
 import { useAppFrameElement } from '@/shared/lib';
 import { NoActiveMeetingDialog } from './NoActiveMeetingDialog';
@@ -26,6 +27,7 @@ export const NavigationSidebar = ({
 }: NavigationSidebarProps) => {
   const frame = useAppFrameElement();
   const { data: credits } = useTeamCredits(teamId);
+  const { activeMeeting, isPending: isActiveMeetingPending } = useActiveMeeting(teamId);
   const router = useRouter();
   const pathname = usePathname();
   const homePath = `/teams/${teamId}`;
@@ -35,6 +37,16 @@ export const NavigationSidebar = ({
     if (pathname !== path) router.push(path);
     onOpenChange(false);
   };
+
+  // TODO: 진행 중인 회의가 있으면 회의 페이지로 이동. 회의 페이지가 없어 지금은 사이드바만 닫는다.
+  const currentMeetingNavItem = (
+    <SidebarNavItem
+      icon={<Radio className="size-5" strokeWidth={2} />}
+      label="현재 회의"
+      disabled={isActiveMeetingPending}
+      onClick={activeMeeting ? () => onOpenChange(false) : undefined}
+    />
+  );
   const teamNameCharacters = Array.from(teamName);
   const displayTeamName =
     teamNameCharacters.length > 8 ? `${teamNameCharacters.slice(0, 8).join('')}…` : teamName;
@@ -81,14 +93,11 @@ export const NavigationSidebar = ({
                 isActive={pathname === managePath}
                 onClick={() => navigateTo(managePath)}
               />
-              <NoActiveMeetingDialog
-                trigger={
-                  <SidebarNavItem
-                    icon={<Radio className="size-5" strokeWidth={2} />}
-                    label="현재 회의"
-                  />
-                }
-              />
+              {activeMeeting ? (
+                currentMeetingNavItem
+              ) : (
+                <NoActiveMeetingDialog trigger={currentMeetingNavItem} />
+              )}
               <SidebarNavItem
                 icon={<ListChecks className="size-5" strokeWidth={2} />}
                 label="회의 목록"
