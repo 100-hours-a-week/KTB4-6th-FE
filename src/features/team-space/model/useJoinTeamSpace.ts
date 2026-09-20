@@ -1,31 +1,45 @@
 'use client';
 
-import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { joinTeam } from '../api/join-team';
+import { teamSpaceKeys } from './query-keys';
+import type { ActiveTeamData } from './types';
 
 export const useJoinTeamSpace = () => {
-  const [isJoining, setIsJoining] = useState(false);
-  const [joinError, setJoinError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: joinTeam,
+    onSuccess: ({ teamId }) => {
+      queryClient.setQueryData<ActiveTeamData>(teamSpaceKeys.activeTeam, {
+        hasActiveTeam: true,
+        teamId,
+      });
+    },
+  });
 
   const joinTeamSpace = async (invitationCode: string, displayName: string) => {
-    if (isJoining) return null;
-
-    setIsJoining(true);
-    setJoinError(null);
+    if (mutation.isPending) return null;
 
     try {
-      const { teamId } = await joinTeam({ invitationCode, displayName });
+      const { teamId } = await mutation.mutateAsync({ invitationCode, displayName });
 
       return teamId;
-    } catch (error) {
-      setJoinError(error instanceof Error ? error.message : '팀 스페이스에 참여하지 못했습니다.');
+    } catch {
       return null;
-    } finally {
-      setIsJoining(false);
     }
   };
 
-  const clearJoinError = () => setJoinError(null);
+  const clearJoinError = () => {
+    if (mutation.isError) {
+      mutation.reset();
+    }
+  };
 
-  return { isJoining, joinError, joinTeamSpace, clearJoinError };
+  return {
+    isJoining: mutation.isPending,
+    joinError: mutation.error?.message ?? null,
+    joinTeamSpace,
+    clearJoinError,
+  };
 };
