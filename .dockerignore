@@ -1,0 +1,32 @@
+# 버전 관리 / Git 훅
+.git
+.github
+.husky
+
+# IDE
+.idea/
+
+# 문서 (런타임에 불필요)
+docs
+README.md
+CONTRIBUTING.md
+AGENTS.md
+CLAUDE.md
+
+# 코드 포맷팅 설정 (next build에서 사용하지 않음)
+.prettierrc
+.prettierignore
+
+# 로컬 Node 버전 고정 (컨테이너는 base image가 버전을 이미 고정)
+.nvmrc
+
+# 빌드 산출물 / 의존성 (컨테이너 내부에서 새로 설치·생성됨)
+node_modules
+.next
+
+# 환경변수 (실제 값은 배포 환경에서 주입, 이미지에 포함 금지)
+.env
+.env.*
+
+# OS 캐시 파일
+.DS_Store
