@@ -17,6 +17,12 @@ RUN corepack enable && corepack prepare pnpm@11.21.0 --activate
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# 클라이언트 번들에 빌드 시점 값으로 치환됨 (NEXT_PUBLIC_ 접두사)
+# 하드코딩 방식이므로 ARG 선언은 두지 않음 (같은 이름의 ARG가 있으면 --build-arg가 무시되어 혼동됨)
+
+# (필요한 경우에만) next.config의 rewrites 등에서 API_BASE_URL을 빌드 때 쓴다면 아래 주석 해제
+
 RUN pnpm run build
 
 # ---------- Runtime Stage ----------
