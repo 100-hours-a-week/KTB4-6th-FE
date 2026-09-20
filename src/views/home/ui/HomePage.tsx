@@ -4,7 +4,9 @@ import { useState } from 'react';
 import { useHome } from '@/features/home';
 import { NavigationSidebar } from '@/widgets/navigation-sidebar';
 import { CreateMeetingButton } from './CreateMeetingButton';
+import { HomeErrorState } from './HomeErrorState';
 import { HomeHeader } from './HomeHeader';
+import { HomePageSkeleton } from './HomePageSkeleton';
 import { MeetingListSection } from './MeetingListSection';
 import { TeamSummaryCard } from './TeamSummaryCard';
 import { toHomeViewModel } from '../model/home-view-model';
@@ -25,7 +27,11 @@ export const HomePage = ({ teamId }: HomePageProps) => {
   });
 
   if (!home || home.team.teamId !== teamId) {
-    return null;
+    if (isError && !isFetching) {
+      return <HomeErrorState />;
+    }
+
+    return <HomePageSkeleton />;
   }
 
   const { team, meetings } = toHomeViewModel(home);
