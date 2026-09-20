@@ -1,5 +1,6 @@
 'use client';
 
+import { usePathname, useRouter } from 'next/navigation';
 import { Drawer } from '@base-ui/react/drawer';
 import { Home, ListChecks, Radio, Users, X } from 'lucide-react';
 import { useTeamCredits } from '@/features/team-management';
@@ -25,6 +26,15 @@ export const NavigationSidebar = ({
 }: NavigationSidebarProps) => {
   const frame = useAppFrameElement();
   const { data: credits } = useTeamCredits(teamId);
+  const router = useRouter();
+  const pathname = usePathname();
+  const homePath = `/teams/${teamId}`;
+  const managePath = `${homePath}/manage`;
+
+  const navigateTo = (path: string) => {
+    if (pathname !== path) router.push(path);
+    onOpenChange(false);
+  };
   const teamNameCharacters = Array.from(teamName);
   const displayTeamName =
     teamNameCharacters.length > 8 ? `${teamNameCharacters.slice(0, 8).join('')}…` : teamName;
@@ -62,9 +72,15 @@ export const NavigationSidebar = ({
               <SidebarNavItem
                 icon={<Home className="size-5" strokeWidth={2} />}
                 label="홈"
-                isActive
+                isActive={pathname === homePath}
+                onClick={() => navigateTo(homePath)}
               />
-              <SidebarNavItem icon={<Users className="size-5" strokeWidth={2} />} label="팀" />
+              <SidebarNavItem
+                icon={<Users className="size-5" strokeWidth={2} />}
+                label="팀"
+                isActive={pathname === managePath}
+                onClick={() => navigateTo(managePath)}
+              />
               <NoActiveMeetingDialog
                 trigger={
                   <SidebarNavItem
