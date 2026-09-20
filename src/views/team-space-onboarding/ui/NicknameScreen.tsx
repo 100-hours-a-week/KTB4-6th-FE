@@ -6,6 +6,7 @@ import {
   getNameError,
   NAME_MAX_LENGTH,
   useCreateTeamSpace,
+  useJoinTeamSpace,
   useTeamSpaceOnboardingStore,
 } from '@/features/team-space';
 import { OnboardingActionButton } from './OnboardingActionButton';
@@ -83,10 +84,9 @@ export const NicknameForm = ({
 
 interface NicknameScreenProps {
   flow: OnboardingFlow;
-  onComplete?: (nickname: string) => void | Promise<void>;
 }
 
-export const NicknameScreen = ({ flow, onComplete }: NicknameScreenProps) => {
+export const NicknameScreen = ({ flow }: NicknameScreenProps) => {
   const router = useRouter();
   const nickname = useTeamSpaceOnboardingStore((state) =>
     flow === 'join' ? state.join.nickname : state.create.nickname,
@@ -96,10 +96,17 @@ export const NicknameScreen = ({ flow, onComplete }: NicknameScreenProps) => {
     flow === 'join' ? state.setJoinNickname : state.setCreateNickname,
   );
   const teamName = useTeamSpaceOnboardingStore((state) => state.create.teamName);
+  const inviteCode = useTeamSpaceOnboardingStore((state) => state.join.inviteCode);
+  const resetJoin = useTeamSpaceOnboardingStore((state) => state.resetJoin);
   const { isCreating, createError, createTeamSpace, clearCreateError } = useCreateTeamSpace();
+  const { isJoining, joinError, joinTeamSpace, clearJoinError } = useJoinTeamSpace();
+
+  const isSubmitting = flow === 'create' ? isCreating : isJoining;
+  const submitError = flow === 'create' ? createError : joinError;
 
   const handleChange = (value: string) => {
     clearCreateError();
+    clearJoinError();
     setNickname(value);
   };
 
@@ -114,15 +121,20 @@ export const NicknameScreen = ({ flow, onComplete }: NicknameScreenProps) => {
       return;
     }
 
-    await onComplete?.(nickname);
+    const teamId = await joinTeamSpace(inviteCode, nickname);
+
+    if (teamId !== null) {
+      router.push(`/teams/${teamId}`);
+      resetJoin();
+    }
   };
 
   return (
     <NicknameForm
       flow={flow}
       value={nickname}
-      errorMessage={createError ?? undefined}
-      isSubmitting={isCreating}
+      errorMessage={submitError ?? undefined}
+      isSubmitting={isSubmitting}
       onChange={handleChange}
       onSubmit={handleSubmit}
     />
