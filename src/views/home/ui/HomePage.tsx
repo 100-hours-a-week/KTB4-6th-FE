@@ -8,12 +8,23 @@ import { HomeHeader } from './HomeHeader';
 import { MeetingListSection } from './MeetingListSection';
 import { TeamSummaryCard } from './TeamSummaryCard';
 import { toHomeViewModel } from '../model/home-view-model';
+import { useRedirectToActiveTeam } from '../model/useRedirectToActiveTeam';
 
-export const HomePage = () => {
+interface HomePageProps {
+  teamId: number;
+}
+
+export const HomePage = ({ teamId }: HomePageProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { data: home } = useHome({ isEnabled: true });
+  const { data: home, isFetching, isError } = useHome({ isEnabled: true });
 
-  if (!home) {
+  useRedirectToActiveTeam({
+    activeTeamId: home?.team.teamId,
+    isSettled: !isFetching && !isError,
+    urlTeamId: teamId,
+  });
+
+  if (!home || home.team.teamId !== teamId) {
     return null;
   }
 
