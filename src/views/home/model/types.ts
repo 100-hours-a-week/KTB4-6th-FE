@@ -1,4 +1,4 @@
-export type MeetingStatus = 'in_progress' | 'completed';
+export type MeetingStatus = 'waiting' | 'in_progress' | 'completed';
 
 export interface Meeting {
   id: string;
