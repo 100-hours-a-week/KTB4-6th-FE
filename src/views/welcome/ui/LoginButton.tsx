@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { startKakaoLogin } from '@/features/auth';
+import { getHome } from '@/features/home';
 import { useStartTeamSpace } from '@/features/team-space';
 import { TeamSpaceStartSheet } from './TeamSpaceStartSheet';
 
@@ -21,8 +22,15 @@ export const LoginButton = ({
 }: LoginButtonProps) => {
   const router = useRouter();
   const [isTeamSpaceSheetOpen, setIsTeamSpaceSheetOpen] = useState(isTeamSpaceSheetInitiallyOpen);
-  const { isCheckingActiveTeam, activeTeamError, startTeamSpace } = useStartTeamSpace(() => {
-    setIsTeamSpaceSheetOpen(true);
+  const { isCheckingActiveTeam, activeTeamError, startTeamSpace } = useStartTeamSpace({
+    onActiveTeam: async () => {
+      const home = await getHome();
+
+      router.push(`/teams/${home.team.teamId}`);
+    },
+    onNoActiveTeam: () => {
+      setIsTeamSpaceSheetOpen(true);
+    },
   });
 
   const handleCloseTeamSpaceSheet = () => {
