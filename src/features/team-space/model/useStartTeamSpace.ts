@@ -3,7 +3,12 @@
 import { useState } from 'react';
 import { getActiveTeam } from '../api/get-active-team';
 
-export const useStartTeamSpace = (onNoActiveTeam: () => void) => {
+interface UseStartTeamSpaceOptions {
+  onActiveTeam: () => Promise<void>;
+  onNoActiveTeam: () => void;
+}
+
+export const useStartTeamSpace = ({ onActiveTeam, onNoActiveTeam }: UseStartTeamSpaceOptions) => {
   const [isCheckingActiveTeam, setIsCheckingActiveTeam] = useState(false);
   const [activeTeamError, setActiveTeamError] = useState<string | null>(null);
 
@@ -17,8 +22,7 @@ export const useStartTeamSpace = (onNoActiveTeam: () => void) => {
       const activeTeam = await getActiveTeam();
 
       if (activeTeam.hasActiveTeam) {
-        // TODO: 홈 페이지 구현 시 GET /api/v1/home/{teamId} 조회 후
-        // /teams/{teamId}로 이동합니다. teamId는 activeTeam.teamId를 사용합니다.
+        await onActiveTeam();
         return;
       }
 
