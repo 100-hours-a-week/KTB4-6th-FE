@@ -23,6 +23,7 @@ export const LoginButton = ({
   const router = useRouter();
   const [isTeamSpaceSheetOpen, setIsTeamSpaceSheetOpen] = useState(isTeamSpaceSheetInitiallyOpen);
   const { isCheckingActiveTeam, activeTeamError, startTeamSpace } = useStartTeamSpace({
+    isEnabled: authState === 'authenticated',
     onActiveTeam: async () => {
       const home = await getHome();
 

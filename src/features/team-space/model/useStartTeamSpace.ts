@@ -1,38 +1,59 @@
 'use client';
 
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { getActiveTeam } from '../api/get-active-team';
+import { teamSpaceKeys } from './query-keys';
 
 interface UseStartTeamSpaceOptions {
+  isEnabled: boolean;
   onActiveTeam: () => Promise<void>;
   onNoActiveTeam: () => void;
 }
 
-export const useStartTeamSpace = ({ onActiveTeam, onNoActiveTeam }: UseStartTeamSpaceOptions) => {
-  const [isCheckingActiveTeam, setIsCheckingActiveTeam] = useState(false);
-  const [activeTeamError, setActiveTeamError] = useState<string | null>(null);
+export const useStartTeamSpace = ({
+  isEnabled,
+  onActiveTeam,
+  onNoActiveTeam,
+}: UseStartTeamSpaceOptions) => {
+  const activeTeamQuery = useQuery({
+    queryKey: teamSpaceKeys.activeTeam,
+    queryFn: getActiveTeam,
+    enabled: isEnabled,
+  });
+  const [isStarting, setIsStarting] = useState(false);
+  const [hasStartError, setHasStartError] = useState(false);
+
+  const isCheckingActiveTeam = (activeTeamQuery.isFetching && !activeTeamQuery.data) || isStarting;
+  const hasError = activeTeamQuery.isError || hasStartError;
 
   const startTeamSpace = async () => {
     if (isCheckingActiveTeam) return;
 
-    setIsCheckingActiveTeam(true);
-    setActiveTeamError(null);
+    const activeTeam = activeTeamQuery.data ?? (await activeTeamQuery.refetch()).data;
+
+    if (!activeTeam) return;
+
+    if (!activeTeam.hasActiveTeam) {
+      onNoActiveTeam();
+      return;
+    }
+
+    setIsStarting(true);
+    setHasStartError(false);
 
     try {
-      const activeTeam = await getActiveTeam();
-
-      if (activeTeam.hasActiveTeam) {
-        await onActiveTeam();
-        return;
-      }
-
-      onNoActiveTeam();
+      await onActiveTeam();
     } catch {
-      setActiveTeamError('팀 스페이스 정보를 불러오지 못했습니다.');
+      setHasStartError(true);
     } finally {
-      setIsCheckingActiveTeam(false);
+      setIsStarting(false);
     }
   };
 
-  return { isCheckingActiveTeam, activeTeamError, startTeamSpace };
+  return {
+    isCheckingActiveTeam,
+    activeTeamError: hasError ? '팀 스페이스 정보를 불러오지 못했습니다.' : null,
+    startTeamSpace,
+  };
 };
