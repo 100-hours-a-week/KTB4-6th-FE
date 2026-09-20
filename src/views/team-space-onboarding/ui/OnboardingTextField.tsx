@@ -11,6 +11,8 @@ interface OnboardingTextFieldProps {
   maxLength: number;
   onChange: (value: string) => void;
   placeholder: string;
+  /** 서버 응답 오류처럼 입력 상호작용 여부와 무관하게 바로 노출할 메시지. */
+  submitError?: string | null;
   value: string;
 }
 
@@ -22,10 +24,11 @@ export const OnboardingTextField = ({
   maxLength,
   onChange,
   placeholder,
+  submitError = null,
   value,
 }: OnboardingTextFieldProps) => {
   const [hasInteracted, setHasInteracted] = useState(false);
-  const visibleError = hasInteracted ? errorMessage : null;
+  const visibleError = submitError ?? (hasInteracted ? errorMessage : null);
 
   return (
     <div>

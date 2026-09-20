@@ -2,7 +2,12 @@
 
 import type { FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { getNameError, NAME_MAX_LENGTH, useTeamSpaceOnboardingStore } from '@/features/team-space';
+import {
+  getNameError,
+  NAME_MAX_LENGTH,
+  useCreateTeamSpace,
+  useTeamSpaceOnboardingStore,
+} from '@/features/team-space';
 import { OnboardingActionButton } from './OnboardingActionButton';
 import { OnboardingLayout } from './OnboardingLayout';
 import { OnboardingTextField } from './OnboardingTextField';
@@ -67,7 +72,8 @@ export const NicknameForm = ({
           maxLength={NAME_MAX_LENGTH}
           placeholder="이름을 입력해주세요"
           helperText="2자 이상 10자 이하"
-          errorMessage={errorMessage ?? validationError}
+          errorMessage={validationError}
+          submitError={errorMessage}
           onChange={onChange}
         />
       </OnboardingLayout>
@@ -89,16 +95,36 @@ export const NicknameScreen = ({ flow, onComplete }: NicknameScreenProps) => {
   const setNickname = useTeamSpaceOnboardingStore((state) =>
     flow === 'join' ? state.setJoinNickname : state.setCreateNickname,
   );
+  const teamName = useTeamSpaceOnboardingStore((state) => state.create.teamName);
+  const { isCreating, createError, createTeamSpace, clearCreateError } = useCreateTeamSpace();
+
+  const handleChange = (value: string) => {
+    clearCreateError();
+    setNickname(value);
+  };
 
   const handleSubmit = async () => {
-    await onComplete?.(nickname);
-
     if (flow === 'create') {
-      router.push('/teams/create/invite');
+      const isCreated = await createTeamSpace(teamName, nickname);
+
+      if (isCreated) {
+        router.push('/teams/create/invite');
+      }
+
+      return;
     }
+
+    await onComplete?.(nickname);
   };
 
   return (
-    <NicknameForm flow={flow} value={nickname} onChange={setNickname} onSubmit={handleSubmit} />
+    <NicknameForm
+      flow={flow}
+      value={nickname}
+      errorMessage={createError ?? undefined}
+      isSubmitting={isCreating}
+      onChange={handleChange}
+      onSubmit={handleSubmit}
+    />
   );
 };
