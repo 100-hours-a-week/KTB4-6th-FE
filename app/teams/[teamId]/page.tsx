@@ -5,8 +5,7 @@ interface TeamHomeProps {
 }
 
 export default async function TeamHome({ params }: TeamHomeProps) {
-  // UI 전용 구현: teamId로 실제 팀 데이터를 조회하지 않고 목업 데이터를 렌더링한다.
-  await params;
+  const { teamId } = await params;
 
-  return <HomePage />;
+  return <HomePage teamId={Number(teamId)} />;
 }

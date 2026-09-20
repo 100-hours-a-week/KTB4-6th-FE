@@ -12,8 +12,11 @@ interface MeetingListItemProps {
 export const MeetingListItem = ({ meeting }: MeetingListItemProps) => {
   const { showToast } = useAppToast();
   const isInProgress = meeting.status === 'in_progress';
+  const isWaiting = meeting.status === 'waiting';
 
   const handleClick = () => {
+    if (isWaiting) return;
+
     if (isInProgress) {
       showToast('회의 참여를 시작합니다', 'success');
     } else {
@@ -54,15 +57,15 @@ export const MeetingListItem = ({ meeting }: MeetingListItemProps) => {
             {meeting.title}
           </span>
           <Badge variant={isInProgress ? 'danger' : 'success'}>
-            {isInProgress ? '진행 중' : '완료'}
+            {isInProgress ? '진행 중' : isWaiting ? '대기 중' : '완료'}
           </Badge>
         </span>
         <span className="truncate text-xs text-cool-500">
-          {isInProgress ? meeting.scheduledAtLabel : meeting.dateLabel}
+          {isInProgress || isWaiting ? meeting.scheduledAtLabel : meeting.dateLabel}
         </span>
       </span>
 
-      {!isInProgress ? (
+      {!isInProgress && !isWaiting ? (
         <span className="shrink-0 text-sm font-medium text-cool-600">{meeting.durationLabel}</span>
       ) : null}
     </button>
