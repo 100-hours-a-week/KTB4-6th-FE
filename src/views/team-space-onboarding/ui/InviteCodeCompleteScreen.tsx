@@ -5,7 +5,7 @@ import { useCopyInviteCode } from '@/entities/invite-code';
 import { OnboardingActionButton } from './OnboardingActionButton';
 
 interface InviteCodeCompleteScreenProps {
-  inviteCode?: string;
+  inviteCode: string;
   isRegenerating?: boolean;
   onMoveToTeamSpace?: () => void;
   onRegenerate?: () => void;
@@ -13,7 +13,7 @@ interface InviteCodeCompleteScreenProps {
 }
 
 export const InviteCodeCompleteScreen = ({
-  inviteCode = 'K7M2Q9PX',
+  inviteCode,
   isRegenerating = false,
   onMoveToTeamSpace,
   onRegenerate,
