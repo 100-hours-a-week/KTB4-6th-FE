@@ -23,6 +23,7 @@ export default async function CurrentMeetingRoute({
 
   return (
     <CurrentMeetingPage
+      meetingId={meetingId}
       previewState={typeof preview === 'string' ? preview : undefined}
       previewRole={role === 'participant' ? 'participant' : 'recorder'}
     />
