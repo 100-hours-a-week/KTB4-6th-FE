@@ -37,7 +37,8 @@ export const NoActiveMeetingDialog = ({ trigger }: NoActiveMeetingDialogProps) =
             현재 진행 중인 회의가 없어요
           </Dialog.Title>
           <Dialog.Description className="mt-1.5 text-sm leading-5 text-cool-500">
-            새로운 회의를 생성해 바로 시작할 수 있어요.
+            <span className="block font-medium text-cool-700">새로운 회의를 시작할까요?</span>
+            <span className="block">새로운 회의를 생성해 시작할 수 있어요.</span>
           </Dialog.Description>
 
           <div className="mt-5 flex gap-2">

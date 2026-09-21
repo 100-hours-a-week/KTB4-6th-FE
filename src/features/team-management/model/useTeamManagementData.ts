@@ -1,10 +1,10 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { getTeamCredits } from '../api/get-team-credits';
 import { getTeamDetail } from '../api/get-team-detail';
 import { getTeamMembers } from '../api/get-team-members';
 import { teamKeys } from './query-keys';
+import { useTeamCredits } from './useTeamCredits';
 import type { TeamCreditsData, TeamDetailData, TeamMemberData } from './types';
 
 export type TeamManagementRequestStatus = 'loading' | 'error' | 'success';
@@ -29,10 +29,7 @@ export const useTeamManagementData = (teamId: number): UseTeamManagementDataResu
     queryKey: teamKeys.members(teamId),
     queryFn: () => getTeamMembers(teamId),
   });
-  const creditsQuery = useQuery({
-    queryKey: teamKeys.credits(teamId),
-    queryFn: () => getTeamCredits(teamId),
-  });
+  const creditsQuery = useTeamCredits(teamId);
 
   const queries = [teamQuery, membersQuery, creditsQuery];
   const status: TeamManagementRequestStatus = queries.some((query) => query.isPending)

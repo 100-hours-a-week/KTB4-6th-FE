@@ -1,9 +1,11 @@
 'use client';
 
+import { usePathname, useRouter } from 'next/navigation';
 import { Drawer } from '@base-ui/react/drawer';
 import { Home, ListChecks, Radio, Users, X } from 'lucide-react';
+import { useActiveMeeting } from '@/features/home';
+import { useTeamCredits } from '@/features/team-management';
 import { useAppFrameElement } from '@/shared/lib';
-import { mockMeetingListCount, mockSidebarCredit } from '../model/mock';
 import { NoActiveMeetingDialog } from './NoActiveMeetingDialog';
 import { SidebarMoreMenu } from './SidebarMoreMenu';
 import { SidebarNavItem } from './SidebarNavItem';
@@ -11,13 +13,40 @@ import { SidebarNavItem } from './SidebarNavItem';
 interface NavigationSidebarProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  teamId: number;
   teamName: string;
 }
 
 // 트리거(햄버거 버튼)가 HomeHeader라는 다른 컴포넌트에 있어서 컨트롤드로 연다/닫는다.
 // isOpen/onOpenChange는 부모(HomePage)가 들고 있는 상태를 그대로 받는다.
-export const NavigationSidebar = ({ isOpen, onOpenChange, teamName }: NavigationSidebarProps) => {
+export const NavigationSidebar = ({
+  isOpen,
+  onOpenChange,
+  teamId,
+  teamName,
+}: NavigationSidebarProps) => {
   const frame = useAppFrameElement();
+  const { data: credits } = useTeamCredits(teamId);
+  const { activeMeeting, isPending: isActiveMeetingPending } = useActiveMeeting(teamId);
+  const router = useRouter();
+  const pathname = usePathname();
+  const homePath = `/teams/${teamId}`;
+  const managePath = `${homePath}/manage`;
+
+  const navigateTo = (path: string) => {
+    if (pathname !== path) router.push(path);
+    onOpenChange(false);
+  };
+
+  // TODO: 진행 중인 회의가 있으면 회의 페이지로 이동. 회의 페이지가 없어 지금은 사이드바만 닫는다.
+  const currentMeetingNavItem = (
+    <SidebarNavItem
+      icon={<Radio className="size-5" strokeWidth={2} />}
+      label="현재 회의"
+      disabled={isActiveMeetingPending}
+      onClick={activeMeeting ? () => onOpenChange(false) : undefined}
+    />
+  );
   const teamNameCharacters = Array.from(teamName);
   const displayTeamName =
     teamNameCharacters.length > 8 ? `${teamNameCharacters.slice(0, 8).join('')}…` : teamName;
@@ -47,7 +76,7 @@ export const NavigationSidebar = ({ isOpen, onOpenChange, teamName }: Navigation
             </div>
 
             <div className="mt-4 rounded-xl bg-cool-50 px-4 py-3">
-              <span className="text-lg font-bold text-cool-900">{mockSidebarCredit}</span>
+              <span className="text-lg font-bold text-cool-900">{credits?.balance ?? '-'}</span>
               <span className="ml-1 text-sm text-cool-500">크레딧</span>
             </div>
 
@@ -55,21 +84,23 @@ export const NavigationSidebar = ({ isOpen, onOpenChange, teamName }: Navigation
               <SidebarNavItem
                 icon={<Home className="size-5" strokeWidth={2} />}
                 label="홈"
-                isActive
+                isActive={pathname === homePath}
+                onClick={() => navigateTo(homePath)}
               />
-              <SidebarNavItem icon={<Users className="size-5" strokeWidth={2} />} label="팀" />
-              <NoActiveMeetingDialog
-                trigger={
-                  <SidebarNavItem
-                    icon={<Radio className="size-5" strokeWidth={2} />}
-                    label="현재 회의"
-                  />
-                }
+              <SidebarNavItem
+                icon={<Users className="size-5" strokeWidth={2} />}
+                label="팀"
+                isActive={pathname === managePath}
+                onClick={() => navigateTo(managePath)}
               />
+              {activeMeeting ? (
+                currentMeetingNavItem
+              ) : (
+                <NoActiveMeetingDialog trigger={currentMeetingNavItem} />
+              )}
               <SidebarNavItem
                 icon={<ListChecks className="size-5" strokeWidth={2} />}
                 label="회의 목록"
-                trailing={<span className="text-sm text-cool-500">{mockMeetingListCount}</span>}
               />
             </nav>
 

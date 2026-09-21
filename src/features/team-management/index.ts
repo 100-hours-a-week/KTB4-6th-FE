@@ -9,6 +9,7 @@ export { useKickTeamMember } from './model/useKickTeamMember';
 export { useLeaveTeam } from './model/useLeaveTeam';
 export { useRegenerateInvitationCode } from './model/useRegenerateInvitationCode';
 export { useReleaseTeamBlock } from './model/useReleaseTeamBlock';
+export { useTeamCredits } from './model/useTeamCredits';
 export type {
   TeamManagementData,
   TeamManagementRequestStatus,

@@ -1,9 +1,9 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Menu } from '@base-ui/react/menu';
 import { LogOut, MoreVertical, UserX } from 'lucide-react';
-import { requestLogout } from '@/features/auth';
+import { useLogout } from '@/features/auth';
 import { useAppFrameElement } from '@/shared/lib';
 import { useAppToast } from '@/shared/ui';
 import { WithdrawConfirmDialog } from './WithdrawConfirmDialog';
@@ -14,26 +14,15 @@ export const SidebarMoreMenu = () => {
   const frame = useAppFrameElement();
   const { showToast } = useAppToast();
   const [isWithdrawDialogOpen, setIsWithdrawDialogOpen] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const logoutInProgressRef = useRef(false);
+  const logoutMutation = useLogout();
+  // 성공 후 이동하기 전까지도 다시 누르지 못하게 막는다.
+  const isLoggingOut = logoutMutation.isPending || logoutMutation.isSuccess;
 
-  const handleLogout = async () => {
-    if (logoutInProgressRef.current) return;
-
-    logoutInProgressRef.current = true;
-    setIsLoggingOut(true);
-
-    try {
-      await requestLogout();
-      window.location.replace('/');
-    } catch (error) {
-      showToast(
-        error instanceof Error ? error.message : '로그아웃에 실패했습니다. 다시 시도해 주세요.',
-        'danger',
-      );
-      logoutInProgressRef.current = false;
-      setIsLoggingOut(false);
-    }
+  const handleLogout = () => {
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => window.location.replace('/'),
+      onError: (error) => showToast(error.message, 'danger'),
+    });
   };
 
   return (
@@ -48,7 +37,7 @@ export const SidebarMoreMenu = () => {
           <Menu.Positioner className="z-[75] outline-none" side="top" align="end" sideOffset={6}>
             <Menu.Popup className="min-w-[152px] rounded-xl border border-cool-100 bg-white py-1 shadow-[0_8px_24px_rgba(20,34,56,0.12)] outline-none">
               <Menu.Item
-                onClick={() => void handleLogout()}
+                onClick={handleLogout}
                 disabled={isLoggingOut}
                 className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-cool-700 outline-none select-none data-highlighted:bg-cool-50 data-disabled:opacity-50"
               >

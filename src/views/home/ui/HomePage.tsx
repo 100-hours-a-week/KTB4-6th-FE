@@ -49,6 +49,7 @@ export const HomePage = ({ teamId }: HomePageProps) => {
       <NavigationSidebar
         isOpen={isSidebarOpen}
         onOpenChange={setIsSidebarOpen}
+        teamId={teamId}
         teamName={team.name}
       />
     </div>
