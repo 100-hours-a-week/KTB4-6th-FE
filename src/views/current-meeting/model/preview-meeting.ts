@@ -10,6 +10,7 @@ export interface TranscriptSegment {
 
 export interface CurrentMeetingViewModel {
   title: string;
+  recorderName: string;
   participantCount: number;
   participantLimit: number;
   targetMinutes: number;
@@ -72,6 +73,7 @@ const sampleTranscripts: TranscriptSegment[] = [
 
 const baseMeeting = {
   title: '기획 리뷰 회의',
+  recorderName: '김도현',
   participantCount: 3,
   participantLimit: 5,
   targetMinutes: 30,

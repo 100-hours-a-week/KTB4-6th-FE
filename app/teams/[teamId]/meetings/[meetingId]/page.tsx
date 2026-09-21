@@ -3,7 +3,7 @@ import { CurrentMeetingPage } from '@/views/current-meeting';
 
 interface CurrentMeetingRouteProps {
   params: Promise<{ teamId: string; meetingId: string }>;
-  searchParams: Promise<{ preview?: string | string[] }>;
+  searchParams: Promise<{ preview?: string | string[]; role?: string | string[] }>;
 }
 
 export default async function CurrentMeetingRoute({
@@ -17,7 +17,14 @@ export default async function CurrentMeetingRoute({
   }
 
   // UI 작업 중 상태별 화면을 확인하기 위한 개발 환경 전용 미리보기다.
-  const preview = process.env.NODE_ENV === 'development' ? (await searchParams).preview : undefined;
+  const previewParams = process.env.NODE_ENV === 'development' ? await searchParams : undefined;
+  const preview = previewParams?.preview;
+  const role = previewParams?.role;
 
-  return <CurrentMeetingPage previewState={typeof preview === 'string' ? preview : undefined} />;
+  return (
+    <CurrentMeetingPage
+      previewState={typeof preview === 'string' ? preview : undefined}
+      previewRole={role === 'participant' ? 'participant' : 'recorder'}
+    />
+  );
 }

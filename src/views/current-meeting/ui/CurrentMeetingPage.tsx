@@ -1,10 +1,12 @@
-import { ChevronDown, Headphones, LoaderCircle, Menu, MoreVertical } from 'lucide-react';
+import { ChevronDown, Headphones, LoaderCircle, Menu } from 'lucide-react';
 import { cn } from '@/shared/lib';
 import { getMeetingPreview } from '../model/preview-meeting';
+import { MeetingControls } from './MeetingControls';
 import { MeetingTranscript } from './MeetingTranscript';
 
 interface CurrentMeetingPageProps {
   previewState?: string;
+  previewRole?: 'recorder' | 'participant';
 }
 
 const formatElapsed = (seconds: number) =>
@@ -12,7 +14,10 @@ const formatElapsed = (seconds: number) =>
     .map((part) => String(part).padStart(2, '0'))
     .join(':');
 
-export const CurrentMeetingPage = ({ previewState }: CurrentMeetingPageProps) => {
+export const CurrentMeetingPage = ({
+  previewState,
+  previewRole = 'recorder',
+}: CurrentMeetingPageProps) => {
   const meeting = getMeetingPreview(previewState);
   const isWaiting = meeting.recordingStatus === 'waiting';
   const isPaused = meeting.recordingStatus === 'paused';
@@ -20,6 +25,7 @@ export const CurrentMeetingPage = ({ previewState }: CurrentMeetingPageProps) =>
   const isDisconnected = meeting.connectionStatus === 'disconnected';
   const isRecording = meeting.recordingStatus === 'recording' && !isDisconnected;
   const isOvertime = meeting.elapsedSeconds > meeting.targetMinutes * 60;
+  const isRecorder = previewRole === 'recorder';
 
   const statusLabel = isDisconnected
     ? '연결 끊김'
@@ -125,44 +131,14 @@ export const CurrentMeetingPage = ({ previewState }: CurrentMeetingPageProps) =>
         />
       )}
 
-      <footer className="grid shrink-0 grid-cols-[1fr_1fr_36px] items-center gap-2 border-t border-cool-200 bg-white px-5 py-3">
-        <button
-          type="button"
-          disabled
-          className={cn(
-            'h-12 rounded-xl px-2 text-sm font-semibold',
-            isWaiting || isPaused
-              ? 'bg-brand-600 text-white'
-              : isDisconnected || isEnding
-                ? 'border border-cool-200 bg-white text-cool-400'
-                : 'border border-cool-200 bg-white text-cool-700',
-          )}
-        >
-          {isWaiting ? '녹음 시작' : isPaused ? '녹음 재개' : '일시 정지'}
-        </button>
-        <button
-          type="button"
-          disabled
-          className={cn(
-            'h-12 rounded-xl px-2 text-sm font-semibold',
-            isWaiting
-              ? 'border border-cool-200 bg-white text-cool-700'
-              : isDisconnected || isEnding
-                ? 'bg-cool-200 text-cool-400'
-                : 'bg-danger text-white',
-          )}
-        >
-          {isWaiting ? '회의 나가기' : isEnding ? '종료 중...' : '회의 종료'}
-        </button>
-        <button
-          type="button"
-          aria-label="더 보기"
-          disabled
-          className="flex size-9 items-center justify-center text-cool-600"
-        >
-          <MoreVertical className="size-5" strokeWidth={2} />
-        </button>
-      </footer>
+      <MeetingControls
+        isWaiting={isWaiting}
+        isRecorder={isRecorder}
+        isPaused={isPaused}
+        isDisconnected={isDisconnected}
+        isEnding={isEnding}
+        recorderName={meeting.recorderName}
+      />
 
       {isEnding && (
         <div
