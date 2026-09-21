@@ -6,6 +6,7 @@ import { MeetingControls } from './MeetingControls';
 import { MeetingTranscript } from './MeetingTranscript';
 
 interface CurrentMeetingPageProps {
+  teamId: string;
   meetingId: string;
   previewState?: string;
   previewRole?: 'recorder' | 'participant';
@@ -17,6 +18,7 @@ const formatElapsed = (seconds: number) =>
     .join(':');
 
 export const CurrentMeetingPage = ({
+  teamId,
   meetingId,
   previewState,
   previewRole = 'recorder',
@@ -136,6 +138,9 @@ export const CurrentMeetingPage = ({
       )}
 
       <MeetingControls
+        teamId={teamId}
+        meetingId={meetingId}
+        isPreview={Boolean(previewState)}
         isWaiting={isWaiting}
         isRecorder={isRecorder}
         isPaused={isPaused}

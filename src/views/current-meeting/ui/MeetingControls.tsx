@@ -1,7 +1,16 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useMeetingExit } from '@/features/meeting-sse';
 import { cn } from '@/shared/lib';
+import { useAppToast } from '@/shared/ui';
 import { MeetingMoreMenu } from './MeetingMoreMenu';
 
 interface MeetingControlsProps {
+  teamId: string;
+  meetingId: string;
+  isPreview: boolean;
   isWaiting: boolean;
   isRecorder: boolean;
   isPaused: boolean;
@@ -11,6 +20,9 @@ interface MeetingControlsProps {
 }
 
 export const MeetingControls = ({
+  teamId,
+  meetingId,
+  isPreview,
   isWaiting,
   isRecorder,
   isPaused,
@@ -18,6 +30,24 @@ export const MeetingControls = ({
   isEnding,
   recorderName,
 }: MeetingControlsProps) => {
+  const router = useRouter();
+  const { showToast } = useAppToast();
+  const { leave } = useMeetingExit(meetingId);
+  const [isLeaving, setIsLeaving] = useState(false);
+
+  const handleLeave = async () => {
+    if (isLeaving) return;
+
+    setIsLeaving(true);
+    try {
+      await leave();
+      router.replace(`/teams/${encodeURIComponent(teamId)}`);
+    } catch {
+      showToast('회의 나가기에 실패했습니다', 'danger');
+      setIsLeaving(false);
+    }
+  };
+
   const participantMessage = isEnding
     ? '회의 종료 처리 중입니다'
     : isDisconnected
@@ -46,7 +76,8 @@ export const MeetingControls = ({
           </button>
           <button
             type="button"
-            disabled
+            disabled={!isWaiting || isPreview || isLeaving}
+            onClick={isWaiting ? handleLeave : undefined}
             className={cn(
               'h-12 rounded-xl px-2 text-sm font-semibold',
               isWaiting
@@ -56,7 +87,13 @@ export const MeetingControls = ({
                   : 'bg-danger text-white',
             )}
           >
-            {isWaiting ? '회의 나가기' : isEnding ? '종료 중...' : '회의 종료'}
+            {isWaiting
+              ? isLeaving
+                ? '나가는 중...'
+                : '회의 나가기'
+              : isEnding
+                ? '종료 중...'
+                : '회의 종료'}
           </button>
         </div>
       ) : (
@@ -65,7 +102,12 @@ export const MeetingControls = ({
         </p>
       )}
 
-      <MeetingMoreMenu isRecorder={isRecorder} />
+      <MeetingMoreMenu
+        isRecorder={isRecorder}
+        isPreview={isPreview}
+        isLeaving={isLeaving}
+        onLeave={handleLeave}
+      />
     </footer>
   );
 };
