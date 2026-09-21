@@ -3,3 +3,4 @@ export { requestLogout } from './api/request-logout';
 export { requestTokenRefresh } from './api/request-token-refresh';
 export { withdraw } from './api/withdraw';
 export { WithdrawApiError } from './model/errors';
+export { useWithdraw } from './model/useWithdraw';
