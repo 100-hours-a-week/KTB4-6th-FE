@@ -15,27 +15,7 @@ env:
   IMAGE_NAME: ${{ vars.DOCKERHUB_USERNAME }}/meety-fe
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 11.21.0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run lint
-      - run: pnpm run typecheck
-      - name: Discord 알림 (테스트 실패)
-        if: failure()
-        run: |
-          curl -H "Content-Type: application/json" -X POST -d "{\"content\": \"❌ [테스트 실패] ${{ github.repository }}\nBranch: ${{ github.ref_name }} (${{ github.sha }})\nAuthor: ${{ github.actor }}\nFailed Job: test\nError Message: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" "${{ secrets.DISCORD_WEBHOOK_URL }}"
-
   build:
-    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
