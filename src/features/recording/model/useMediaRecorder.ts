@@ -7,6 +7,7 @@ const supportedFormats: { mimeType: string; audioFormat: AudioFormat }[] = [
   { mimeType: 'audio/webm;codecs=opus', audioFormat: 'webm_opus' },
   { mimeType: 'audio/mp4;codecs=mp4a.40.2', audioFormat: 'mp4_aac' },
 ];
+const AUDIO_CHUNK_INTERVAL_MS = 20;
 
 type MediaRecorderStatus = 'idle' | 'requesting' | 'ready' | 'recording' | 'paused';
 
@@ -15,7 +16,7 @@ interface MediaRecorderState {
   recorder: MediaRecorder | null;
   audioFormat: AudioFormat | null;
   prepare: () => Promise<AudioFormat>;
-  start: (timeslice?: number) => void;
+  start: (onChunk: (chunk: Blob) => void) => void;
   pause: () => void;
   resume: () => void;
   release: () => void;
@@ -79,10 +80,20 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
     return promise;
   },
 
-  start: (timeslice) => {
+  start: (onChunk) => {
     const { recorder } = get();
     if (!recorder || recorder.state !== 'inactive') return;
-    recorder.start(timeslice);
+
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) onChunk(event.data);
+    };
+
+    try {
+      recorder.start(AUDIO_CHUNK_INTERVAL_MS);
+    } catch (error) {
+      recorder.ondataavailable = null;
+      throw error;
+    }
     set({ status: 'recording' });
   },
 

@@ -36,7 +36,7 @@ export const useCurrentMeetingRecording = ({
   const resumeBrowserRecording = useMediaRecorder((state) => state.resume);
   const releaseMicrophone = useMediaRecorder((state) => state.release);
   const recorderStatus = useMediaRecorder((state) => state.status);
-  const { connect, disconnect, statuses } = useRecordingWebSocket();
+  const { connect, sendAudioChunk, disconnect, statuses } = useRecordingWebSocket();
   const { showToast } = useAppToast();
   const meeting = getMeetingPreview(previewState);
 
@@ -71,7 +71,7 @@ export const useCurrentMeetingRecording = ({
 
     if (socketStatus === 'connected' && recorderStatus === 'ready') {
       try {
-        startBrowserRecording();
+        startBrowserRecording((chunk) => sendAudioChunk(recordingSessionId, chunk));
       } catch {
         disconnect(recordingSessionId);
         releaseMicrophone();
@@ -91,6 +91,7 @@ export const useCurrentMeetingRecording = ({
     recorderStatus,
     recordingSessionId,
     releaseMicrophone,
+    sendAudioChunk,
     showToast,
     socketStatus,
     startBrowserRecording,
