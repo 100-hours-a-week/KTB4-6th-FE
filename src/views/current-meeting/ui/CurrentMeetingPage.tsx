@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { ChevronDown, Headphones, LoaderCircle, Menu } from 'lucide-react';
+import { MeetingSseConnection } from '@/features/meeting-sse';
 import { useRecordingWebSocket } from '@/features/recording-websocket';
 import { useCompleteRecording, useStartRecording } from '@/features/recording';
 import { cn } from '@/shared/lib';
@@ -11,6 +12,7 @@ import { MeetingControls } from './MeetingControls';
 import { MeetingTranscript } from './MeetingTranscript';
 
 interface CurrentMeetingPageProps {
+  teamId: string;
   meetingId: number;
   previewState?: string;
   previewRole?: 'recorder' | 'participant';
@@ -22,6 +24,7 @@ const formatElapsed = (seconds: number) =>
     .join(':');
 
 export const CurrentMeetingPage = ({
+  teamId,
   meetingId,
   previewState,
   previewRole = 'recorder',
@@ -93,6 +96,7 @@ export const CurrentMeetingPage = ({
 
   return (
     <div className="relative flex h-dvh min-h-[844px] flex-1 flex-col bg-cool-50">
+      {!previewState && <MeetingSseConnection meetingId={String(meetingId)} teamId={teamId} />}
       <header className="shrink-0 border-b border-cool-200 bg-white px-5 pt-5 pb-4">
         <div className="flex h-10 items-center gap-2">
           <button
@@ -186,6 +190,9 @@ export const CurrentMeetingPage = ({
       )}
 
       <MeetingControls
+        teamId={teamId}
+        meetingId={String(meetingId)}
+        isPreview={Boolean(previewState)}
         isWaiting={isWaiting}
         isRecorder={isRecorder}
         isPaused={isPaused}

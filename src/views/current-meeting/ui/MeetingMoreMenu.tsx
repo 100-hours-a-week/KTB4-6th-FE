@@ -5,10 +5,24 @@ import { LogOut, MoreVertical } from 'lucide-react';
 import { cn, useAppFrameElement } from '@/shared/lib';
 
 interface MeetingMoreMenuProps {
+  canDelete: boolean;
+  isDeleting: boolean;
   isRecorder: boolean;
+  isPreview: boolean;
+  isLeaving: boolean;
+  onDelete: () => void;
+  onLeave: () => void;
 }
 
-export const MeetingMoreMenu = ({ isRecorder }: MeetingMoreMenuProps) => {
+export const MeetingMoreMenu = ({
+  canDelete,
+  isDeleting,
+  isRecorder,
+  isPreview,
+  isLeaving,
+  onDelete,
+  onLeave,
+}: MeetingMoreMenuProps) => {
   const frame = useAppFrameElement();
 
   return (
@@ -24,7 +38,7 @@ export const MeetingMoreMenu = ({ isRecorder }: MeetingMoreMenuProps) => {
           <Menu.Popup
             className={cn(
               'rounded-xl border border-cool-100 bg-white py-1 shadow-[0_8px_24px_rgba(20,34,56,0.12)] outline-none',
-              isRecorder ? 'min-w-[190px]' : 'min-w-[152px]',
+              isRecorder || canDelete ? 'min-w-[190px]' : 'min-w-[152px]',
             )}
           >
             {isRecorder ? (
@@ -35,20 +49,27 @@ export const MeetingMoreMenu = ({ isRecorder }: MeetingMoreMenuProps) => {
                 >
                   회의 이름 변경
                 </Menu.Item>
-                <Menu.Item
-                  disabled
-                  className="flex min-h-12 items-center border-t border-cool-100 px-4 py-3 text-sm font-medium text-cool-400 outline-none select-none"
-                >
-                  회의 삭제
-                </Menu.Item>
               </>
             ) : (
               <Menu.Item
-                disabled
-                className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-cool-400 outline-none select-none"
+                disabled={isPreview || isLeaving}
+                onClick={onLeave}
+                className={cn(
+                  'flex items-center gap-2 px-3 py-2.5 text-sm font-medium outline-none select-none',
+                  isPreview || isLeaving ? 'text-cool-400' : 'text-cool-700',
+                )}
               >
                 <LogOut className="size-4" strokeWidth={2} />
-                회의 나가기
+                {isLeaving ? '나가는 중...' : '회의 나가기'}
+              </Menu.Item>
+            )}
+            {canDelete && (
+              <Menu.Item
+                disabled={isDeleting}
+                onClick={onDelete}
+                className="flex min-h-12 items-center border-t border-cool-100 px-4 py-3 text-sm font-medium text-danger outline-none select-none"
+              >
+                {isDeleting ? '삭제 중...' : '회의 삭제'}
               </Menu.Item>
             )}
           </Menu.Popup>

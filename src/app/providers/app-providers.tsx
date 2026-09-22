@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MeetingSseProvider } from '@/features/meeting-sse';
 import { RecordingWebSocketProvider } from '@/features/recording-websocket';
 import { AppToastProvider } from '@/shared/ui';
 
@@ -26,9 +27,11 @@ export function AppProviders({ children }: AppProvidersProps) {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-        <AppToastProvider>
-          <RecordingWebSocketProvider>{children}</RecordingWebSocketProvider>
-        </AppToastProvider>
+        <MeetingSseProvider>
+          <AppToastProvider>
+            <RecordingWebSocketProvider>{children}</RecordingWebSocketProvider>
+          </AppToastProvider>
+        </MeetingSseProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
