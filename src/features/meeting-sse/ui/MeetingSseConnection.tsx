@@ -16,15 +16,18 @@ export function MeetingSseConnection({ meetingId, teamId }: MeetingSseConnection
   const { connect, subscribeDeleted } = useMeetingSse();
 
   useEffect(() => {
+    connect(meetingId);
+  }, [connect, meetingId]);
+
+  useEffect(() => {
     const unsubscribeDeleted = subscribeDeleted(meetingId, () => {
       showToast('회의가 삭제되어 팀 홈으로 이동합니다.', 'danger');
       router.replace(`/teams/${encodeURIComponent(teamId)}`);
     });
 
-    connect(meetingId);
     // 페이지 이동은 회의 나가기가 아니므로 여기서 연결을 닫지 않는다.
     return unsubscribeDeleted;
-  }, [connect, meetingId, router, showToast, subscribeDeleted, teamId]);
+  }, [meetingId, router, showToast, subscribeDeleted, teamId]);
 
   return null;
 }
