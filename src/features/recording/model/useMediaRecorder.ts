@@ -111,8 +111,11 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
     set({ recorder: null, audioFormat: null, status: 'idle' });
 
     if (recorder) {
-      if (recorder.state !== 'inactive') recorder.stop();
-      recorder.stream.getTracks().forEach((track) => track.stop());
+      try {
+        if (recorder.state !== 'inactive') recorder.stop();
+      } finally {
+        recorder.stream.getTracks().forEach((track) => track.stop());
+      }
     }
   },
 }));

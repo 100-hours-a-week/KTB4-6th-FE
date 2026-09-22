@@ -156,9 +156,14 @@ export const useCurrentMeetingRecording = ({
 
     completeRecording.mutate(recordingSessionId, {
       onSuccess: () => {
-        disconnect(recordingSessionId);
-        releaseMicrophone();
-        setIsCompleted(true);
+        try {
+          releaseMicrophone();
+        } catch {
+          showToast('녹음은 종료됐지만 브라우저 녹음 정리에 실패했습니다.', 'danger');
+        } finally {
+          disconnect(recordingSessionId);
+          setIsCompleted(true);
+        }
       },
       onError: () => showToast('녹음을 종료하지 못했습니다. 다시 시도해주세요.', 'danger'),
     });
