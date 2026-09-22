@@ -1,10 +1,17 @@
+'use client';
+
+import { useState } from 'react';
 import { ChevronDown, Headphones, LoaderCircle, Menu } from 'lucide-react';
+import { useRecordingWebSocket } from '@/features/recording-websocket';
+import { useStartRecording } from '@/features/recording';
 import { cn } from '@/shared/lib';
+import { useAppToast } from '@/shared/ui';
 import { getMeetingPreview } from '../model/preview-meeting';
 import { MeetingControls } from './MeetingControls';
 import { MeetingTranscript } from './MeetingTranscript';
 
 interface CurrentMeetingPageProps {
+  meetingId: number;
   previewState?: string;
   previewRole?: 'recorder' | 'participant';
 }
@@ -15,17 +22,39 @@ const formatElapsed = (seconds: number) =>
     .join(':');
 
 export const CurrentMeetingPage = ({
+  meetingId,
   previewState,
   previewRole = 'recorder',
 }: CurrentMeetingPageProps) => {
+  const [recordingSessionId, setRecordingSessionId] = useState<number | null>(null);
+  const startRecording = useStartRecording();
+  const { connect, statuses } = useRecordingWebSocket();
+  const { showToast } = useAppToast();
   const meeting = getMeetingPreview(previewState);
-  const isWaiting = meeting.recordingStatus === 'waiting';
+  const isWaiting = meeting.recordingStatus === 'waiting' && recordingSessionId === null;
   const isPaused = meeting.recordingStatus === 'paused';
   const isEnding = meeting.recordingStatus === 'ending';
-  const isDisconnected = meeting.connectionStatus === 'disconnected';
-  const isRecording = meeting.recordingStatus === 'recording' && !isDisconnected;
+  const socketStatus = recordingSessionId === null ? undefined : statuses[recordingSessionId];
+  const isDisconnected =
+    meeting.connectionStatus === 'disconnected' ||
+    socketStatus === 'error' ||
+    socketStatus === 'unconfigured';
+  const isRecording =
+    (meeting.recordingStatus === 'recording' || recordingSessionId !== null) && !isDisconnected;
   const isOvertime = meeting.elapsedSeconds > meeting.targetMinutes * 60;
-  const isRecorder = previewRole === 'recorder';
+  const isRecorder = previewRole === 'recorder' || recordingSessionId !== null;
+
+  const handleStartRecording = () => {
+    if (!isWaiting || previewState !== undefined || startRecording.isPending) return;
+
+    startRecording.mutate(meetingId, {
+      onSuccess: (startedSessionId) => {
+        setRecordingSessionId(startedSessionId);
+        connect(startedSessionId);
+      },
+      onError: () => showToast('녹음을 시작하지 못했습니다. 다시 시도해주세요.', 'danger'),
+    });
+  };
 
   const statusLabel = isDisconnected
     ? '연결 끊김'
@@ -137,6 +166,9 @@ export const CurrentMeetingPage = ({
         isPaused={isPaused}
         isDisconnected={isDisconnected}
         isEnding={isEnding}
+        isStartingRecording={startRecording.isPending}
+        canStartRecording={isWaiting && previewState === undefined && !startRecording.isPending}
+        onStartRecording={handleStartRecording}
         recorderName={meeting.recorderName}
       />
 

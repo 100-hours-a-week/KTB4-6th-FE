@@ -2,20 +2,26 @@ import { cn } from '@/shared/lib';
 import { MeetingMoreMenu } from './MeetingMoreMenu';
 
 interface MeetingControlsProps {
+  canStartRecording: boolean;
   isWaiting: boolean;
   isRecorder: boolean;
   isPaused: boolean;
   isDisconnected: boolean;
   isEnding: boolean;
+  isStartingRecording: boolean;
+  onStartRecording: () => void;
   recorderName: string;
 }
 
 export const MeetingControls = ({
+  canStartRecording,
   isWaiting,
   isRecorder,
   isPaused,
   isDisconnected,
   isEnding,
+  isStartingRecording,
+  onStartRecording,
   recorderName,
 }: MeetingControlsProps) => {
   const participantMessage = isEnding
@@ -32,7 +38,8 @@ export const MeetingControls = ({
         <div className="grid min-w-0 grid-cols-2 gap-2">
           <button
             type="button"
-            disabled
+            disabled={!canStartRecording}
+            onClick={onStartRecording}
             className={cn(
               'h-12 rounded-xl px-2 text-sm font-semibold',
               isDisconnected || isEnding
@@ -42,7 +49,13 @@ export const MeetingControls = ({
                   : 'border border-cool-200 bg-white text-cool-700',
             )}
           >
-            {isWaiting ? '녹음 시작' : isPaused ? '녹음 재개' : '일시 정지'}
+            {isWaiting
+              ? isStartingRecording
+                ? '시작 중...'
+                : '녹음 시작'
+              : isPaused
+                ? '녹음 재개'
+                : '일시 정지'}
           </button>
           <button
             type="button"
