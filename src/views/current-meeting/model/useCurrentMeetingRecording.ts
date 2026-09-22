@@ -27,6 +27,7 @@ export const useCurrentMeetingRecording = ({
   const [isStartDialogOpen, setIsStartDialogOpen] = useState(false);
   const [isRecordingAcknowledged, setIsRecordingAcknowledged] = useState(false);
   const [isPreparingMicrophone, setIsPreparingMicrophone] = useState(false);
+  const [isFinishingRecording, setIsFinishingRecording] = useState(false);
   const startRecording = useStartRecording();
   const completeRecording = useCompleteRecording();
   const updateRecordingStatus = useUpdateRecordingStatus();
@@ -34,16 +35,18 @@ export const useCurrentMeetingRecording = ({
   const startBrowserRecording = useMediaRecorder((state) => state.start);
   const pauseBrowserRecording = useMediaRecorder((state) => state.pause);
   const resumeBrowserRecording = useMediaRecorder((state) => state.resume);
+  const flushForCompletion = useMediaRecorder((state) => state.flushForCompletion);
   const releaseMicrophone = useMediaRecorder((state) => state.release);
   const recorderStatus = useMediaRecorder((state) => state.status);
-  const { connect, disconnect, statuses } = useRecordingWebSocket();
+  const { connect, sendAudioChunk, disconnect, statuses } = useRecordingWebSocket();
   const { showToast } = useAppToast();
   const meeting = getMeetingPreview(previewState);
 
   const isWaiting = meeting.recordingStatus === 'waiting' && recordingSessionId === null;
   const isPaused =
     previewState === undefined ? recorderStatus === 'paused' : meeting.recordingStatus === 'paused';
-  const isEnding = meeting.recordingStatus === 'ending' || completeRecording.isPending;
+  const isEnding =
+    meeting.recordingStatus === 'ending' || isFinishingRecording || completeRecording.isPending;
   const socketStatus = recordingSessionId === null ? undefined : statuses[recordingSessionId];
   const isDisconnected =
     meeting.connectionStatus === 'disconnected' ||
@@ -63,6 +66,7 @@ export const useCurrentMeetingRecording = ({
     socketStatus === 'connected' &&
     (recorderStatus === 'recording' || recorderStatus === 'paused') &&
     !isCompleted &&
+    !isFinishingRecording &&
     !completeRecording.isPending &&
     !updateRecordingStatus.isPending;
 
@@ -71,7 +75,7 @@ export const useCurrentMeetingRecording = ({
 
     if (socketStatus === 'connected' && recorderStatus === 'ready') {
       try {
-        startBrowserRecording();
+        startBrowserRecording((chunk) => sendAudioChunk(recordingSessionId, chunk));
       } catch {
         disconnect(recordingSessionId);
         releaseMicrophone();
@@ -91,6 +95,7 @@ export const useCurrentMeetingRecording = ({
     recorderStatus,
     recordingSessionId,
     releaseMicrophone,
+    sendAudioChunk,
     showToast,
     socketStatus,
     startBrowserRecording,
@@ -143,10 +148,11 @@ export const useCurrentMeetingRecording = ({
     }
   };
 
-  const handleCompleteRecording = () => {
+  const handleCompleteRecording = async () => {
     if (
       recordingSessionId === null ||
       isCompleted ||
+      isFinishingRecording ||
       completeRecording.isPending ||
       updateRecordingStatus.isPending ||
       previewState !== undefined
@@ -154,19 +160,35 @@ export const useCurrentMeetingRecording = ({
       return;
     }
 
-    completeRecording.mutate(recordingSessionId, {
-      onSuccess: () => {
+    setIsFinishingRecording(true);
+    const recorder = useMediaRecorder.getState().recorder;
+    const wasRecording = recorder?.state === 'recording';
+
+    try {
+      if (recorder && recorder.state !== 'inactive') await flushForCompletion();
+      await completeRecording.mutateAsync(recordingSessionId);
+    } catch {
+      if (wasRecording && useMediaRecorder.getState().recorder?.state === 'paused') {
         try {
-          releaseMicrophone();
+          resumeBrowserRecording();
         } catch {
-          showToast('녹음은 종료됐지만 브라우저 녹음 정리에 실패했습니다.', 'danger');
-        } finally {
-          disconnect(recordingSessionId);
-          setIsCompleted(true);
+          showToast('브라우저 녹음을 다시 시작하지 못했습니다.', 'danger');
         }
-      },
-      onError: () => showToast('녹음을 종료하지 못했습니다. 다시 시도해주세요.', 'danger'),
-    });
+      }
+      showToast('녹음을 종료하지 못했습니다. 다시 시도해주세요.', 'danger');
+      setIsFinishingRecording(false);
+      return;
+    }
+
+    try {
+      releaseMicrophone();
+    } catch {
+      showToast('녹음은 종료됐지만 브라우저 녹음 정리에 실패했습니다.', 'danger');
+    } finally {
+      disconnect(recordingSessionId);
+      setIsCompleted(true);
+      setIsFinishingRecording(false);
+    }
   };
 
   const handlePauseResumeRecording = () => {
@@ -214,6 +236,7 @@ export const useCurrentMeetingRecording = ({
     canCompleteRecording:
       recordingSessionId !== null &&
       !isCompleted &&
+      !isFinishingRecording &&
       !completeRecording.isPending &&
       !updateRecordingStatus.isPending &&
       previewState === undefined,

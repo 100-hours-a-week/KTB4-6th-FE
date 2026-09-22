@@ -18,6 +18,7 @@ export type RecordingWebSocketStatus =
 interface RecordingWebSocketContextValue {
   statuses: Record<number, RecordingWebSocketStatus>;
   connect: (recordingSessionId: number, audioFormat: AudioFormat) => void;
+  sendAudioChunk: (recordingSessionId: number, chunk: Blob) => void;
   disconnect: (recordingSessionId: number) => void;
 }
 
@@ -91,6 +92,11 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
     };
   }, []);
 
+  const sendAudioChunk = useCallback((recordingSessionId: number, chunk: Blob) => {
+    const socket = sockets.current.get(recordingSessionId);
+    if (socket?.readyState === WebSocket.OPEN) socket.send(chunk);
+  }, []);
+
   useEffect(() => {
     const activeSockets = sockets.current;
     return () => {
@@ -104,7 +110,10 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
     };
   }, []);
 
-  const value = useMemo(() => ({ statuses, connect, disconnect }), [statuses, connect, disconnect]);
+  const value = useMemo(
+    () => ({ statuses, connect, sendAudioChunk, disconnect }),
+    [statuses, connect, sendAudioChunk, disconnect],
+  );
 
   return (
     <RecordingWebSocketContext.Provider value={value}>

@@ -7,6 +7,7 @@ const supportedFormats: { mimeType: string; audioFormat: AudioFormat }[] = [
   { mimeType: 'audio/webm;codecs=opus', audioFormat: 'webm_opus' },
   { mimeType: 'audio/mp4;codecs=mp4a.40.2', audioFormat: 'mp4_aac' },
 ];
+const AUDIO_CHUNK_INTERVAL_MS = 20;
 
 type MediaRecorderStatus = 'idle' | 'requesting' | 'ready' | 'recording' | 'paused';
 
@@ -14,10 +15,12 @@ interface MediaRecorderState {
   status: MediaRecorderStatus;
   recorder: MediaRecorder | null;
   audioFormat: AudioFormat | null;
+  isFlushing: boolean;
   prepare: () => Promise<AudioFormat>;
-  start: (timeslice?: number) => void;
+  start: (onChunk: (chunk: Blob) => void) => void;
   pause: () => void;
   resume: () => void;
+  flushForCompletion: () => Promise<void>;
   release: () => void;
 }
 
@@ -28,6 +31,7 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
   status: 'idle',
   recorder: null,
   audioFormat: null,
+  isFlushing: false,
 
   prepare: () => {
     const { recorder, audioFormat } = get();
@@ -79,10 +83,22 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
     return promise;
   },
 
-  start: (timeslice) => {
+  start: (onChunk) => {
     const { recorder } = get();
     if (!recorder || recorder.state !== 'inactive') return;
-    recorder.start(timeslice);
+
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0 && (recorder.state === 'recording' || get().isFlushing)) {
+        onChunk(event.data);
+      }
+    };
+
+    try {
+      recorder.start(AUDIO_CHUNK_INTERVAL_MS);
+    } catch (error) {
+      recorder.ondataavailable = null;
+      throw error;
+    }
     set({ status: 'recording' });
   },
 
@@ -104,11 +120,57 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
     set({ status: 'recording' });
   },
 
+  flushForCompletion: async () => {
+    const { recorder } = get();
+    if (!recorder || recorder.state === 'inactive') {
+      throw new Error('종료할 브라우저 녹음이 없습니다.');
+    }
+
+    const waitForEvent = (eventName: 'pause' | 'dataavailable', action: () => void) =>
+      new Promise<void>((resolve, reject) => {
+        const cleanup = () => {
+          recorder.removeEventListener(eventName, onExpected);
+          recorder.removeEventListener('error', onFailure);
+          recorder.removeEventListener('stop', onFailure);
+        };
+        const onExpected = () => {
+          cleanup();
+          resolve();
+        };
+        const onFailure = () => {
+          cleanup();
+          reject(new Error('브라우저 녹음 데이터를 마무리하지 못했습니다.'));
+        };
+
+        recorder.addEventListener(eventName, onExpected);
+        recorder.addEventListener('error', onFailure);
+        recorder.addEventListener('stop', onFailure);
+        try {
+          action();
+        } catch (error) {
+          cleanup();
+          reject(error);
+        }
+      });
+
+    set({ isFlushing: true });
+    try {
+      if (recorder.state === 'recording') {
+        await waitForEvent('pause', () => recorder.pause());
+        set({ status: 'paused' });
+      }
+
+      await waitForEvent('dataavailable', () => recorder.requestData());
+    } finally {
+      set({ isFlushing: false });
+    }
+  },
+
   release: () => {
     preparationVersion += 1;
     pendingPreparation = null;
     const { recorder } = get();
-    set({ recorder: null, audioFormat: null, status: 'idle' });
+    set({ recorder: null, audioFormat: null, isFlushing: false, status: 'idle' });
 
     if (recorder) {
       try {
