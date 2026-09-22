@@ -5,7 +5,7 @@ name: FE CI/CD (임시)
 
 on:
   push:
-    branches: ['dev']
+    branches: ['deploy/**', 'feature/60']
 
 # 기본 권한은 최소화하고, 필요한 job에서만 개별 상향
 permissions:
