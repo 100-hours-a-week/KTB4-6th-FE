@@ -1,13 +1,19 @@
+'use client';
+
+import { useState } from 'react';
 import { ChevronDown, Headphones, LoaderCircle, Menu } from 'lucide-react';
 import { MeetingSseConnection } from '@/features/meeting-sse';
+import { useRecordingWebSocket } from '@/features/recording-websocket';
+import { useCompleteRecording, useStartRecording } from '@/features/recording';
 import { cn } from '@/shared/lib';
+import { useAppToast } from '@/shared/ui';
 import { getMeetingPreview } from '../model/preview-meeting';
 import { MeetingControls } from './MeetingControls';
 import { MeetingTranscript } from './MeetingTranscript';
 
 interface CurrentMeetingPageProps {
   teamId: string;
-  meetingId: string;
+  meetingId: number;
   previewState?: string;
   previewRole?: 'recorder' | 'participant';
 }
@@ -23,28 +29,74 @@ export const CurrentMeetingPage = ({
   previewState,
   previewRole = 'recorder',
 }: CurrentMeetingPageProps) => {
+  const [recordingSessionId, setRecordingSessionId] = useState<number | null>(null);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const startRecording = useStartRecording();
+  const completeRecording = useCompleteRecording();
+  const { connect, disconnect, statuses } = useRecordingWebSocket();
+  const { showToast } = useAppToast();
   const meeting = getMeetingPreview(previewState);
-  const isWaiting = meeting.recordingStatus === 'waiting';
+  const isWaiting = meeting.recordingStatus === 'waiting' && recordingSessionId === null;
   const isPaused = meeting.recordingStatus === 'paused';
-  const isEnding = meeting.recordingStatus === 'ending';
-  const isDisconnected = meeting.connectionStatus === 'disconnected';
-  const isRecording = meeting.recordingStatus === 'recording' && !isDisconnected;
+  const isEnding = meeting.recordingStatus === 'ending' || completeRecording.isPending;
+  const socketStatus = recordingSessionId === null ? undefined : statuses[recordingSessionId];
+  const isDisconnected =
+    meeting.connectionStatus === 'disconnected' ||
+    socketStatus === 'error' ||
+    socketStatus === 'unconfigured';
+  const isRecording =
+    (meeting.recordingStatus === 'recording' || recordingSessionId !== null) &&
+    !isDisconnected &&
+    !isCompleted;
   const isOvertime = meeting.elapsedSeconds > meeting.targetMinutes * 60;
-  const isRecorder = previewRole === 'recorder';
+  const isRecorder = previewRole === 'recorder' || recordingSessionId !== null;
 
-  const statusLabel = isDisconnected
-    ? '연결 끊김'
-    : isEnding
-      ? '종료 중'
-      : isPaused
-        ? '일시정지'
-        : isRecording
-          ? '녹음 중'
-          : '대기 중';
+  const handleStartRecording = () => {
+    if (!isWaiting || previewState !== undefined || startRecording.isPending) return;
+
+    startRecording.mutate(meetingId, {
+      onSuccess: (startedSessionId) => {
+        setRecordingSessionId(startedSessionId);
+        connect(startedSessionId);
+      },
+      onError: () => showToast('녹음을 시작하지 못했습니다. 다시 시도해주세요.', 'danger'),
+    });
+  };
+
+  const handleCompleteRecording = () => {
+    if (
+      recordingSessionId === null ||
+      isCompleted ||
+      completeRecording.isPending ||
+      previewState !== undefined
+    ) {
+      return;
+    }
+
+    completeRecording.mutate(recordingSessionId, {
+      onSuccess: () => {
+        disconnect(recordingSessionId);
+        setIsCompleted(true);
+      },
+      onError: () => showToast('녹음을 종료하지 못했습니다. 다시 시도해주세요.', 'danger'),
+    });
+  };
+
+  const statusLabel = isCompleted
+    ? '종료됨'
+    : isDisconnected
+      ? '연결 끊김'
+      : isEnding
+        ? '종료 중'
+        : isPaused
+          ? '일시정지'
+          : isRecording
+            ? '녹음 중'
+            : '대기 중';
 
   return (
     <div className="relative flex h-dvh min-h-[844px] flex-1 flex-col bg-cool-50">
-      {!previewState && <MeetingSseConnection meetingId={meetingId} teamId={teamId} />}
+      {!previewState && <MeetingSseConnection meetingId={String(meetingId)} teamId={teamId} />}
       <header className="shrink-0 border-b border-cool-200 bg-white px-5 pt-5 pb-4">
         <div className="flex h-10 items-center gap-2">
           <button
@@ -139,13 +191,24 @@ export const CurrentMeetingPage = ({
 
       <MeetingControls
         teamId={teamId}
-        meetingId={meetingId}
+        meetingId={String(meetingId)}
         isPreview={Boolean(previewState)}
         isWaiting={isWaiting}
         isRecorder={isRecorder}
         isPaused={isPaused}
         isDisconnected={isDisconnected}
         isEnding={isEnding}
+        isStartingRecording={startRecording.isPending}
+        canStartRecording={isWaiting && previewState === undefined && !startRecording.isPending}
+        onStartRecording={handleStartRecording}
+        canCompleteRecording={
+          recordingSessionId !== null &&
+          !isCompleted &&
+          !completeRecording.isPending &&
+          previewState === undefined
+        }
+        isCompleted={isCompleted}
+        onCompleteRecording={handleCompleteRecording}
         recorderName={meeting.recorderName}
       />
 

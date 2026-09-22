@@ -14,11 +14,17 @@ interface MeetingControlsProps {
   teamId: string;
   meetingId: string;
   isPreview: boolean;
+  canCompleteRecording: boolean;
+  canStartRecording: boolean;
+  isCompleted: boolean;
   isWaiting: boolean;
   isRecorder: boolean;
   isPaused: boolean;
   isDisconnected: boolean;
   isEnding: boolean;
+  isStartingRecording: boolean;
+  onStartRecording: () => void;
+  onCompleteRecording: () => void;
   recorderName: string;
 }
 
@@ -26,11 +32,17 @@ export const MeetingControls = ({
   teamId,
   meetingId,
   isPreview,
+  canCompleteRecording,
+  canStartRecording,
+  isCompleted,
   isWaiting,
   isRecorder,
   isPaused,
   isDisconnected,
   isEnding,
+  isStartingRecording,
+  onStartRecording,
+  onCompleteRecording,
   recorderName,
 }: MeetingControlsProps) => {
   const router = useRouter();
@@ -89,7 +101,8 @@ export const MeetingControls = ({
         <div className="grid min-w-0 grid-cols-2 gap-2">
           <button
             type="button"
-            disabled
+            disabled={!canStartRecording}
+            onClick={onStartRecording}
             className={cn(
               'h-12 rounded-xl px-2 text-sm font-semibold',
               isDisconnected || isEnding
@@ -99,12 +112,18 @@ export const MeetingControls = ({
                   : 'border border-cool-200 bg-white text-cool-700',
             )}
           >
-            {isWaiting ? '녹음 시작' : isPaused ? '녹음 재개' : '일시 정지'}
+            {isWaiting
+              ? isStartingRecording
+                ? '시작 중...'
+                : '녹음 시작'
+              : isPaused
+                ? '녹음 재개'
+                : '일시 정지'}
           </button>
           <button
             type="button"
-            disabled={!isWaiting || isPreview || isLeaving}
-            onClick={isWaiting ? handleLeave : undefined}
+            disabled={isWaiting ? isPreview || isLeaving : !canCompleteRecording}
+            onClick={isWaiting ? handleLeave : onCompleteRecording}
             className={cn(
               'h-12 rounded-xl px-2 text-sm font-semibold',
               isWaiting
@@ -120,7 +139,9 @@ export const MeetingControls = ({
                 : '회의 나가기'
               : isEnding
                 ? '종료 중...'
-                : '회의 종료'}
+                : isCompleted
+                  ? '종료됨'
+                  : '회의 종료'}
           </button>
         </div>
       ) : (
