@@ -18,6 +18,7 @@ interface MeetingSseContextValue {
   statuses: Record<string, MeetingSseStatus>;
   connect: (meetingId: string) => void;
   disconnect: (meetingId: string) => void;
+  subscribeDeleted: (meetingId: string, listener: () => void) => () => void;
 }
 
 const MeetingSseContext = createContext<MeetingSseContextValue | null>(null);
@@ -29,7 +30,19 @@ interface MeetingSseProviderProps {
 export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
   const sources = useRef(new Map<string, EventSource>());
   const joining = useRef(new Map<string, { cancelled: boolean }>());
+  const deletedListeners = useRef(new Map<string, Set<() => void>>());
   const [statuses, setStatuses] = useState<Record<string, MeetingSseStatus>>({});
+
+  const subscribeDeleted = useCallback((meetingId: string, listener: () => void) => {
+    const listeners = deletedListeners.current.get(meetingId) ?? new Set<() => void>();
+    listeners.add(listener);
+    deletedListeners.current.set(meetingId, listeners);
+
+    return () => {
+      listeners.delete(listener);
+      if (listeners.size === 0) deletedListeners.current.delete(meetingId);
+    };
+  }, []);
 
   const disconnect = useCallback((meetingId: string) => {
     const pendingJoin = joining.current.get(meetingId);
@@ -94,6 +107,13 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
             disconnect(meetingId);
           });
 
+          source.addEventListener('MEETING_DELETED', () => {
+            if (sources.current.get(meetingId) !== source) return;
+
+            disconnect(meetingId);
+            deletedListeners.current.get(meetingId)?.forEach((listener) => listener());
+          });
+
           source.onerror = () => {
             // EventSource의 자동 재연결은 이번 작업 범위에 포함하지 않는다.
             source.close();
@@ -117,16 +137,21 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
   useEffect(() => {
     const activeSources = sources.current;
     const pendingJoins = joining.current;
+    const activeDeletedListeners = deletedListeners.current;
     return () => {
       pendingJoins.forEach((attempt) => {
         attempt.cancelled = true;
       });
       activeSources.forEach((source) => source.close());
       activeSources.clear();
+      activeDeletedListeners.clear();
     };
   }, []);
 
-  const value = useMemo(() => ({ statuses, connect, disconnect }), [statuses, connect, disconnect]);
+  const value = useMemo(
+    () => ({ statuses, connect, disconnect, subscribeDeleted }),
+    [statuses, connect, disconnect, subscribeDeleted],
+  );
 
   return <MeetingSseContext.Provider value={value}>{children}</MeetingSseContext.Provider>;
 }

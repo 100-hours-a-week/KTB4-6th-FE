@@ -44,7 +44,7 @@ export const CurrentMeetingPage = ({
 
   return (
     <div className="relative flex h-dvh min-h-[844px] flex-1 flex-col bg-cool-50">
-      {!previewState && <MeetingSseConnection meetingId={meetingId} />}
+      {!previewState && <MeetingSseConnection meetingId={meetingId} teamId={teamId} />}
       <header className="shrink-0 border-b border-cool-200 bg-white px-5 pt-5 pb-4">
         <div className="flex h-10 items-center gap-2">
           <button
