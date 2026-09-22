@@ -33,12 +33,15 @@ export const CurrentMeetingPage = ({
     isStartDialogOpen,
     isRecordingAcknowledged,
     isStartingRecording,
+    isUpdatingRecordingStatus,
     canStartRecording,
+    canPauseResumeRecording,
     canCompleteRecording,
     setIsRecordingAcknowledged,
     handleStartRecording,
     handleStartDialogOpenChange,
     handleConfirmRecording,
+    handlePauseResumeRecording,
     handleCompleteRecording,
   } = useCurrentMeetingRecording({ meetingId, previewState, previewRole });
 
@@ -87,8 +90,11 @@ export const CurrentMeetingPage = ({
         isDisconnected={isDisconnected}
         isEnding={isEnding}
         isStartingRecording={isStartingRecording}
+        isUpdatingRecordingStatus={isUpdatingRecordingStatus}
         canStartRecording={canStartRecording}
         onStartRecording={handleStartRecording}
+        canPauseResumeRecording={canPauseResumeRecording}
+        onPauseResumeRecording={handlePauseResumeRecording}
         canCompleteRecording={canCompleteRecording}
         isCompleted={isCompleted}
         onCompleteRecording={handleCompleteRecording}

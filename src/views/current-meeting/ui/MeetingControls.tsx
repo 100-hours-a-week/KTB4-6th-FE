@@ -16,6 +16,7 @@ interface MeetingControlsProps {
   isPreview: boolean;
   canCompleteRecording: boolean;
   canStartRecording: boolean;
+  canPauseResumeRecording: boolean;
   isCompleted: boolean;
   isWaiting: boolean;
   isRecorder: boolean;
@@ -23,7 +24,9 @@ interface MeetingControlsProps {
   isDisconnected: boolean;
   isEnding: boolean;
   isStartingRecording: boolean;
+  isUpdatingRecordingStatus: boolean;
   onStartRecording: () => void;
+  onPauseResumeRecording: () => void;
   onCompleteRecording: () => void;
   recorderName: string;
 }
@@ -34,6 +37,7 @@ export const MeetingControls = ({
   isPreview,
   canCompleteRecording,
   canStartRecording,
+  canPauseResumeRecording,
   isCompleted,
   isWaiting,
   isRecorder,
@@ -41,7 +45,9 @@ export const MeetingControls = ({
   isDisconnected,
   isEnding,
   isStartingRecording,
+  isUpdatingRecordingStatus,
   onStartRecording,
+  onPauseResumeRecording,
   onCompleteRecording,
   recorderName,
 }: MeetingControlsProps) => {
@@ -101,11 +107,11 @@ export const MeetingControls = ({
         <div className="grid min-w-0 grid-cols-2 gap-2">
           <button
             type="button"
-            disabled={!canStartRecording}
-            onClick={onStartRecording}
+            disabled={isWaiting ? !canStartRecording : !canPauseResumeRecording}
+            onClick={isWaiting ? onStartRecording : onPauseResumeRecording}
             className={cn(
               'h-12 rounded-xl px-2 text-sm font-semibold',
-              isDisconnected || isEnding
+              isDisconnected || isEnding || isUpdatingRecordingStatus
                 ? 'border border-cool-200 bg-white text-cool-400'
                 : isWaiting || isPaused
                   ? 'bg-brand-600 text-white'
@@ -116,9 +122,11 @@ export const MeetingControls = ({
               ? isStartingRecording
                 ? '시작 중...'
                 : '녹음 시작'
-              : isPaused
-                ? '녹음 재개'
-                : '일시 정지'}
+              : isUpdatingRecordingStatus
+                ? '처리 중...'
+                : isPaused
+                  ? '녹음 재개'
+                  : '일시 정지'}
           </button>
           <button
             type="button"

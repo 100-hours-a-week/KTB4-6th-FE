@@ -8,7 +8,7 @@ const supportedFormats: { mimeType: string; audioFormat: AudioFormat }[] = [
   { mimeType: 'audio/mp4;codecs=mp4a.40.2', audioFormat: 'mp4_aac' },
 ];
 
-type MediaRecorderStatus = 'idle' | 'requesting' | 'ready' | 'recording';
+type MediaRecorderStatus = 'idle' | 'requesting' | 'ready' | 'recording' | 'paused';
 
 interface MediaRecorderState {
   status: MediaRecorderStatus;
@@ -16,6 +16,8 @@ interface MediaRecorderState {
   audioFormat: AudioFormat | null;
   prepare: () => Promise<AudioFormat>;
   start: (timeslice?: number) => void;
+  pause: () => void;
+  resume: () => void;
   release: () => void;
 }
 
@@ -81,6 +83,24 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
     const { recorder } = get();
     if (!recorder || recorder.state !== 'inactive') return;
     recorder.start(timeslice);
+    set({ status: 'recording' });
+  },
+
+  pause: () => {
+    const { recorder } = get();
+    if (!recorder || recorder.state !== 'recording') {
+      throw new Error('일시정지할 브라우저 녹음이 없습니다.');
+    }
+    recorder.pause();
+    set({ status: 'paused' });
+  },
+
+  resume: () => {
+    const { recorder } = get();
+    if (!recorder || recorder.state !== 'paused') {
+      throw new Error('재개할 브라우저 녹음이 없습니다.');
+    }
+    recorder.resume();
     set({ status: 'recording' });
   },
 
