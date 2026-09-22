@@ -10,13 +10,14 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import type { AudioFormat } from '@/entities/recording';
 
 export type RecordingWebSocketStatus =
   'idle' | 'unconfigured' | 'connecting' | 'connected' | 'error';
 
 interface RecordingWebSocketContextValue {
   statuses: Record<number, RecordingWebSocketStatus>;
-  connect: (recordingSessionId: number) => void;
+  connect: (recordingSessionId: number, audioFormat: AudioFormat) => void;
   disconnect: (recordingSessionId: number) => void;
 }
 
@@ -38,7 +39,7 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
     setStatuses((current) => ({ ...current, [recordingSessionId]: 'idle' }));
   }, []);
 
-  const connect = useCallback((recordingSessionId: number) => {
+  const connect = useCallback((recordingSessionId: number, audioFormat: AudioFormat) => {
     if (sockets.current.has(recordingSessionId)) return;
 
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -56,6 +57,7 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
       if (url.protocol === 'http:') url.protocol = 'ws:';
       else if (url.protocol === 'https:') url.protocol = 'wss:';
       else throw new Error('지원하지 않는 WebSocket 주소입니다.');
+      url.searchParams.set('audioFormat', audioFormat);
 
       // 브라우저가 전송 가능한 쿠키를 핸드셰이크에 자동으로 포함한다.
       socket = new WebSocket(url);
