@@ -10,7 +10,7 @@ export default async function CurrentMeetingRoute({
   params,
   searchParams,
 }: CurrentMeetingRouteProps) {
-  const { meetingId } = await params;
+  const { teamId, meetingId } = await params;
 
   if (!Number.isSafeInteger(Number(meetingId)) || Number(meetingId) <= 0) {
     notFound();
@@ -23,6 +23,8 @@ export default async function CurrentMeetingRoute({
 
   return (
     <CurrentMeetingPage
+      teamId={teamId}
+      meetingId={meetingId}
       previewState={typeof preview === 'string' ? preview : undefined}
       previewRole={role === 'participant' ? 'participant' : 'recorder'}
     />

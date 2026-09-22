@@ -1,7 +1,19 @@
+'use client';
+
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
+import { useMeetingExit } from '@/features/meeting-sse';
+import { getTeamDetail } from '@/features/team-management';
 import { cn } from '@/shared/lib';
+import { useAppToast } from '@/shared/ui';
+import { MeetingDeleteDialog } from './MeetingDeleteDialog';
 import { MeetingMoreMenu } from './MeetingMoreMenu';
 
 interface MeetingControlsProps {
+  teamId: string;
+  meetingId: string;
+  isPreview: boolean;
   isWaiting: boolean;
   isRecorder: boolean;
   isPaused: boolean;
@@ -11,6 +23,9 @@ interface MeetingControlsProps {
 }
 
 export const MeetingControls = ({
+  teamId,
+  meetingId,
+  isPreview,
   isWaiting,
   isRecorder,
   isPaused,
@@ -18,6 +33,48 @@ export const MeetingControls = ({
   isEnding,
   recorderName,
 }: MeetingControlsProps) => {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { showToast } = useAppToast();
+  const { leave, remove } = useMeetingExit(meetingId);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const numericTeamId = Number(teamId);
+  const { data: team } = useQuery({
+    queryKey: ['teams', numericTeamId, 'detail'],
+    queryFn: () => getTeamDetail(numericTeamId),
+    enabled: !isPreview && Number.isSafeInteger(numericTeamId) && numericTeamId > 0,
+  });
+  const canDelete = !isPreview && team?.role === 'LEADER';
+
+  const handleLeave = async () => {
+    if (isLeaving) return;
+
+    setIsLeaving(true);
+    try {
+      await leave();
+      router.replace(`/teams/${encodeURIComponent(teamId)}`);
+    } catch {
+      showToast('회의 나가기에 실패했습니다', 'danger');
+      setIsLeaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!canDelete || isDeleting) return;
+
+    setIsDeleting(true);
+    try {
+      await remove();
+      void queryClient.invalidateQueries({ queryKey: ['home'] });
+      router.replace(`/teams/${encodeURIComponent(teamId)}`);
+    } catch {
+      showToast('회의 삭제에 실패했습니다', 'danger');
+      setIsDeleting(false);
+    }
+  };
+
   const participantMessage = isEnding
     ? '회의 종료 처리 중입니다'
     : isDisconnected
@@ -46,7 +103,8 @@ export const MeetingControls = ({
           </button>
           <button
             type="button"
-            disabled
+            disabled={!isWaiting || isPreview || isLeaving}
+            onClick={isWaiting ? handleLeave : undefined}
             className={cn(
               'h-12 rounded-xl px-2 text-sm font-semibold',
               isWaiting
@@ -56,7 +114,13 @@ export const MeetingControls = ({
                   : 'bg-danger text-white',
             )}
           >
-            {isWaiting ? '회의 나가기' : isEnding ? '종료 중...' : '회의 종료'}
+            {isWaiting
+              ? isLeaving
+                ? '나가는 중...'
+                : '회의 나가기'
+              : isEnding
+                ? '종료 중...'
+                : '회의 종료'}
           </button>
         </div>
       ) : (
@@ -65,7 +129,21 @@ export const MeetingControls = ({
         </p>
       )}
 
-      <MeetingMoreMenu isRecorder={isRecorder} />
+      <MeetingMoreMenu
+        canDelete={canDelete}
+        isDeleting={isDeleting}
+        isRecorder={isRecorder}
+        isPreview={isPreview}
+        isLeaving={isLeaving}
+        onDelete={() => setIsDeleteDialogOpen(true)}
+        onLeave={handleLeave}
+      />
+      <MeetingDeleteDialog
+        isDeleting={isDeleting}
+        isOpen={isDeleteDialogOpen}
+        onConfirm={handleDelete}
+        onOpenChange={setIsDeleteDialogOpen}
+      />
     </footer>
   );
 };

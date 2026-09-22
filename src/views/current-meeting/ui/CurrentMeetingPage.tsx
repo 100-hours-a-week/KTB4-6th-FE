@@ -1,10 +1,13 @@
 import { ChevronDown, Headphones, LoaderCircle, Menu } from 'lucide-react';
+import { MeetingSseConnection } from '@/features/meeting-sse';
 import { cn } from '@/shared/lib';
 import { getMeetingPreview } from '../model/preview-meeting';
 import { MeetingControls } from './MeetingControls';
 import { MeetingTranscript } from './MeetingTranscript';
 
 interface CurrentMeetingPageProps {
+  teamId: string;
+  meetingId: string;
   previewState?: string;
   previewRole?: 'recorder' | 'participant';
 }
@@ -15,6 +18,8 @@ const formatElapsed = (seconds: number) =>
     .join(':');
 
 export const CurrentMeetingPage = ({
+  teamId,
+  meetingId,
   previewState,
   previewRole = 'recorder',
 }: CurrentMeetingPageProps) => {
@@ -39,6 +44,7 @@ export const CurrentMeetingPage = ({
 
   return (
     <div className="relative flex h-dvh min-h-[844px] flex-1 flex-col bg-cool-50">
+      {!previewState && <MeetingSseConnection meetingId={meetingId} teamId={teamId} />}
       <header className="shrink-0 border-b border-cool-200 bg-white px-5 pt-5 pb-4">
         <div className="flex h-10 items-center gap-2">
           <button
@@ -132,6 +138,9 @@ export const CurrentMeetingPage = ({
       )}
 
       <MeetingControls
+        teamId={teamId}
+        meetingId={meetingId}
+        isPreview={Boolean(previewState)}
         isWaiting={isWaiting}
         isRecorder={isRecorder}
         isPaused={isPaused}
