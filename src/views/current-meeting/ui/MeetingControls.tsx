@@ -1,10 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useMeetingExit } from '@/features/meeting-sse';
+import { getTeamDetail } from '@/features/team-management';
 import { cn } from '@/shared/lib';
 import { useAppToast } from '@/shared/ui';
+import { MeetingDeleteDialog } from './MeetingDeleteDialog';
 import { MeetingMoreMenu } from './MeetingMoreMenu';
 
 interface MeetingControlsProps {
@@ -31,9 +34,19 @@ export const MeetingControls = ({
   recorderName,
 }: MeetingControlsProps) => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { showToast } = useAppToast();
-  const { leave } = useMeetingExit(meetingId);
+  const { leave, remove } = useMeetingExit(meetingId);
   const [isLeaving, setIsLeaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const numericTeamId = Number(teamId);
+  const { data: team } = useQuery({
+    queryKey: ['teams', numericTeamId, 'detail'],
+    queryFn: () => getTeamDetail(numericTeamId),
+    enabled: !isPreview && Number.isSafeInteger(numericTeamId) && numericTeamId > 0,
+  });
+  const canDelete = !isPreview && team?.role === 'LEADER';
 
   const handleLeave = async () => {
     if (isLeaving) return;
@@ -45,6 +58,20 @@ export const MeetingControls = ({
     } catch {
       showToast('회의 나가기에 실패했습니다', 'danger');
       setIsLeaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!canDelete || isDeleting) return;
+
+    setIsDeleting(true);
+    try {
+      await remove();
+      void queryClient.invalidateQueries({ queryKey: ['home'] });
+      router.replace(`/teams/${encodeURIComponent(teamId)}`);
+    } catch {
+      showToast('회의 삭제에 실패했습니다', 'danger');
+      setIsDeleting(false);
     }
   };
 
@@ -103,10 +130,19 @@ export const MeetingControls = ({
       )}
 
       <MeetingMoreMenu
+        canDelete={canDelete}
+        isDeleting={isDeleting}
         isRecorder={isRecorder}
         isPreview={isPreview}
         isLeaving={isLeaving}
+        onDelete={() => setIsDeleteDialogOpen(true)}
         onLeave={handleLeave}
+      />
+      <MeetingDeleteDialog
+        isDeleting={isDeleting}
+        isOpen={isDeleteDialogOpen}
+        onConfirm={handleDelete}
+        onOpenChange={setIsDeleteDialogOpen}
       />
     </footer>
   );
