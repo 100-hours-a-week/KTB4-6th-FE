@@ -1,30 +1,48 @@
 'use client';
 
 import { create } from 'zustand';
+import type { AudioFormat } from '@/entities/recording';
+
+const supportedFormats: { mimeType: string; audioFormat: AudioFormat }[] = [
+  { mimeType: 'audio/webm;codecs=opus', audioFormat: 'webm_opus' },
+  { mimeType: 'audio/mp4;codecs=mp4a.40.2', audioFormat: 'mp4_aac' },
+];
 
 type MediaRecorderStatus = 'idle' | 'requesting' | 'ready' | 'recording';
 
 interface MediaRecorderState {
   status: MediaRecorderStatus;
   recorder: MediaRecorder | null;
-  prepare: () => Promise<void>;
+  audioFormat: AudioFormat | null;
+  prepare: () => Promise<AudioFormat>;
   start: (timeslice?: number) => void;
   release: () => void;
 }
 
-let pendingPreparation: { version: number; promise: Promise<void> } | null = null;
+let pendingPreparation: { version: number; promise: Promise<AudioFormat> } | null = null;
 let preparationVersion = 0;
 
 export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
   status: 'idle',
   recorder: null,
+  audioFormat: null,
 
   prepare: () => {
-    if (get().recorder) return Promise.resolve();
+    const { recorder, audioFormat } = get();
+    if (recorder && audioFormat) return Promise.resolve(audioFormat);
     if (pendingPreparation?.version === preparationVersion) return pendingPreparation.promise;
 
-    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+    if (
+      !navigator.mediaDevices?.getUserMedia ||
+      typeof MediaRecorder === 'undefined' ||
+      !MediaRecorder.isTypeSupported
+    ) {
       return Promise.reject(new Error('이 브라우저에서는 마이크 녹음을 사용할 수 없습니다.'));
+    }
+
+    const format = supportedFormats.find(({ mimeType }) => MediaRecorder.isTypeSupported(mimeType));
+    if (!format) {
+      return Promise.reject(new Error('지원하는 오디오 녹음 형식이 없습니다.'));
     }
 
     const version = ++preparationVersion;
@@ -39,8 +57,9 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
       }
 
       try {
-        const recorder = new MediaRecorder(stream);
-        set({ recorder, status: 'ready' });
+        const recorder = new MediaRecorder(stream, { mimeType: format.mimeType });
+        set({ recorder, audioFormat: format.audioFormat, status: 'ready' });
+        return format.audioFormat;
       } catch (error) {
         stream.getTracks().forEach((track) => track.stop());
         throw error;
@@ -69,7 +88,7 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
     preparationVersion += 1;
     pendingPreparation = null;
     const { recorder } = get();
-    set({ recorder: null, status: 'idle' });
+    set({ recorder: null, audioFormat: null, status: 'idle' });
 
     if (recorder) {
       if (recorder.state !== 'inactive') recorder.stop();

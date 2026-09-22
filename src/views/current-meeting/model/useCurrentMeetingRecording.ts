@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRecordingWebSocket } from '@/features/recording-websocket';
 import { useCompleteRecording, useMediaRecorder, useStartRecording } from '@/features/recording';
 import { useAppToast } from '@/shared/ui';
@@ -25,7 +25,9 @@ export const useCurrentMeetingRecording = ({
   const startRecording = useStartRecording();
   const completeRecording = useCompleteRecording();
   const prepareMicrophone = useMediaRecorder((state) => state.prepare);
+  const startBrowserRecording = useMediaRecorder((state) => state.start);
   const releaseMicrophone = useMediaRecorder((state) => state.release);
+  const recorderStatus = useMediaRecorder((state) => state.status);
   const { connect, disconnect, statuses } = useRecordingWebSocket();
   const { showToast } = useAppToast();
   const meeting = getMeetingPreview(previewState);
@@ -39,11 +41,43 @@ export const useCurrentMeetingRecording = ({
     socketStatus === 'error' ||
     socketStatus === 'unconfigured';
   const isRecording =
-    (meeting.recordingStatus === 'recording' || recordingSessionId !== null) &&
+    (previewState === undefined
+      ? recorderStatus === 'recording'
+      : meeting.recordingStatus === 'recording') &&
     !isDisconnected &&
     !isCompleted;
   const isRecorder = previewRole === 'recorder' || recordingSessionId !== null;
   const isStartingRecording = startRecording.isPending || isPreparingMicrophone;
+
+  useEffect(() => {
+    if (previewState !== undefined || recordingSessionId === null) return;
+
+    if (socketStatus === 'connected' && recorderStatus === 'ready') {
+      try {
+        startBrowserRecording();
+      } catch {
+        disconnect(recordingSessionId);
+        releaseMicrophone();
+        showToast('브라우저 녹음을 시작하지 못했습니다.', 'danger');
+      }
+    }
+
+    if (
+      (socketStatus === 'error' || socketStatus === 'unconfigured') &&
+      recorderStatus === 'ready'
+    ) {
+      releaseMicrophone();
+    }
+  }, [
+    disconnect,
+    previewState,
+    recorderStatus,
+    recordingSessionId,
+    releaseMicrophone,
+    showToast,
+    socketStatus,
+    startBrowserRecording,
+  ]);
 
   const handleStartRecording = () => {
     if (!isWaiting || previewState !== undefined || startRecording.isPending) return;
@@ -68,7 +102,20 @@ export const useCurrentMeetingRecording = ({
 
     setIsPreparingMicrophone(true);
     try {
-      await prepareMicrophone();
+      const audioFormat = await prepareMicrophone();
+      setIsPreparingMicrophone(false);
+
+      startRecording.mutate(meetingId, {
+        onSuccess: (startedSessionId) => {
+          setRecordingSessionId(startedSessionId);
+          connect(startedSessionId, audioFormat);
+          handleStartDialogOpenChange(false);
+        },
+        onError: () => {
+          releaseMicrophone();
+          showToast('녹음을 시작하지 못했습니다. 다시 시도해주세요.', 'danger');
+        },
+      });
     } catch (error) {
       const message =
         error instanceof DOMException && error.name === 'NotAllowedError'
@@ -76,21 +123,7 @@ export const useCurrentMeetingRecording = ({
           : '마이크를 사용할 수 없습니다. 장치와 브라우저 권한을 확인해주세요.';
       showToast(message, 'danger');
       setIsPreparingMicrophone(false);
-      return;
     }
-    setIsPreparingMicrophone(false);
-
-    startRecording.mutate(meetingId, {
-      onSuccess: (startedSessionId) => {
-        setRecordingSessionId(startedSessionId);
-        connect(startedSessionId);
-        handleStartDialogOpenChange(false);
-      },
-      onError: () => {
-        releaseMicrophone();
-        showToast('녹음을 시작하지 못했습니다. 다시 시도해주세요.', 'danger');
-      },
-    });
   };
 
   const handleCompleteRecording = () => {
