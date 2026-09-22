@@ -2,7 +2,9 @@ import { cn } from '@/shared/lib';
 import { MeetingMoreMenu } from './MeetingMoreMenu';
 
 interface MeetingControlsProps {
+  canCompleteRecording: boolean;
   canStartRecording: boolean;
+  isCompleted: boolean;
   isWaiting: boolean;
   isRecorder: boolean;
   isPaused: boolean;
@@ -10,11 +12,14 @@ interface MeetingControlsProps {
   isEnding: boolean;
   isStartingRecording: boolean;
   onStartRecording: () => void;
+  onCompleteRecording: () => void;
   recorderName: string;
 }
 
 export const MeetingControls = ({
+  canCompleteRecording,
   canStartRecording,
+  isCompleted,
   isWaiting,
   isRecorder,
   isPaused,
@@ -22,6 +27,7 @@ export const MeetingControls = ({
   isEnding,
   isStartingRecording,
   onStartRecording,
+  onCompleteRecording,
   recorderName,
 }: MeetingControlsProps) => {
   const participantMessage = isEnding
@@ -59,7 +65,8 @@ export const MeetingControls = ({
           </button>
           <button
             type="button"
-            disabled
+            disabled={!canCompleteRecording}
+            onClick={onCompleteRecording}
             className={cn(
               'h-12 rounded-xl px-2 text-sm font-semibold',
               isWaiting
@@ -69,7 +76,13 @@ export const MeetingControls = ({
                   : 'bg-danger text-white',
             )}
           >
-            {isWaiting ? '회의 나가기' : isEnding ? '종료 중...' : '회의 종료'}
+            {isWaiting
+              ? '회의 나가기'
+              : isEnding
+                ? '종료 중...'
+                : isCompleted
+                  ? '종료됨'
+                  : '회의 종료'}
           </button>
         </div>
       ) : (
