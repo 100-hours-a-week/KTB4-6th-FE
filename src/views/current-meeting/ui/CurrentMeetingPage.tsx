@@ -1,7 +1,11 @@
 'use client';
 
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Headphones, LoaderCircle } from 'lucide-react';
 import { MeetingSseConnection } from '@/features/meeting-sse';
+import { getTeamDetail } from '@/features/team-management';
+import { NavigationSidebar } from '@/widgets/navigation-sidebar';
 import { useCurrentMeetingRecording } from '../model/useCurrentMeetingRecording';
 import { CurrentMeetingHeader } from './CurrentMeetingHeader';
 import { MeetingControls } from './MeetingControls';
@@ -21,6 +25,14 @@ export const CurrentMeetingPage = ({
   previewState,
   previewRole = 'recorder',
 }: CurrentMeetingPageProps) => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const numericTeamId = Number(teamId);
+  const isPreview = Boolean(previewState);
+  const { data: team } = useQuery({
+    queryKey: ['teams', numericTeamId, 'detail'],
+    queryFn: () => getTeamDetail(numericTeamId),
+    enabled: !isPreview && Number.isSafeInteger(numericTeamId) && numericTeamId > 0,
+  });
   const {
     meeting,
     isWaiting,
@@ -50,12 +62,14 @@ export const CurrentMeetingPage = ({
       {!previewState && <MeetingSseConnection meetingId={String(meetingId)} teamId={teamId} />}
       <CurrentMeetingHeader
         meeting={meeting}
+        isMenuDisabled={!team}
         isWaiting={isWaiting}
         isPaused={isPaused}
         isEnding={isEnding}
         isDisconnected={isDisconnected}
         isRecording={isRecording}
         isCompleted={isCompleted}
+        onMenuClick={() => setIsSidebarOpen(true)}
       />
 
       {isWaiting ? (
@@ -83,7 +97,8 @@ export const CurrentMeetingPage = ({
       <MeetingControls
         teamId={teamId}
         meetingId={String(meetingId)}
-        isPreview={Boolean(previewState)}
+        isPreview={isPreview}
+        canDelete={!isPreview && team?.role === 'LEADER'}
         isWaiting={isWaiting}
         isRecorder={isRecorder}
         isPaused={isPaused}
@@ -109,6 +124,15 @@ export const CurrentMeetingPage = ({
         onConfirm={handleConfirmRecording}
         onOpenChange={handleStartDialogOpenChange}
       />
+
+      {team && (
+        <NavigationSidebar
+          isOpen={isSidebarOpen}
+          onOpenChange={setIsSidebarOpen}
+          teamId={numericTeamId}
+          teamName={team.name}
+        />
+      )}
 
       {isEnding && (
         <div
