@@ -34,6 +34,7 @@ export const useCurrentMeetingRecording = ({
   const pauseBrowserRecording = useMediaRecorder((state) => state.pause);
   const resumeBrowserRecording = useMediaRecorder((state) => state.resume);
   const flushForCompletion = useMediaRecorder((state) => state.flushForCompletion);
+  const convertToMp4 = useMediaRecorder((state) => state.convertToMp4);
   const releaseMicrophone = useMediaRecorder((state) => state.release);
   const recorderStatus = useMediaRecorder((state) => state.status);
   const activeRecording = useMediaRecorder((state) => state.activeRecording);
@@ -144,7 +145,12 @@ export const useCurrentMeetingRecording = ({
     const wasRecording = recorder?.state === 'recording';
 
     try {
-      if (recorder && recorder.state !== 'inactive') await flushForCompletion();
+      if (!recorder || recorder.state === 'inactive') {
+        throw new Error('종료할 브라우저 녹음이 없습니다.');
+      }
+
+      const recordingBlob = await flushForCompletion();
+      await convertToMp4(recordingBlob, `recording-${recordingSessionId}.mp4`);
       await completeRecording.mutateAsync(recordingSessionId);
     } catch {
       if (wasRecording && useMediaRecorder.getState().recorder?.state === 'paused') {
@@ -154,7 +160,11 @@ export const useCurrentMeetingRecording = ({
           showToast('브라우저 녹음을 다시 시작하지 못했습니다.', 'danger');
         }
       }
-      showToast('녹음을 종료하지 못했습니다. 다시 시도해주세요.', 'danger');
+      showToast(
+        useMediaRecorder.getState().conversionError ??
+          '녹음을 종료하지 못했습니다. 다시 시도해주세요.',
+        'danger',
+      );
       setOperation('idle');
       return;
     }

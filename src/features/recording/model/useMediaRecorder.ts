@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import type { AudioFormat } from '@/entities/recording';
+import { convertRecordingToMp4, type ConvertedRecordingFile } from './convert-recording-to-mp4';
 
 const supportedFormats: { mimeType: string; audioFormat: AudioFormat }[] = [
   { mimeType: 'audio/webm;codecs=opus', audioFormat: 'webm_opus' },
@@ -11,6 +12,7 @@ const AUDIO_CHUNK_INTERVAL_MS = 20;
 
 type MediaRecorderStatus = 'idle' | 'requesting' | 'ready' | 'recording' | 'paused';
 type RecordingOperation = 'idle' | 'starting' | 'updating' | 'finishing';
+type RecordingConversionStatus = 'idle' | 'loading' | 'converting' | 'success' | 'error';
 
 interface ActiveRecording {
   teamId: string;
@@ -26,6 +28,9 @@ interface MediaRecorderState {
   isFlushing: boolean;
   activeRecording: ActiveRecording | null;
   operation: RecordingOperation;
+  conversionStatus: RecordingConversionStatus;
+  conversionProgress: number;
+  conversionError: string | null;
   setActiveRecording: (recording: ActiveRecording) => void;
   clearActiveRecording: (recordingSessionId: number) => void;
   setOperation: (operation: RecordingOperation) => void;
@@ -34,6 +39,7 @@ interface MediaRecorderState {
   pause: () => void;
   resume: () => void;
   flushForCompletion: () => Promise<Blob>;
+  convertToMp4: (source: Blob, fileName: string) => Promise<ConvertedRecordingFile>;
   release: () => void;
 }
 
@@ -48,6 +54,9 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
   isFlushing: false,
   activeRecording: null,
   operation: 'idle',
+  conversionStatus: 'idle',
+  conversionProgress: 0,
+  conversionError: null,
 
   setActiveRecording: (recording) => set({ activeRecording: recording }),
   setOperation: (operation) => set({ operation }),
@@ -198,12 +207,38 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
     }
   },
 
+  convertToMp4: async (source, fileName) => {
+    set({ conversionStatus: 'loading', conversionProgress: 0, conversionError: null });
+
+    try {
+      const convertedFile = await convertRecordingToMp4(source, {
+        fileName,
+        onReady: () => set({ conversionStatus: 'converting' }),
+        onProgress: (conversionProgress) => set({ conversionProgress }),
+      });
+      set({ conversionStatus: 'success', conversionProgress: 1 });
+      return convertedFile;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '녹음 파일 변환에 실패했습니다.';
+      set({ conversionStatus: 'error', conversionError: message });
+      throw error;
+    }
+  },
+
   release: () => {
     preparationVersion += 1;
     pendingPreparation = null;
     recordedChunks = [];
     const { recorder } = get();
-    set({ recorder: null, audioFormat: null, isFlushing: false, status: 'idle' });
+    set({
+      recorder: null,
+      audioFormat: null,
+      isFlushing: false,
+      status: 'idle',
+      conversionStatus: 'idle',
+      conversionProgress: 0,
+      conversionError: null,
+    });
 
     if (recorder) {
       try {
