@@ -6,6 +6,7 @@ import { useRecordingWebSocket } from '@/features/recording-websocket';
 import {
   useCompleteRecording,
   useMediaRecorder,
+  useRecordingSessionStore,
   useStartRecording,
   useUpdateRecordingStatus,
 } from '@/features/recording';
@@ -42,11 +43,11 @@ export const useCurrentMeetingRecordingSession = ({
   const flushForCompletion = useMediaRecorder((state) => state.flushForCompletion);
   const releaseMicrophone = useMediaRecorder((state) => state.release);
   const recorderStatus = useMediaRecorder((state) => state.status);
-  const activeRecording = useMediaRecorder((state) => state.activeRecording);
-  const operation = useMediaRecorder((state) => state.operation);
-  const setActiveRecording = useMediaRecorder((state) => state.setActiveRecording);
-  const clearActiveRecording = useMediaRecorder((state) => state.clearActiveRecording);
-  const setOperation = useMediaRecorder((state) => state.setOperation);
+  const activeRecording = useRecordingSessionStore((state) => state.activeRecording);
+  const operation = useRecordingSessionStore((state) => state.operation);
+  const setActiveRecording = useRecordingSessionStore((state) => state.setActiveRecording);
+  const clearActiveRecording = useRecordingSessionStore((state) => state.clearActiveRecording);
+  const setOperation = useRecordingSessionStore((state) => state.setOperation);
   const { statuses: sseStatuses } = useMeetingSse();
   const { connect, disconnect, statuses } = useRecordingWebSocket();
   const { showToast } = useAppToast();
@@ -92,9 +93,9 @@ export const useCurrentMeetingRecordingSession = ({
   const handleConfirmRecording = async () => {
     if (
       !isWaiting ||
-      useMediaRecorder.getState().activeRecording !== null ||
+      useRecordingSessionStore.getState().activeRecording !== null ||
       !isRecordingAcknowledged ||
-      useMediaRecorder.getState().operation !== 'idle' ||
+      useRecordingSessionStore.getState().operation !== 'idle' ||
       isPreview
     ) {
       return;
@@ -133,7 +134,7 @@ export const useCurrentMeetingRecordingSession = ({
     if (
       recordingSessionId === null ||
       isCompleted ||
-      useMediaRecorder.getState().operation !== 'idle' ||
+      useRecordingSessionStore.getState().operation !== 'idle' ||
       isPreview
     ) {
       return;
@@ -175,7 +176,7 @@ export const useCurrentMeetingRecordingSession = ({
     if (
       !canPauseResumeRecording ||
       recordingSessionId === null ||
-      useMediaRecorder.getState().operation !== 'idle'
+      useRecordingSessionStore.getState().operation !== 'idle'
     )
       return;
 
