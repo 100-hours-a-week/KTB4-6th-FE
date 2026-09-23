@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import type { AudioFormat } from '@/entities/recording';
+import type { AudioFileUploadTarget } from '../api/create-audio-file-upload-url';
 import { convertRecordingToMp4, type ConvertedRecordingFile } from './convert-recording-to-mp4';
 
 const supportedFormats: { mimeType: string; audioFormat: AudioFormat }[] = [
@@ -21,18 +22,26 @@ interface ActiveRecording {
   startedAt: number;
 }
 
+interface PendingRecordingUpload extends AudioFileUploadTarget {
+  recordingSessionId: number;
+  isCompleted: boolean;
+}
+
 interface MediaRecorderState {
   status: MediaRecorderStatus;
   recorder: MediaRecorder | null;
   audioFormat: AudioFormat | null;
   isFlushing: boolean;
   activeRecording: ActiveRecording | null;
+  pendingUpload: PendingRecordingUpload | null;
   operation: RecordingOperation;
   conversionStatus: RecordingConversionStatus;
   conversionProgress: number;
   conversionError: string | null;
   setActiveRecording: (recording: ActiveRecording) => void;
   clearActiveRecording: (recordingSessionId: number) => void;
+  setPendingUpload: (upload: PendingRecordingUpload) => void;
+  markPendingUploadCompleted: (recordingSessionId: number) => void;
   setOperation: (operation: RecordingOperation) => void;
   prepare: () => Promise<AudioFormat>;
   start: (onChunk: (chunk: Blob) => void) => void;
@@ -53,6 +62,7 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
   audioFormat: null,
   isFlushing: false,
   activeRecording: null,
+  pendingUpload: null,
   operation: 'idle',
   conversionStatus: 'idle',
   conversionProgress: 0,
@@ -63,6 +73,13 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
   clearActiveRecording: (recordingSessionId) => {
     if (get().activeRecording?.recordingSessionId === recordingSessionId) {
       set({ activeRecording: null });
+    }
+  },
+  setPendingUpload: (pendingUpload) => set({ pendingUpload }),
+  markPendingUploadCompleted: (recordingSessionId) => {
+    const { pendingUpload } = get();
+    if (pendingUpload?.recordingSessionId === recordingSessionId) {
+      set({ pendingUpload: { ...pendingUpload, isCompleted: true } });
     }
   },
 
@@ -234,6 +251,7 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
       recorder: null,
       audioFormat: null,
       isFlushing: false,
+      pendingUpload: null,
       status: 'idle',
       conversionStatus: 'idle',
       conversionProgress: 0,
