@@ -10,12 +10,25 @@ const supportedFormats: { mimeType: string; audioFormat: AudioFormat }[] = [
 const AUDIO_CHUNK_INTERVAL_MS = 20;
 
 type MediaRecorderStatus = 'idle' | 'requesting' | 'ready' | 'recording' | 'paused';
+type RecordingOperation = 'idle' | 'starting' | 'updating' | 'finishing';
+
+interface ActiveRecording {
+  teamId: string;
+  meetingId: number;
+  recordingSessionId: number;
+  startedAt: number;
+}
 
 interface MediaRecorderState {
   status: MediaRecorderStatus;
   recorder: MediaRecorder | null;
   audioFormat: AudioFormat | null;
   isFlushing: boolean;
+  activeRecording: ActiveRecording | null;
+  operation: RecordingOperation;
+  setActiveRecording: (recording: ActiveRecording) => void;
+  clearActiveRecording: (recordingSessionId: number) => void;
+  setOperation: (operation: RecordingOperation) => void;
   prepare: () => Promise<AudioFormat>;
   start: (onChunk: (chunk: Blob) => void) => void;
   pause: () => void;
@@ -32,6 +45,16 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
   recorder: null,
   audioFormat: null,
   isFlushing: false,
+  activeRecording: null,
+  operation: 'idle',
+
+  setActiveRecording: (recording) => set({ activeRecording: recording }),
+  setOperation: (operation) => set({ operation }),
+  clearActiveRecording: (recordingSessionId) => {
+    if (get().activeRecording?.recordingSessionId === recordingSessionId) {
+      set({ activeRecording: null });
+    }
+  },
 
   prepare: () => {
     const { recorder, audioFormat } = get();

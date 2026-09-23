@@ -130,7 +130,9 @@ export const MeetingControls = ({
           </button>
           <button
             type="button"
-            disabled={isWaiting ? isPreview || isLeaving : !canCompleteRecording}
+            disabled={
+              isWaiting ? isPreview || isLeaving || isStartingRecording : !canCompleteRecording
+            }
             onClick={isWaiting ? handleLeave : onCompleteRecording}
             className={cn(
               'h-12 rounded-xl px-2 text-sm font-semibold',
