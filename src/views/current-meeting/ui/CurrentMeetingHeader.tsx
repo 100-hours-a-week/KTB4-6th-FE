@@ -1,7 +1,7 @@
 import { ChevronDown, Menu } from 'lucide-react';
 import { cn } from '@/shared/lib';
-import type { CurrentMeetingConnectionStatus } from '../model/useCurrentMeetingRecording';
 import type { CurrentMeetingViewModel } from '../model/preview-meeting';
+import type { CurrentMeetingConnectionStatus } from '../model/useCurrentMeetingRecordingSession';
 
 interface CurrentMeetingHeaderProps {
   meeting: CurrentMeetingViewModel;
