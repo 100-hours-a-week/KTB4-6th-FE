@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useMeetingSse } from '@/features/meeting-sse';
 import { useRecordingWebSocket } from '@/features/recording-websocket';
 import {
   useCompleteRecording,
@@ -17,6 +18,8 @@ interface UseCurrentMeetingRecordingParams {
   previewState?: string;
   previewRole: 'recorder' | 'participant';
 }
+
+export type CurrentMeetingConnectionStatus = 'connecting' | 'connected' | 'error';
 
 export const useCurrentMeetingRecording = ({
   teamId,
@@ -41,6 +44,7 @@ export const useCurrentMeetingRecording = ({
   const setActiveRecording = useMediaRecorder((state) => state.setActiveRecording);
   const clearActiveRecording = useMediaRecorder((state) => state.clearActiveRecording);
   const setOperation = useMediaRecorder((state) => state.setOperation);
+  const { statuses: sseStatuses } = useMeetingSse();
   const { connect, disconnect, statuses } = useRecordingWebSocket();
   const { showToast } = useAppToast();
   const meeting = getMeetingPreview(previewState);
@@ -58,11 +62,24 @@ export const useCurrentMeetingRecording = ({
   const isEnding =
     meeting.recordingStatus === 'ending' ||
     (recordingSessionId !== null && operation === 'finishing');
+  const sseStatus = sseStatuses[String(meetingId)];
   const socketStatus = recordingSessionId === null ? undefined : statuses[recordingSessionId];
-  const isDisconnected =
-    meeting.connectionStatus === 'disconnected' ||
+  const hasConnectionError =
+    sseStatus === 'error' ||
+    sseStatus === 'unconfigured' ||
     socketStatus === 'error' ||
     socketStatus === 'unconfigured';
+  const connectionStatus: CurrentMeetingConnectionStatus =
+    previewState !== undefined
+      ? meeting.connectionStatus === 'disconnected'
+        ? 'error'
+        : 'connected'
+      : hasConnectionError
+        ? 'error'
+        : sseStatus === 'connected' && (recordingSessionId === null || socketStatus === 'connected')
+          ? 'connected'
+          : 'connecting';
+  const isDisconnected = connectionStatus === 'error';
   const isRecording =
     (previewState === undefined
       ? recordingSessionId !== null && recorderStatus === 'recording'
@@ -74,7 +91,7 @@ export const useCurrentMeetingRecording = ({
   const canPauseResumeRecording =
     previewState === undefined &&
     recordingSessionId !== null &&
-    socketStatus === 'connected' &&
+    connectionStatus === 'connected' &&
     (recorderStatus === 'recording' || recorderStatus === 'paused') &&
     !isCompleted &&
     operation === 'idle';
@@ -213,6 +230,7 @@ export const useCurrentMeetingRecording = ({
     isWaiting,
     isPaused,
     isEnding,
+    connectionStatus,
     isDisconnected,
     isRecording,
     isRecorder,
@@ -225,6 +243,7 @@ export const useCurrentMeetingRecording = ({
       isWaiting &&
       activeRecording === null &&
       previewState === undefined &&
+      connectionStatus === 'connected' &&
       !isStartingRecording &&
       !isStartDialogOpen,
     canPauseResumeRecording,

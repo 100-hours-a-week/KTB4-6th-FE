@@ -38,6 +38,7 @@ export const CurrentMeetingPage = ({
     isWaiting,
     isPaused,
     isEnding,
+    connectionStatus,
     isDisconnected,
     isRecording,
     isRecorder,
@@ -66,7 +67,7 @@ export const CurrentMeetingPage = ({
         isWaiting={isWaiting}
         isPaused={isPaused}
         isEnding={isEnding}
-        isDisconnected={isDisconnected}
+        connectionStatus={connectionStatus}
         isRecording={isRecording}
         isCompleted={isCompleted}
         onMenuClick={() => setIsSidebarOpen(true)}
