@@ -43,7 +43,7 @@ export const CurrentMeetingPage = ({
     handleConfirmRecording,
     handlePauseResumeRecording,
     handleCompleteRecording,
-  } = useCurrentMeetingRecording({ meetingId, previewState, previewRole });
+  } = useCurrentMeetingRecording({ teamId, meetingId, previewState, previewRole });
 
   return (
     <div className="relative flex h-dvh min-h-[844px] flex-1 flex-col bg-cool-50">

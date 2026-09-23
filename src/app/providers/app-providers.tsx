@@ -7,6 +7,7 @@ import { RecordingWebSocketProvider } from '@/features/recording-websocket';
 import { AppToastProvider } from '@/shared/ui';
 
 import { ThemeProvider } from './theme-provider';
+import { RecordingSessionManager } from './recording-session-manager';
 import { useAuthRetryInterceptor } from './use-auth-retry-interceptor';
 
 interface AppProvidersProps {
@@ -29,7 +30,10 @@ export function AppProviders({ children }: AppProvidersProps) {
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
         <MeetingSseProvider>
           <AppToastProvider>
-            <RecordingWebSocketProvider>{children}</RecordingWebSocketProvider>
+            <RecordingWebSocketProvider>
+              <RecordingSessionManager />
+              {children}
+            </RecordingWebSocketProvider>
           </AppToastProvider>
         </MeetingSseProvider>
       </ThemeProvider>
