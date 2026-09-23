@@ -4,12 +4,14 @@ import type { CurrentMeetingViewModel } from '../model/preview-meeting';
 
 interface CurrentMeetingHeaderProps {
   meeting: CurrentMeetingViewModel;
+  isMenuDisabled: boolean;
   isWaiting: boolean;
   isPaused: boolean;
   isEnding: boolean;
   isDisconnected: boolean;
   isRecording: boolean;
   isCompleted: boolean;
+  onMenuClick: () => void;
 }
 
 const formatElapsed = (seconds: number) =>
@@ -19,12 +21,14 @@ const formatElapsed = (seconds: number) =>
 
 export const CurrentMeetingHeader = ({
   meeting,
+  isMenuDisabled,
   isWaiting,
   isPaused,
   isEnding,
   isDisconnected,
   isRecording,
   isCompleted,
+  onMenuClick,
 }: CurrentMeetingHeaderProps) => {
   const isOvertime = meeting.elapsedSeconds > meeting.targetMinutes * 60;
   const statusLabel = isCompleted
@@ -45,8 +49,9 @@ export const CurrentMeetingHeader = ({
         <button
           type="button"
           aria-label="메뉴 열기"
-          disabled
-          className="flex size-9 shrink-0 items-center justify-center rounded-full text-cool-900"
+          disabled={isMenuDisabled}
+          onClick={onMenuClick}
+          className="flex size-9 shrink-0 items-center justify-center rounded-full text-cool-900 disabled:text-cool-400"
         >
           <Menu className="size-5" strokeWidth={2} />
         </button>
