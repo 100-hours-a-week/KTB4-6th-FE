@@ -27,7 +27,7 @@ export const CurrentMeetingPage = ({
 }: CurrentMeetingPageProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const numericTeamId = Number(teamId);
-  const isPreview = Boolean(previewState);
+  const isPreview = previewState !== undefined;
   const { data: team } = useQuery({
     queryKey: ['teams', numericTeamId, 'detail'],
     queryFn: () => getTeamDetail(numericTeamId),
@@ -35,6 +35,7 @@ export const CurrentMeetingPage = ({
   });
   const {
     meeting,
+    isMeetingPending,
     isWaiting,
     isPaused,
     isEnding,
@@ -58,9 +59,30 @@ export const CurrentMeetingPage = ({
     handleCompleteRecording,
   } = useCurrentMeetingRecording({ teamId, meetingId, previewState, previewRole });
 
+  if (!meeting) {
+    return (
+      <div className="flex h-dvh min-h-[844px] flex-1 items-center justify-center bg-cool-50 px-6 text-center">
+        <div>
+          {isMeetingPending && (
+            <LoaderCircle
+              aria-hidden="true"
+              className="mx-auto size-7 text-brand-600 motion-safe:animate-spin"
+              strokeWidth={2}
+            />
+          )}
+          <p className="mt-4 text-sm text-cool-600">
+            {isMeetingPending ? '회의 정보를 불러오는 중입니다' : '회의 정보를 불러오지 못했습니다'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative flex h-dvh min-h-[844px] flex-1 flex-col bg-cool-50">
-      {!previewState && <MeetingSseConnection meetingId={String(meetingId)} teamId={teamId} />}
+      {!isPreview && !isCompleted && (
+        <MeetingSseConnection meetingId={String(meetingId)} teamId={teamId} />
+      )}
       <CurrentMeetingHeader
         meeting={meeting}
         isMenuDisabled={!team}

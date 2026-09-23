@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { getCurrentMeetingState } from '@/features/meeting-sse';
 import { getMeetingPreview } from './preview-meeting';
 import { useCurrentMeetingRecordingSession } from './useCurrentMeetingRecordingSession';
 
@@ -19,7 +21,32 @@ export const useCurrentMeetingRecording = ({
 }: UseCurrentMeetingRecordingParams) => {
   const [isStartDialogOpen, setIsStartDialogOpen] = useState(false);
   const [isRecordingAcknowledged, setIsRecordingAcknowledged] = useState(false);
-  const meeting = getMeetingPreview(previewState);
+  const isPreview = previewState !== undefined;
+  const currentMeetingQuery = useQuery({
+    queryKey: ['meetings', meetingId, 'current-state'],
+    queryFn: () => getCurrentMeetingState(meetingId),
+    enabled: !isPreview,
+  });
+  const meeting = isPreview
+    ? getMeetingPreview(previewState)
+    : currentMeetingQuery.data
+      ? {
+          title: currentMeetingQuery.data.title,
+          recorderName: currentMeetingQuery.data.recorderName,
+          participantCount: currentMeetingQuery.data.participantCount,
+          participantLimit: 5,
+          targetMinutes: currentMeetingQuery.data.targetMinutes,
+          elapsedSeconds: 0,
+          recordingStatus:
+            currentMeetingQuery.data.meetingStatus === 'WAITING'
+              ? ('waiting' as const)
+              : currentMeetingQuery.data.recordingStatus === 'PAUSED'
+                ? ('paused' as const)
+                : ('recording' as const),
+          connectionStatus: 'connected' as const,
+          transcripts: [],
+        }
+      : null;
 
   const handleStartDialogOpenChange = (open: boolean) => {
     setIsStartDialogOpen(open);
@@ -42,30 +69,33 @@ export const useCurrentMeetingRecording = ({
   } = useCurrentMeetingRecordingSession({
     teamId,
     meetingId,
-    isMeetingWaiting: meeting.recordingStatus === 'waiting',
-    isPreview: previewState !== undefined,
-    previewConnectionStatus: meeting.connectionStatus,
+    isMeetingWaiting: meeting?.recordingStatus === 'waiting',
+    isPreview,
+    previewConnectionStatus: meeting?.connectionStatus ?? 'connected',
     isRecordingAcknowledged,
     onRecordingStarted: () => handleStartDialogOpenChange(false),
   });
 
+  const isServerCompleted = currentMeetingQuery.data?.meetingStatus === 'COMPLETED';
+  const hasCompleted = isServerCompleted || isCompleted;
   const isWaiting =
-    meeting.recordingStatus === 'waiting' && recordingSessionId === null && !isCompleted;
+    meeting?.recordingStatus === 'waiting' && recordingSessionId === null && !hasCompleted;
   const isPaused =
-    previewState === undefined
-      ? recordingSessionId !== null && recorderStatus === 'paused'
-      : meeting.recordingStatus === 'paused';
+    isPreview || recordingSessionId === null
+      ? meeting?.recordingStatus === 'paused'
+      : recorderStatus === 'paused';
   const isEnding =
-    meeting.recordingStatus === 'ending' ||
+    (isPreview && previewState === 'ending') ||
     (recordingSessionId !== null && operation === 'finishing');
   const isDisconnected = connectionStatus === 'error';
   const isRecording =
-    (previewState === undefined
-      ? recordingSessionId !== null && recorderStatus === 'recording'
-      : meeting.recordingStatus === 'recording') &&
+    (isPreview || recordingSessionId === null
+      ? meeting?.recordingStatus === 'recording'
+      : recorderStatus === 'recording') &&
     !isDisconnected &&
-    !isCompleted;
-  const isRecorder = previewRole === 'recorder' || recordingSessionId !== null;
+    !hasCompleted;
+  const isRecorder =
+    !hasCompleted && (isPreview ? previewRole === 'recorder' : recordingSessionId !== null);
 
   const handleStartRecording = () => {
     if (!canStartRecordingSession || isStartDialogOpen) return;
@@ -74,6 +104,7 @@ export const useCurrentMeetingRecording = ({
 
   return {
     meeting,
+    isMeetingPending: !isPreview && currentMeetingQuery.isPending,
     isWaiting,
     isPaused,
     isEnding,
@@ -81,14 +112,14 @@ export const useCurrentMeetingRecording = ({
     isDisconnected,
     isRecording,
     isRecorder,
-    isCompleted,
+    isCompleted: hasCompleted,
     isStartDialogOpen,
     isRecordingAcknowledged,
     isStartingRecording,
     isUpdatingRecordingStatus: operation === 'updating',
     canStartRecording: canStartRecordingSession && !isStartDialogOpen,
-    canPauseResumeRecording,
-    canCompleteRecording,
+    canPauseResumeRecording: canPauseResumeRecording && !hasCompleted,
+    canCompleteRecording: canCompleteRecording && !hasCompleted,
     setIsRecordingAcknowledged,
     handleStartRecording,
     handleStartDialogOpenChange,
