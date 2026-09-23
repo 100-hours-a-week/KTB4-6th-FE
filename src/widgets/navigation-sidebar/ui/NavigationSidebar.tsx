@@ -32,19 +32,22 @@ export const NavigationSidebar = ({
   const pathname = usePathname();
   const homePath = `/teams/${teamId}`;
   const managePath = `${homePath}/manage`;
+  const currentMeetingPath = activeMeeting
+    ? `${homePath}/meetings/${activeMeeting.meetingId}`
+    : null;
 
   const navigateTo = (path: string) => {
     if (pathname !== path) router.push(path);
     onOpenChange(false);
   };
 
-  // TODO: 진행 중인 회의가 있으면 회의 페이지로 이동. 회의 페이지가 없어 지금은 사이드바만 닫는다.
   const currentMeetingNavItem = (
     <SidebarNavItem
       icon={<Radio className="size-5" strokeWidth={2} />}
       label="현재 회의"
       disabled={isActiveMeetingPending}
-      onClick={activeMeeting ? () => onOpenChange(false) : undefined}
+      isActive={currentMeetingPath !== null && pathname === currentMeetingPath}
+      onClick={currentMeetingPath ? () => navigateTo(currentMeetingPath) : undefined}
     />
   );
   const teamNameCharacters = Array.from(teamName);
