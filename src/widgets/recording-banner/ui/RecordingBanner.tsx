@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useMediaRecorder } from '@/features/recording';
+import { useMediaRecorder, useRecordingSessionStore } from '@/features/recording';
 
 const formatElapsed = (seconds: number) =>
   [Math.floor(seconds / 3600), Math.floor((seconds % 3600) / 60), seconds % 60]
@@ -12,9 +12,9 @@ const formatElapsed = (seconds: number) =>
 
 export function RecordingBanner() {
   const pathname = usePathname();
-  const activeRecording = useMediaRecorder((state) => state.activeRecording);
+  const activeRecording = useRecordingSessionStore((state) => state.activeRecording);
   const recorderStatus = useMediaRecorder((state) => state.status);
-  const operation = useMediaRecorder((state) => state.operation);
+  const operation = useRecordingSessionStore((state) => state.operation);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {

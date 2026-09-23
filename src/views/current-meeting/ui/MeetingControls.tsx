@@ -89,11 +89,13 @@ export const MeetingControls = ({
 
   const participantMessage = isEnding
     ? '회의 종료 처리 중입니다'
-    : isDisconnected
-      ? '서버 연결이 끊어졌습니다'
-      : isPaused
-        ? recorderName + '님이 녹음을 일시정지했습니다'
-        : recorderName + '님이 녹음을 진행 중입니다';
+    : isCompleted
+      ? '회의가 종료되었습니다'
+      : isDisconnected
+        ? '서버 연결이 끊어졌습니다'
+        : isPaused
+          ? recorderName + '님이 녹음을 일시정지했습니다'
+          : recorderName + '님이 녹음을 진행 중입니다';
 
   return (
     <footer className="grid shrink-0 grid-cols-[minmax(0,1fr)_36px] items-center gap-2 border-t border-cool-200 bg-white px-5 py-3">

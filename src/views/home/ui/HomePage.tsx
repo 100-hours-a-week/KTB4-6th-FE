@@ -44,7 +44,7 @@ export const HomePage = ({ teamId }: HomePageProps) => {
       <HomeHeader onMenuClick={() => setIsSidebarOpen(true)} />
       <TeamSummaryCard team={team} />
       <CreateMeetingButton />
-      <MeetingListSection meetings={meetings} />
+      <MeetingListSection meetings={meetings} teamId={teamId} />
 
       <NavigationSidebar
         isOpen={isSidebarOpen}
