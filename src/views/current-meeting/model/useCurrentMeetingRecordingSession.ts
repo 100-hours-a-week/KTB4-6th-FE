@@ -9,6 +9,7 @@ import {
   useRecordingSessionStore,
   useStartRecording,
   useUpdateRecordingStatus,
+  useUploadRecordingFile,
 } from '@/features/recording';
 import { useAppToast } from '@/shared/ui';
 
@@ -37,16 +38,23 @@ export const useCurrentMeetingRecordingSession = ({
   const startRecording = useStartRecording();
   const completeRecording = useCompleteRecording();
   const updateRecordingStatus = useUpdateRecordingStatus();
+  const uploadRecordingFile = useUploadRecordingFile();
   const prepareMicrophone = useMediaRecorder((state) => state.prepare);
   const pauseBrowserRecording = useMediaRecorder((state) => state.pause);
   const resumeBrowserRecording = useMediaRecorder((state) => state.resume);
   const flushForCompletion = useMediaRecorder((state) => state.flushForCompletion);
+  const convertToMp4 = useMediaRecorder((state) => state.convertToMp4);
   const releaseMicrophone = useMediaRecorder((state) => state.release);
   const recorderStatus = useMediaRecorder((state) => state.status);
   const activeRecording = useRecordingSessionStore((state) => state.activeRecording);
+  const pendingUpload = useRecordingSessionStore((state) => state.pendingUpload);
   const operation = useRecordingSessionStore((state) => state.operation);
   const setActiveRecording = useRecordingSessionStore((state) => state.setActiveRecording);
   const clearActiveRecording = useRecordingSessionStore((state) => state.clearActiveRecording);
+  const setPendingUpload = useRecordingSessionStore((state) => state.setPendingUpload);
+  const markPendingUploadCompleted = useRecordingSessionStore(
+    (state) => state.markPendingUploadCompleted,
+  );
   const setOperation = useRecordingSessionStore((state) => state.setOperation);
   const { statuses: sseStatuses } = useMeetingSse();
   const { connect, disconnect, statuses } = useRecordingWebSocket();
@@ -74,6 +82,8 @@ export const useCurrentMeetingRecordingSession = ({
         : 'connecting';
   const isWaiting = isMeetingWaiting && recordingSessionId === null && !isCompleted;
   const isStartingRecording = operation === 'starting';
+  const isUploadCompleted =
+    pendingUpload?.recordingSessionId === recordingSessionId && pendingUpload.isCompleted;
   const canStartRecording =
     isWaiting &&
     activeRecording === null &&
@@ -86,6 +96,7 @@ export const useCurrentMeetingRecordingSession = ({
     connectionStatus === 'connected' &&
     (recorderStatus === 'recording' || recorderStatus === 'paused') &&
     !isCompleted &&
+    !isUploadCompleted &&
     operation === 'idle';
   const canCompleteRecording =
     recordingSessionId !== null && !isCompleted && operation === 'idle' && !isPreview;
@@ -145,17 +156,59 @@ export const useCurrentMeetingRecordingSession = ({
     const wasRecording = recorder?.state === 'recording';
 
     try {
-      if (recorder && recorder.state !== 'inactive') await flushForCompletion();
+      if (!recorder || recorder.state === 'inactive') {
+        throw new Error('종료할 브라우저 녹음이 없습니다.');
+      }
+
+      const currentUpload = useRecordingSessionStore.getState().pendingUpload;
+      const reusableUpload =
+        currentUpload?.recordingSessionId === recordingSessionId ? currentUpload : null;
+
+      if (!reusableUpload?.isCompleted) {
+        const recordingBlob = await flushForCompletion();
+        const convertedRecording = await convertToMp4(
+          recordingBlob,
+          `recording-${recordingSessionId}.mp4`,
+        );
+
+        await uploadRecordingFile.mutateAsync({
+          recordingSessionId,
+          ...convertedRecording,
+          uploadTarget: reusableUpload ?? undefined,
+          onUploadTargetCreated: (target) =>
+            setPendingUpload({
+              recordingSessionId,
+              ...target,
+              isCompleted: false,
+            }),
+        });
+        markPendingUploadCompleted(recordingSessionId);
+      }
+
       await completeRecording.mutateAsync(recordingSessionId);
     } catch {
-      if (wasRecording && useMediaRecorder.getState().recorder?.state === 'paused') {
+      const currentUpload = useRecordingSessionStore.getState().pendingUpload;
+      const uploadCompleted =
+        currentUpload?.recordingSessionId === recordingSessionId && currentUpload.isCompleted;
+
+      if (
+        !uploadCompleted &&
+        wasRecording &&
+        useMediaRecorder.getState().recorder?.state === 'paused'
+      ) {
         try {
           resumeBrowserRecording();
         } catch {
           showToast('브라우저 녹음을 다시 시작하지 못했습니다.', 'danger');
         }
       }
-      showToast('녹음을 종료하지 못했습니다. 다시 시도해주세요.', 'danger');
+      showToast(
+        useMediaRecorder.getState().conversionError ??
+          (uploadCompleted
+            ? '녹음을 종료하지 못했습니다. 다시 시도해주세요.'
+            : '녹음 파일을 업로드하지 못했습니다. 다시 시도해주세요.'),
+        'danger',
+      );
       setOperation('idle');
       return;
     }
