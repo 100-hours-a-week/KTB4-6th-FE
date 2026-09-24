@@ -2,9 +2,20 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getCurrentMeetingState } from '@/features/meeting-sse';
-import { getMeetingPreview } from './preview-meeting';
+import {
+  getCurrentMeetingState,
+  type TranscriptCreatedEventData,
+  useMeetingSse,
+} from '@/features/meeting-sse';
+import { getMeetingPreview, type TranscriptSegment } from './preview-meeting';
 import { useCurrentMeetingRecordingSession } from './useCurrentMeetingRecordingSession';
+
+const toTranscriptSegment = (transcript: TranscriptCreatedEventData): TranscriptSegment => ({
+  id: String(transcript.transcriptSegmentId),
+  speakerNumber: null,
+  startedAtSeconds: Math.floor(transcript.startedAtMs / 1000),
+  text: transcript.text,
+});
 
 interface UseCurrentMeetingRecordingParams {
   teamId: string;
@@ -21,6 +32,7 @@ export const useCurrentMeetingRecording = ({
 }: UseCurrentMeetingRecordingParams) => {
   const [isStartDialogOpen, setIsStartDialogOpen] = useState(false);
   const [isRecordingAcknowledged, setIsRecordingAcknowledged] = useState(false);
+  const { transcriptsByMeetingId } = useMeetingSse();
   const isPreview = previewState !== undefined;
   const currentMeetingQuery = useQuery({
     queryKey: ['meetings', meetingId, 'current-state'],
@@ -44,7 +56,7 @@ export const useCurrentMeetingRecording = ({
                 ? ('paused' as const)
                 : ('recording' as const),
           connectionStatus: 'connected' as const,
-          transcripts: [],
+          transcripts: (transcriptsByMeetingId[String(meetingId)] ?? []).map(toTranscriptSegment),
         }
       : null;
 
