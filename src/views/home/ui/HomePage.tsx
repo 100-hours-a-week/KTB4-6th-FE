@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useHome } from '@/features/home';
+import { useActiveMeeting, useHome } from '@/features/home';
 import { NavigationSidebar } from '@/widgets/navigation-sidebar';
 import { CreateMeetingButton } from './CreateMeetingButton';
 import { HomeErrorState } from './HomeErrorState';
@@ -19,6 +19,8 @@ interface HomePageProps {
 export const HomePage = ({ teamId }: HomePageProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { data: home, dataUpdatedAt, isFetching, isError, refetch } = useHome({ isEnabled: true });
+
+  const { activeMeeting, isPending: isActiveMeetingPending } = useActiveMeeting(teamId);
 
   useRedirectToActiveTeam({
     activeTeamId: home?.team.teamId,
@@ -43,7 +45,11 @@ export const HomePage = ({ teamId }: HomePageProps) => {
     <div className="flex min-h-[844px] flex-1 flex-col bg-cool-50">
       <HomeHeader onMenuClick={() => setIsSidebarOpen(true)} />
       <TeamSummaryCard team={team} />
-      <CreateMeetingButton teamId={teamId} />
+      <CreateMeetingButton
+        teamId={teamId}
+        activeMeetingId={activeMeeting?.meetingId ?? null}
+        isDisabled={isActiveMeetingPending}
+      />
       <MeetingListSection meetings={meetings} teamId={teamId} />
 
       <NavigationSidebar
