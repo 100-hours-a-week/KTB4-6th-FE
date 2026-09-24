@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { ChevronDown, ChevronUp, Menu } from 'lucide-react';
 import { cn } from '@/shared/lib';
 import type { CurrentMeetingViewModel } from '../model/preview-meeting';
-import type { CurrentMeetingConnectionStatus } from '../model/useCurrentMeetingRecordingSession';
+import type { CurrentMeetingConnectionStatus } from '../model/useCurrentMeetingConnection';
 
 interface CurrentMeetingHeaderProps {
   meeting: CurrentMeetingViewModel;
