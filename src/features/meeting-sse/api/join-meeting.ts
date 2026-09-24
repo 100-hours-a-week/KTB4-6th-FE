@@ -10,8 +10,6 @@ interface JoinMeetingErrorResponse {
   error?: { code?: string };
 }
 
-const ALREADY_JOINED_ERROR_CODES = new Set(['ALREADY_PARTICIPATING', 'MEETING_ALREADY_JOINED']);
-
 export async function joinMeeting(meetingId: string): Promise<void> {
   try {
     const response = await apiClient.post<JoinMeetingResponse>(
@@ -29,7 +27,7 @@ export async function joinMeeting(meetingId: string): Promise<void> {
     if (
       axios.isAxiosError<JoinMeetingErrorResponse>(error) &&
       error.response?.status === 409 &&
-      ALREADY_JOINED_ERROR_CODES.has(error.response.data?.error?.code ?? '')
+      error.response.data?.error?.code === 'ALREADY_PARTICIPATING'
     ) {
       return;
     }
