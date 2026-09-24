@@ -1,10 +1,12 @@
 'use client';
 
 import type { RecordingBlockedReason } from '../model/blocked-action-toasts';
+import { useCompleteRecordingDialog } from '../model/useCompleteRecordingDialog';
 import { useMeetingControlActions } from '../model/useMeetingControlActions';
 import { MeetingDeleteDialog } from './MeetingDeleteDialog';
 import { MeetingMoreMenu } from './MeetingMoreMenu';
 import { ParticipantStatusMessage } from './ParticipantStatusMessage';
+import { RecordingCompleteDialog } from './RecordingCompleteDialog';
 import { RecordingControlButtons } from './RecordingControlButtons';
 
 interface MeetingControlsProps {
@@ -66,6 +68,8 @@ export const MeetingControls = ({
     handleDeleteRequest,
     handleLeaveRequest,
   } = useMeetingControlActions({ teamId, meetingId, canDelete, isMeetingInProgress });
+  const { isCompleteDialogOpen, setIsCompleteDialogOpen, handleCompleteRequest, handleComplete } =
+    useCompleteRecordingDialog(onCompleteRecording);
 
   return (
     <footer className="grid shrink-0 grid-cols-[minmax(0,1fr)_36px] items-center gap-2 border-t border-cool-200 bg-white px-5 py-3">
@@ -87,7 +91,7 @@ export const MeetingControls = ({
           canCompleteRecording={canCompleteRecording}
           onStartRecording={onStartRecording}
           onPauseResumeRecording={onPauseResumeRecording}
-          onCompleteRecording={onCompleteRecording}
+          onCompleteRecording={handleCompleteRequest}
           onLeave={handleLeave}
         />
       ) : (
@@ -114,6 +118,11 @@ export const MeetingControls = ({
         isOpen={isDeleteDialogOpen}
         onConfirm={handleDelete}
         onOpenChange={setIsDeleteDialogOpen}
+      />
+      <RecordingCompleteDialog
+        isOpen={isCompleteDialogOpen}
+        onConfirm={handleComplete}
+        onOpenChange={setIsCompleteDialogOpen}
       />
     </footer>
   );
