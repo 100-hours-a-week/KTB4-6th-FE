@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { type TranscriptCreatedEventData, useMeetingSse } from '@/features/meeting-sse';
 import { useRecordingWebSocket } from '@/features/recording-websocket';
 import {
   useCompleteRecording,
@@ -9,7 +10,14 @@ import {
   useUpdateRecordingStatus,
 } from '@/features/recording';
 import { useAppToast } from '@/shared/ui';
-import { getMeetingPreview } from './preview-meeting';
+import { getMeetingPreview, type TranscriptSegment } from './preview-meeting';
+
+const toTranscriptSegment = (transcript: TranscriptCreatedEventData): TranscriptSegment => ({
+  id: String(transcript.transcriptSegmentId),
+  speakerNumber: null,
+  startedAtSeconds: Math.floor(transcript.startedAtMs / 1000),
+  text: transcript.text,
+});
 
 interface UseCurrentMeetingRecordingParams {
   teamId: string;
@@ -41,9 +49,17 @@ export const useCurrentMeetingRecording = ({
   const setActiveRecording = useMediaRecorder((state) => state.setActiveRecording);
   const clearActiveRecording = useMediaRecorder((state) => state.clearActiveRecording);
   const setOperation = useMediaRecorder((state) => state.setOperation);
+  const { transcriptsByMeetingId } = useMeetingSse();
   const { connect, disconnect, statuses } = useRecordingWebSocket();
   const { showToast } = useAppToast();
-  const meeting = getMeetingPreview(previewState);
+  const previewMeeting = getMeetingPreview(previewState);
+  const meeting =
+    previewState === undefined
+      ? {
+          ...previewMeeting,
+          transcripts: (transcriptsByMeetingId[String(meetingId)] ?? []).map(toTranscriptSegment),
+        }
+      : previewMeeting;
   const recordingSessionId =
     previewState === undefined && activeRecording?.meetingId === meetingId
       ? activeRecording.recordingSessionId
