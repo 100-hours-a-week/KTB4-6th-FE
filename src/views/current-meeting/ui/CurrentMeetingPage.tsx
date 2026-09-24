@@ -81,7 +81,7 @@ export const CurrentMeetingPage = ({
   }
 
   return (
-    <div className="relative flex h-dvh min-h-[844px] flex-1 flex-col bg-cool-50">
+    <div className="relative flex h-dvh min-h-[844px] flex-col bg-cool-50">
       {!isPreview && !isCompleted && (
         <MeetingSseConnection meetingId={String(meetingId)} teamId={teamId} />
       )}
