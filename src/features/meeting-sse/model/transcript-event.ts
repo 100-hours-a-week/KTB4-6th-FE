@@ -1,7 +1,6 @@
 export interface TranscriptCreatedEventData {
   type: 'TRANSCRIPT_CREATED';
   meetingId: number;
-  recordingSessionId: number;
   transcriptSegmentId: number;
   sequenceNumber: number;
   text: string;
@@ -28,17 +27,21 @@ export const parseTranscriptCreatedEvent = (data: string): TranscriptCreatedEven
     return null;
   }
 
+  const segment = isRecord(value) && isRecord(value.segment) ? value.segment : null;
+
   if (
     !isRecord(value) ||
     value.type !== 'TRANSCRIPT_CREATED' ||
     !isPositiveSafeInteger(value.meetingId) ||
-    !isPositiveSafeInteger(value.recordingSessionId) ||
-    !isPositiveSafeInteger(value.transcriptSegmentId) ||
-    !isNonNegativeSafeInteger(value.sequenceNumber) ||
-    typeof value.text !== 'string' ||
-    !isNonNegativeSafeInteger(value.startedAtMs) ||
-    (value.endedAtMs !== undefined && !isNonNegativeSafeInteger(value.endedAtMs)) ||
-    typeof value.recognizedAt !== 'string'
+    !segment ||
+    !isPositiveSafeInteger(segment.id) ||
+    !isNonNegativeSafeInteger(segment.sequenceNumber) ||
+    typeof segment.content !== 'string' ||
+    !isNonNegativeSafeInteger(segment.startedAtMs) ||
+    (segment.endedAtMs !== undefined &&
+      segment.endedAtMs !== null &&
+      !isNonNegativeSafeInteger(segment.endedAtMs)) ||
+    typeof segment.recognizedAt !== 'string'
   ) {
     return null;
   }
@@ -46,12 +49,13 @@ export const parseTranscriptCreatedEvent = (data: string): TranscriptCreatedEven
   return {
     type: value.type,
     meetingId: value.meetingId,
-    recordingSessionId: value.recordingSessionId,
-    transcriptSegmentId: value.transcriptSegmentId,
-    sequenceNumber: value.sequenceNumber,
-    text: value.text,
-    startedAtMs: value.startedAtMs,
-    ...(value.endedAtMs === undefined ? {} : { endedAtMs: value.endedAtMs }),
-    recognizedAt: value.recognizedAt,
+    transcriptSegmentId: segment.id,
+    sequenceNumber: segment.sequenceNumber,
+    text: segment.content,
+    startedAtMs: segment.startedAtMs,
+    ...(segment.endedAtMs === undefined || segment.endedAtMs === null
+      ? {}
+      : { endedAtMs: segment.endedAtMs }),
+    recognizedAt: segment.recognizedAt,
   };
 };
