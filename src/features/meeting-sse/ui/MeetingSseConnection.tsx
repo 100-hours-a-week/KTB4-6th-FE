@@ -21,7 +21,7 @@ export function MeetingSseConnection({ meetingId, teamId }: MeetingSseConnection
 
   useEffect(() => {
     const unsubscribeDeleted = subscribeDeleted(meetingId, () => {
-      showToast('회의가 삭제되어 팀 홈으로 이동합니다.', 'danger');
+      showToast('회의가 삭제되었습니다.', 'success');
       router.replace(`/teams/${encodeURIComponent(teamId)}`);
     });
 

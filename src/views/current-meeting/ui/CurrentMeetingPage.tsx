@@ -49,7 +49,9 @@ export const CurrentMeetingPage = ({
     isStartingRecording,
     isUpdatingRecordingStatus,
     canStartRecording,
+    startBlockedReason,
     canPauseResumeRecording,
+    pauseResumeBlockedReason,
     canCompleteRecording,
     setIsRecordingAcknowledged,
     handleStartRecording,
@@ -79,7 +81,7 @@ export const CurrentMeetingPage = ({
   }
 
   return (
-    <div className="relative flex h-dvh min-h-[844px] flex-1 flex-col bg-cool-50">
+    <div className="relative flex h-dvh min-h-[844px] flex-col bg-cool-50">
       {!isPreview && !isCompleted && (
         <MeetingSseConnection meetingId={String(meetingId)} teamId={teamId} />
       )}
@@ -130,8 +132,11 @@ export const CurrentMeetingPage = ({
         isStartingRecording={isStartingRecording}
         isUpdatingRecordingStatus={isUpdatingRecordingStatus}
         canStartRecording={canStartRecording}
+        startBlockedReason={startBlockedReason}
         onStartRecording={handleStartRecording}
         canPauseResumeRecording={canPauseResumeRecording}
+        pauseResumeBlockedReason={pauseResumeBlockedReason}
+        isMeetingInProgress={!isWaiting && !isCompleted}
         onPauseResumeRecording={handlePauseResumeRecording}
         canCompleteRecording={canCompleteRecording}
         isCompleted={isCompleted}
