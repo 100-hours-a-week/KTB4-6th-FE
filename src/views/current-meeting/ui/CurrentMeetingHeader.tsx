@@ -1,15 +1,18 @@
 import { ChevronDown, Menu } from 'lucide-react';
 import { cn } from '@/shared/lib';
 import type { CurrentMeetingViewModel } from '../model/preview-meeting';
+import type { CurrentMeetingConnectionStatus } from '../model/useCurrentMeetingRecordingSession';
 
 interface CurrentMeetingHeaderProps {
   meeting: CurrentMeetingViewModel;
+  isMenuDisabled: boolean;
   isWaiting: boolean;
   isPaused: boolean;
   isEnding: boolean;
-  isDisconnected: boolean;
+  connectionStatus: CurrentMeetingConnectionStatus;
   isRecording: boolean;
   isCompleted: boolean;
+  onMenuClick: () => void;
 }
 
 const formatElapsed = (seconds: number) =>
@@ -19,14 +22,23 @@ const formatElapsed = (seconds: number) =>
 
 export const CurrentMeetingHeader = ({
   meeting,
+  isMenuDisabled,
   isWaiting,
   isPaused,
   isEnding,
-  isDisconnected,
+  connectionStatus,
   isRecording,
   isCompleted,
+  onMenuClick,
 }: CurrentMeetingHeaderProps) => {
+  const isDisconnected = connectionStatus === 'error';
   const isOvertime = meeting.elapsedSeconds > meeting.targetMinutes * 60;
+  const connectionLabel =
+    connectionStatus === 'connecting'
+      ? '서버 연결 중'
+      : connectionStatus === 'connected'
+        ? '서버 연결 완료'
+        : '서버 연결 오류';
   const statusLabel = isCompleted
     ? '종료됨'
     : isDisconnected
@@ -45,8 +57,9 @@ export const CurrentMeetingHeader = ({
         <button
           type="button"
           aria-label="메뉴 열기"
-          disabled
-          className="flex size-9 shrink-0 items-center justify-center rounded-full text-cool-900"
+          disabled={isMenuDisabled}
+          onClick={onMenuClick}
+          className="flex size-9 shrink-0 items-center justify-center rounded-full text-cool-900 disabled:text-cool-400"
         >
           <Menu className="size-5" strokeWidth={2} />
         </button>
@@ -54,14 +67,19 @@ export const CurrentMeetingHeader = ({
         <span
           className={cn(
             'ml-auto flex items-center gap-1.5 whitespace-nowrap text-xs',
-            isDisconnected ? 'text-danger' : 'text-cool-600',
+            connectionStatus === 'error' ? 'text-danger' : 'text-cool-600',
           )}
         >
           <span
             aria-hidden="true"
-            className={cn('size-2 rounded-full', isDisconnected ? 'bg-danger' : 'bg-success')}
+            className={cn(
+              'size-2 rounded-full',
+              connectionStatus === 'connecting' && 'bg-brand-600 motion-safe:animate-pulse',
+              connectionStatus === 'connected' && 'bg-success',
+              connectionStatus === 'error' && 'bg-danger',
+            )}
           />
-          {isDisconnected ? '서버 연결 끊김' : '서버 연결 됨'}
+          {connectionLabel}
         </span>
       </div>
 

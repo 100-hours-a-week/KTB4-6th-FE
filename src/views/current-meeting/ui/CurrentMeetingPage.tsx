@@ -1,7 +1,11 @@
 'use client';
 
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Headphones, LoaderCircle } from 'lucide-react';
 import { MeetingSseConnection } from '@/features/meeting-sse';
+import { getTeamDetail } from '@/features/team-management';
+import { NavigationSidebar } from '@/widgets/navigation-sidebar';
 import { useCurrentMeetingRecording } from '../model/useCurrentMeetingRecording';
 import { CurrentMeetingHeader } from './CurrentMeetingHeader';
 import { MeetingControls } from './MeetingControls';
@@ -21,11 +25,21 @@ export const CurrentMeetingPage = ({
   previewState,
   previewRole = 'recorder',
 }: CurrentMeetingPageProps) => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const numericTeamId = Number(teamId);
+  const isPreview = previewState !== undefined;
+  const { data: team } = useQuery({
+    queryKey: ['teams', numericTeamId, 'detail'],
+    queryFn: () => getTeamDetail(numericTeamId),
+    enabled: !isPreview && Number.isSafeInteger(numericTeamId) && numericTeamId > 0,
+  });
   const {
     meeting,
+    isMeetingPending,
     isWaiting,
     isPaused,
     isEnding,
+    connectionStatus,
     isDisconnected,
     isRecording,
     isRecorder,
@@ -45,17 +59,40 @@ export const CurrentMeetingPage = ({
     handleCompleteRecording,
   } = useCurrentMeetingRecording({ teamId, meetingId, previewState, previewRole });
 
+  if (!meeting) {
+    return (
+      <div className="flex h-dvh min-h-[844px] flex-1 items-center justify-center bg-cool-50 px-6 text-center">
+        <div>
+          {isMeetingPending && (
+            <LoaderCircle
+              aria-hidden="true"
+              className="mx-auto size-7 text-brand-600 motion-safe:animate-spin"
+              strokeWidth={2}
+            />
+          )}
+          <p className="mt-4 text-sm text-cool-600">
+            {isMeetingPending ? '회의 정보를 불러오는 중입니다' : '회의 정보를 불러오지 못했습니다'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative flex h-dvh min-h-[844px] flex-1 flex-col bg-cool-50">
-      {!previewState && <MeetingSseConnection meetingId={String(meetingId)} teamId={teamId} />}
+      {!isPreview && !isCompleted && (
+        <MeetingSseConnection meetingId={String(meetingId)} teamId={teamId} />
+      )}
       <CurrentMeetingHeader
         meeting={meeting}
+        isMenuDisabled={!team}
         isWaiting={isWaiting}
         isPaused={isPaused}
         isEnding={isEnding}
-        isDisconnected={isDisconnected}
+        connectionStatus={connectionStatus}
         isRecording={isRecording}
         isCompleted={isCompleted}
+        onMenuClick={() => setIsSidebarOpen(true)}
       />
 
       {isWaiting ? (
@@ -83,7 +120,8 @@ export const CurrentMeetingPage = ({
       <MeetingControls
         teamId={teamId}
         meetingId={String(meetingId)}
-        isPreview={Boolean(previewState)}
+        isPreview={isPreview}
+        canDelete={!isPreview && team?.role === 'LEADER'}
         isWaiting={isWaiting}
         isRecorder={isRecorder}
         isPaused={isPaused}
@@ -109,6 +147,15 @@ export const CurrentMeetingPage = ({
         onConfirm={handleConfirmRecording}
         onOpenChange={handleStartDialogOpenChange}
       />
+
+      {team && (
+        <NavigationSidebar
+          isOpen={isSidebarOpen}
+          onOpenChange={setIsSidebarOpen}
+          teamId={numericTeamId}
+          teamName={team.name}
+        />
+      )}
 
       {isEnding && (
         <div

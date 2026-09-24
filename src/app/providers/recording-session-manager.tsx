@@ -2,11 +2,11 @@
 
 import { useEffect } from 'react';
 import { useRecordingWebSocket } from '@/features/recording-websocket';
-import { useMediaRecorder } from '@/features/recording';
+import { useMediaRecorder, useRecordingSessionStore } from '@/features/recording';
 import { useAppToast } from '@/shared/ui';
 
 export function RecordingSessionManager() {
-  const activeRecording = useMediaRecorder((state) => state.activeRecording);
+  const activeRecording = useRecordingSessionStore((state) => state.activeRecording);
   const recorderStatus = useMediaRecorder((state) => state.status);
   const startBrowserRecording = useMediaRecorder((state) => state.start);
   const releaseMicrophone = useMediaRecorder((state) => state.release);

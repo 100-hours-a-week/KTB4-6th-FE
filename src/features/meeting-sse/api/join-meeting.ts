@@ -27,7 +27,7 @@ export async function joinMeeting(meetingId: string): Promise<void> {
     if (
       axios.isAxiosError<JoinMeetingErrorResponse>(error) &&
       error.response?.status === 409 &&
-      error.response.data?.error?.code === 'MEETING_ALREADY_JOINED'
+      error.response.data?.error?.code === 'ALREADY_PARTICIPATING'
     ) {
       return;
     }

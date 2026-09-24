@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { FileText } from 'lucide-react';
 import { cn } from '@/shared/lib';
 import { Badge, useAppToast } from '@/shared/ui';
@@ -7,21 +8,23 @@ import type { Meeting } from '../model/types';
 
 interface MeetingListItemProps {
   meeting: Meeting;
+  teamId: number;
 }
 
-export const MeetingListItem = ({ meeting }: MeetingListItemProps) => {
+export const MeetingListItem = ({ meeting, teamId }: MeetingListItemProps) => {
+  const router = useRouter();
   const { showToast } = useAppToast();
   const isInProgress = meeting.status === 'in_progress';
   const isWaiting = meeting.status === 'waiting';
+  const isJoinable = isInProgress || isWaiting;
 
   const handleClick = () => {
-    if (isWaiting) return;
-
-    if (isInProgress) {
-      showToast('회의 참여를 시작합니다', 'success');
-    } else {
-      showToast('종료된 회의입니다', 'danger');
+    if (isJoinable) {
+      router.push(`/teams/${teamId}/meetings/${meeting.id}`);
+      return;
     }
+
+    showToast('종료된 회의입니다', 'danger');
   };
 
   return (

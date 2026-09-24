@@ -82,13 +82,10 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
       setStatuses((current) => ({ ...current, [recordingSessionId]: 'error' }));
     };
 
-    socket.onclose = (event) => {
+    socket.onclose = () => {
       if (sockets.current.get(recordingSessionId) !== socket) return;
       sockets.current.delete(recordingSessionId);
-      setStatuses((current) => ({
-        ...current,
-        [recordingSessionId]: event.code === 1000 ? 'idle' : 'error',
-      }));
+      setStatuses((current) => ({ ...current, [recordingSessionId]: 'error' }));
     };
   }, []);
 

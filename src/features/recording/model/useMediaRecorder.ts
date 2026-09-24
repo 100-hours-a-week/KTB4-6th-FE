@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import type { AudioFormat } from '@/entities/recording';
+import { convertRecordingToMp4, type ConvertedRecordingFile } from './convert-recording-to-mp4';
 
 const supportedFormats: { mimeType: string; audioFormat: AudioFormat }[] = [
   { mimeType: 'audio/webm;codecs=opus', audioFormat: 'webm_opus' },
@@ -10,51 +11,37 @@ const supportedFormats: { mimeType: string; audioFormat: AudioFormat }[] = [
 const AUDIO_CHUNK_INTERVAL_MS = 20;
 
 type MediaRecorderStatus = 'idle' | 'requesting' | 'ready' | 'recording' | 'paused';
-type RecordingOperation = 'idle' | 'starting' | 'updating' | 'finishing';
-
-interface ActiveRecording {
-  teamId: string;
-  meetingId: number;
-  recordingSessionId: number;
-  startedAt: number;
-}
+type RecordingConversionStatus = 'idle' | 'loading' | 'converting' | 'success' | 'error';
 
 interface MediaRecorderState {
   status: MediaRecorderStatus;
   recorder: MediaRecorder | null;
   audioFormat: AudioFormat | null;
   isFlushing: boolean;
-  activeRecording: ActiveRecording | null;
-  operation: RecordingOperation;
-  setActiveRecording: (recording: ActiveRecording) => void;
-  clearActiveRecording: (recordingSessionId: number) => void;
-  setOperation: (operation: RecordingOperation) => void;
+  conversionStatus: RecordingConversionStatus;
+  conversionProgress: number;
+  conversionError: string | null;
   prepare: () => Promise<AudioFormat>;
   start: (onChunk: (chunk: Blob) => void) => void;
   pause: () => void;
   resume: () => void;
-  flushForCompletion: () => Promise<void>;
+  flushForCompletion: () => Promise<Blob>;
+  convertToMp4: (source: Blob, fileName: string) => Promise<ConvertedRecordingFile>;
   release: () => void;
 }
 
 let pendingPreparation: { version: number; promise: Promise<AudioFormat> } | null = null;
 let preparationVersion = 0;
+let recordedChunks: Blob[] = [];
 
 export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
   status: 'idle',
   recorder: null,
   audioFormat: null,
   isFlushing: false,
-  activeRecording: null,
-  operation: 'idle',
-
-  setActiveRecording: (recording) => set({ activeRecording: recording }),
-  setOperation: (operation) => set({ operation }),
-  clearActiveRecording: (recordingSessionId) => {
-    if (get().activeRecording?.recordingSessionId === recordingSessionId) {
-      set({ activeRecording: null });
-    }
-  },
+  conversionStatus: 'idle',
+  conversionProgress: 0,
+  conversionError: null,
 
   prepare: () => {
     const { recorder, audioFormat } = get();
@@ -110,8 +97,10 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
     const { recorder } = get();
     if (!recorder || recorder.state !== 'inactive') return;
 
+    recordedChunks = [];
     recorder.ondataavailable = (event) => {
       if (event.data.size > 0 && (recorder.state === 'recording' || get().isFlushing)) {
+        recordedChunks.push(event.data);
         onChunk(event.data);
       }
     };
@@ -184,19 +173,53 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
       }
 
       await waitForEvent('dataavailable', () => recorder.requestData());
+      const recordingBlob = new Blob(recordedChunks, { type: recorder.mimeType });
+      if (recordingBlob.size === 0) {
+        throw new Error('생성된 브라우저 녹음 파일이 비어 있습니다.');
+      }
+
+      return recordingBlob;
     } finally {
       set({ isFlushing: false });
+    }
+  },
+
+  convertToMp4: async (source, fileName) => {
+    set({ conversionStatus: 'loading', conversionProgress: 0, conversionError: null });
+
+    try {
+      const convertedFile = await convertRecordingToMp4(source, {
+        fileName,
+        onReady: () => set({ conversionStatus: 'converting' }),
+        onProgress: (conversionProgress) => set({ conversionProgress }),
+      });
+      set({ conversionStatus: 'success', conversionProgress: 1 });
+      return convertedFile;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '녹음 파일 변환에 실패했습니다.';
+      set({ conversionStatus: 'error', conversionError: message });
+      throw error;
     }
   },
 
   release: () => {
     preparationVersion += 1;
     pendingPreparation = null;
+    recordedChunks = [];
     const { recorder } = get();
-    set({ recorder: null, audioFormat: null, isFlushing: false, status: 'idle' });
+    set({
+      recorder: null,
+      audioFormat: null,
+      isFlushing: false,
+      status: 'idle',
+      conversionStatus: 'idle',
+      conversionProgress: 0,
+      conversionError: null,
+    });
 
     if (recorder) {
       try {
+        recorder.ondataavailable = null;
         if (recorder.state !== 'inactive') recorder.stop();
       } finally {
         recorder.stream.getTracks().forEach((track) => track.stop());

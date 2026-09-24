@@ -1,16 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { type TranscriptCreatedEventData, useMeetingSse } from '@/features/meeting-sse';
-import { useRecordingWebSocket } from '@/features/recording-websocket';
+import { useQuery } from '@tanstack/react-query';
 import {
-  useCompleteRecording,
-  useMediaRecorder,
-  useStartRecording,
-  useUpdateRecordingStatus,
-} from '@/features/recording';
-import { useAppToast } from '@/shared/ui';
+  getCurrentMeetingState,
+  type TranscriptCreatedEventData,
+  useMeetingSse,
+} from '@/features/meeting-sse';
 import { getMeetingPreview, type TranscriptSegment } from './preview-meeting';
+import { useCurrentMeetingRecordingSession } from './useCurrentMeetingRecordingSession';
 
 const toTranscriptSegment = (transcript: TranscriptCreatedEventData): TranscriptSegment => ({
   id: String(transcript.transcriptSegmentId),
@@ -32,223 +30,108 @@ export const useCurrentMeetingRecording = ({
   previewState,
   previewRole,
 }: UseCurrentMeetingRecordingParams) => {
-  const [isCompleted, setIsCompleted] = useState(false);
   const [isStartDialogOpen, setIsStartDialogOpen] = useState(false);
   const [isRecordingAcknowledged, setIsRecordingAcknowledged] = useState(false);
-  const startRecording = useStartRecording();
-  const completeRecording = useCompleteRecording();
-  const updateRecordingStatus = useUpdateRecordingStatus();
-  const prepareMicrophone = useMediaRecorder((state) => state.prepare);
-  const pauseBrowserRecording = useMediaRecorder((state) => state.pause);
-  const resumeBrowserRecording = useMediaRecorder((state) => state.resume);
-  const flushForCompletion = useMediaRecorder((state) => state.flushForCompletion);
-  const releaseMicrophone = useMediaRecorder((state) => state.release);
-  const recorderStatus = useMediaRecorder((state) => state.status);
-  const activeRecording = useMediaRecorder((state) => state.activeRecording);
-  const operation = useMediaRecorder((state) => state.operation);
-  const setActiveRecording = useMediaRecorder((state) => state.setActiveRecording);
-  const clearActiveRecording = useMediaRecorder((state) => state.clearActiveRecording);
-  const setOperation = useMediaRecorder((state) => state.setOperation);
   const { transcriptsByMeetingId } = useMeetingSse();
-  const { connect, disconnect, statuses } = useRecordingWebSocket();
-  const { showToast } = useAppToast();
-  const previewMeeting = getMeetingPreview(previewState);
-  const meeting =
-    previewState === undefined
+  const isPreview = previewState !== undefined;
+  const currentMeetingQuery = useQuery({
+    queryKey: ['meetings', meetingId, 'current-state'],
+    queryFn: () => getCurrentMeetingState(meetingId),
+    enabled: !isPreview,
+  });
+  const meeting = isPreview
+    ? getMeetingPreview(previewState)
+    : currentMeetingQuery.data
       ? {
-          ...previewMeeting,
+          title: currentMeetingQuery.data.title,
+          recorderName: currentMeetingQuery.data.recorderName,
+          participantCount: currentMeetingQuery.data.participantCount,
+          participantLimit: 5,
+          targetMinutes: currentMeetingQuery.data.targetMinutes,
+          elapsedSeconds: 0,
+          recordingStatus:
+            currentMeetingQuery.data.meetingStatus === 'WAITING'
+              ? ('waiting' as const)
+              : currentMeetingQuery.data.recordingStatus === 'PAUSED'
+                ? ('paused' as const)
+                : ('recording' as const),
+          connectionStatus: 'connected' as const,
           transcripts: (transcriptsByMeetingId[String(meetingId)] ?? []).map(toTranscriptSegment),
         }
-      : previewMeeting;
-  const recordingSessionId =
-    previewState === undefined && activeRecording?.meetingId === meetingId
-      ? activeRecording.recordingSessionId
       : null;
-
-  const isWaiting =
-    meeting.recordingStatus === 'waiting' && recordingSessionId === null && !isCompleted;
-  const isPaused =
-    previewState === undefined
-      ? recordingSessionId !== null && recorderStatus === 'paused'
-      : meeting.recordingStatus === 'paused';
-  const isEnding =
-    meeting.recordingStatus === 'ending' ||
-    (recordingSessionId !== null && operation === 'finishing');
-  const socketStatus = recordingSessionId === null ? undefined : statuses[recordingSessionId];
-  const isDisconnected =
-    meeting.connectionStatus === 'disconnected' ||
-    socketStatus === 'error' ||
-    socketStatus === 'unconfigured';
-  const isRecording =
-    (previewState === undefined
-      ? recordingSessionId !== null && recorderStatus === 'recording'
-      : meeting.recordingStatus === 'recording') &&
-    !isDisconnected &&
-    !isCompleted;
-  const isRecorder = previewRole === 'recorder' || recordingSessionId !== null;
-  const isStartingRecording = operation === 'starting';
-  const canPauseResumeRecording =
-    previewState === undefined &&
-    recordingSessionId !== null &&
-    socketStatus === 'connected' &&
-    (recorderStatus === 'recording' || recorderStatus === 'paused') &&
-    !isCompleted &&
-    operation === 'idle';
-
-  const handleStartRecording = () => {
-    if (!isWaiting || activeRecording || previewState !== undefined || operation !== 'idle') return;
-    setIsStartDialogOpen(true);
-  };
 
   const handleStartDialogOpenChange = (open: boolean) => {
     setIsStartDialogOpen(open);
     if (!open) setIsRecordingAcknowledged(false);
   };
 
-  const handleConfirmRecording = async () => {
-    if (
-      !isWaiting ||
-      useMediaRecorder.getState().activeRecording !== null ||
-      !isRecordingAcknowledged ||
-      useMediaRecorder.getState().operation !== 'idle' ||
-      previewState !== undefined
-    ) {
-      return;
-    }
+  const {
+    recordingSessionId,
+    recorderStatus,
+    operation,
+    connectionStatus,
+    isCompleted,
+    isStartingRecording,
+    canStartRecording: canStartRecordingSession,
+    canPauseResumeRecording,
+    canCompleteRecording,
+    handleConfirmRecording,
+    handlePauseResumeRecording,
+    handleCompleteRecording,
+  } = useCurrentMeetingRecordingSession({
+    teamId,
+    meetingId,
+    isMeetingWaiting: meeting?.recordingStatus === 'waiting',
+    isPreview,
+    previewConnectionStatus: meeting?.connectionStatus ?? 'connected',
+    isRecordingAcknowledged,
+    onRecordingStarted: () => handleStartDialogOpenChange(false),
+  });
 
-    setOperation('starting');
-    try {
-      const audioFormat = await prepareMicrophone();
+  const isServerCompleted = currentMeetingQuery.data?.meetingStatus === 'COMPLETED';
+  const hasCompleted = isServerCompleted || isCompleted;
+  const isWaiting =
+    meeting?.recordingStatus === 'waiting' && recordingSessionId === null && !hasCompleted;
+  const isPaused =
+    isPreview || recordingSessionId === null
+      ? meeting?.recordingStatus === 'paused'
+      : recorderStatus === 'paused';
+  const isEnding =
+    (isPreview && previewState === 'ending') ||
+    (recordingSessionId !== null && operation === 'finishing');
+  const isDisconnected = connectionStatus === 'error';
+  const isRecording =
+    (isPreview || recordingSessionId === null
+      ? meeting?.recordingStatus === 'recording'
+      : recorderStatus === 'recording') &&
+    !isDisconnected &&
+    !hasCompleted;
+  const isRecorder =
+    !hasCompleted && (isPreview ? previewRole === 'recorder' : recordingSessionId !== null);
 
-      try {
-        const startedSessionId = await startRecording.mutateAsync(meetingId);
-        setActiveRecording({
-          teamId,
-          meetingId,
-          recordingSessionId: startedSessionId,
-          startedAt: Date.now(),
-        });
-        connect(startedSessionId, audioFormat);
-        handleStartDialogOpenChange(false);
-      } catch {
-        releaseMicrophone();
-        showToast('녹음을 시작하지 못했습니다. 다시 시도해주세요.', 'danger');
-      }
-    } catch (error) {
-      const message =
-        error instanceof DOMException && error.name === 'NotAllowedError'
-          ? '마이크 권한을 허용해야 녹음을 시작할 수 있습니다.'
-          : '마이크를 사용할 수 없습니다. 장치와 브라우저 권한을 확인해주세요.';
-      showToast(message, 'danger');
-    } finally {
-      setOperation('idle');
-    }
-  };
-
-  const handleCompleteRecording = async () => {
-    if (
-      recordingSessionId === null ||
-      isCompleted ||
-      useMediaRecorder.getState().operation !== 'idle' ||
-      previewState !== undefined
-    ) {
-      return;
-    }
-
-    setOperation('finishing');
-    const recorder = useMediaRecorder.getState().recorder;
-    const wasRecording = recorder?.state === 'recording';
-
-    try {
-      if (recorder && recorder.state !== 'inactive') await flushForCompletion();
-      await completeRecording.mutateAsync(recordingSessionId);
-    } catch {
-      if (wasRecording && useMediaRecorder.getState().recorder?.state === 'paused') {
-        try {
-          resumeBrowserRecording();
-        } catch {
-          showToast('브라우저 녹음을 다시 시작하지 못했습니다.', 'danger');
-        }
-      }
-      showToast('녹음을 종료하지 못했습니다. 다시 시도해주세요.', 'danger');
-      setOperation('idle');
-      return;
-    }
-
-    try {
-      releaseMicrophone();
-    } catch {
-      showToast('녹음은 종료됐지만 브라우저 녹음 정리에 실패했습니다.', 'danger');
-    } finally {
-      disconnect(recordingSessionId);
-      clearActiveRecording(recordingSessionId);
-      setIsCompleted(true);
-      setOperation('idle');
-    }
-  };
-
-  const handlePauseResumeRecording = async () => {
-    if (
-      !canPauseResumeRecording ||
-      recordingSessionId === null ||
-      useMediaRecorder.getState().operation !== 'idle'
-    )
-      return;
-
-    const shouldPause = recorderStatus === 'recording';
-    const recorder = useMediaRecorder.getState().recorder;
-    if (recorder?.state !== (shouldPause ? 'recording' : 'paused')) {
-      showToast('브라우저 녹음 상태를 확인할 수 없습니다.', 'danger');
-      return;
-    }
-
-    setOperation('updating');
-    try {
-      await updateRecordingStatus.mutateAsync({
-        recordingSessionId,
-        status: shouldPause ? 'PAUSED' : 'RECORDING',
-      });
-    } catch {
-      showToast('녹음 상태를 변경하지 못했습니다. 다시 시도해주세요.', 'danger');
-      setOperation('idle');
-      return;
-    }
-
-    try {
-      if (shouldPause) pauseBrowserRecording();
-      else resumeBrowserRecording();
-    } catch {
-      showToast('브라우저 녹음 상태를 변경하지 못했습니다.', 'danger');
-    } finally {
-      setOperation('idle');
-    }
+  const handleStartRecording = () => {
+    if (!canStartRecordingSession || isStartDialogOpen) return;
+    setIsStartDialogOpen(true);
   };
 
   return {
     meeting,
+    isMeetingPending: !isPreview && currentMeetingQuery.isPending,
     isWaiting,
     isPaused,
     isEnding,
+    connectionStatus,
     isDisconnected,
     isRecording,
     isRecorder,
-    isCompleted,
+    isCompleted: hasCompleted,
     isStartDialogOpen,
     isRecordingAcknowledged,
     isStartingRecording,
     isUpdatingRecordingStatus: operation === 'updating',
-    canStartRecording:
-      isWaiting &&
-      activeRecording === null &&
-      previewState === undefined &&
-      !isStartingRecording &&
-      !isStartDialogOpen,
-    canPauseResumeRecording,
-    canCompleteRecording:
-      recordingSessionId !== null &&
-      !isCompleted &&
-      operation === 'idle' &&
-      previewState === undefined,
+    canStartRecording: canStartRecordingSession && !isStartDialogOpen,
+    canPauseResumeRecording: canPauseResumeRecording && !hasCompleted,
+    canCompleteRecording: canCompleteRecording && !hasCompleted,
     setIsRecordingAcknowledged,
     handleStartRecording,
     handleStartDialogOpenChange,

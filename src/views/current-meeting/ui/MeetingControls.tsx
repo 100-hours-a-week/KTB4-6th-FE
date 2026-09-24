@@ -1,10 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useMeetingExit } from '@/features/meeting-sse';
-import { getTeamDetail } from '@/features/team-management';
 import { cn } from '@/shared/lib';
 import { useAppToast } from '@/shared/ui';
 import { MeetingDeleteDialog } from './MeetingDeleteDialog';
@@ -14,6 +13,7 @@ interface MeetingControlsProps {
   teamId: string;
   meetingId: string;
   isPreview: boolean;
+  canDelete: boolean;
   canCompleteRecording: boolean;
   canStartRecording: boolean;
   canPauseResumeRecording: boolean;
@@ -35,6 +35,7 @@ export const MeetingControls = ({
   teamId,
   meetingId,
   isPreview,
+  canDelete,
   canCompleteRecording,
   canStartRecording,
   canPauseResumeRecording,
@@ -58,13 +59,6 @@ export const MeetingControls = ({
   const [isLeaving, setIsLeaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const numericTeamId = Number(teamId);
-  const { data: team } = useQuery({
-    queryKey: ['teams', numericTeamId, 'detail'],
-    queryFn: () => getTeamDetail(numericTeamId),
-    enabled: !isPreview && Number.isSafeInteger(numericTeamId) && numericTeamId > 0,
-  });
-  const canDelete = !isPreview && team?.role === 'LEADER';
 
   const handleLeave = async () => {
     if (isLeaving) return;
@@ -95,11 +89,13 @@ export const MeetingControls = ({
 
   const participantMessage = isEnding
     ? '회의 종료 처리 중입니다'
-    : isDisconnected
-      ? '서버 연결이 끊어졌습니다'
-      : isPaused
-        ? recorderName + '님이 녹음을 일시정지했습니다'
-        : recorderName + '님이 녹음을 진행 중입니다';
+    : isCompleted
+      ? '회의가 종료되었습니다'
+      : isDisconnected
+        ? '서버 연결이 끊어졌습니다'
+        : isPaused
+          ? recorderName + '님이 녹음을 일시정지했습니다'
+          : recorderName + '님이 녹음을 진행 중입니다';
 
   return (
     <footer className="grid shrink-0 grid-cols-[minmax(0,1fr)_36px] items-center gap-2 border-t border-cool-200 bg-white px-5 py-3">
