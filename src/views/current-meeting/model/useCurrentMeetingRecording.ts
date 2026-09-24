@@ -7,7 +7,7 @@ import {
   type TranscriptCreatedEventData,
   useMeetingSse,
 } from '@/features/meeting-sse';
-import { getMeetingPreview, type TranscriptSegment } from './preview-meeting';
+import { getMeetingPreview, mockMeetingInfo, type TranscriptSegment } from './preview-meeting';
 import { useCurrentMeetingRecordingSession } from './useCurrentMeetingRecordingSession';
 
 const toTranscriptSegment = (transcript: TranscriptCreatedEventData): TranscriptSegment => ({
@@ -48,6 +48,7 @@ export const useCurrentMeetingRecording = ({
           participantCount: currentMeetingQuery.data.participantCount,
           participantLimit: 5,
           targetMinutes: currentMeetingQuery.data.targetMinutes,
+          ...mockMeetingInfo,
           elapsedSeconds: 0,
           recordingStatus:
             currentMeetingQuery.data.meetingStatus === 'WAITING'

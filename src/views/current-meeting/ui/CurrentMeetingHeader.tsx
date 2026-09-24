@@ -1,4 +1,7 @@
-import { ChevronDown, Menu } from 'lucide-react';
+'use client';
+
+import { useState } from 'react';
+import { ChevronDown, ChevronUp, Menu } from 'lucide-react';
 import { cn } from '@/shared/lib';
 import type { CurrentMeetingViewModel } from '../model/preview-meeting';
 import type { CurrentMeetingConnectionStatus } from '../model/useCurrentMeetingRecordingSession';
@@ -14,6 +17,8 @@ interface CurrentMeetingHeaderProps {
   isCompleted: boolean;
   onMenuClick: () => void;
 }
+
+const MEETING_INFO_PANEL_ID = 'current-meeting-info';
 
 const formatElapsed = (seconds: number) =>
   [Math.floor(seconds / 3600), Math.floor((seconds % 3600) / 60), seconds % 60]
@@ -31,6 +36,7 @@ export const CurrentMeetingHeader = ({
   isCompleted,
   onMenuClick,
 }: CurrentMeetingHeaderProps) => {
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
   const isDisconnected = connectionStatus === 'error';
   const isOvertime = meeting.elapsedSeconds > meeting.targetMinutes * 60;
   const connectionLabel =
@@ -112,7 +118,20 @@ export const CurrentMeetingHeader = ({
               />
               {statusLabel}
             </span>
-            <ChevronDown aria-hidden="true" className="size-5 text-cool-600" strokeWidth={2} />
+            <button
+              type="button"
+              aria-controls={MEETING_INFO_PANEL_ID}
+              aria-expanded={isInfoOpen}
+              aria-label={isInfoOpen ? '회의 정보 접기' : '회의 정보 펼치기'}
+              onClick={() => setIsInfoOpen((open) => !open)}
+              className="-mr-1.5 flex size-8 items-center justify-center rounded-full text-cool-600 transition-colors hover:bg-cool-100"
+            >
+              {isInfoOpen ? (
+                <ChevronUp aria-hidden="true" className="size-5" strokeWidth={2} />
+              ) : (
+                <ChevronDown aria-hidden="true" className="size-5" strokeWidth={2} />
+              )}
+            </button>
           </div>
           {!isWaiting && (
             <span
@@ -126,6 +145,28 @@ export const CurrentMeetingHeader = ({
           )}
         </div>
       </div>
+
+      {isInfoOpen && (
+        <dl
+          id={MEETING_INFO_PANEL_ID}
+          className="motion-safe:animate-in motion-safe:fade-in mt-4 flex max-h-[40dvh] flex-col gap-3 overflow-y-auto border-t border-cool-100 pt-4 text-sm"
+        >
+          <div className="flex items-baseline gap-3">
+            <dt className="shrink-0 font-semibold text-cool-900">회의 목표 시간</dt>
+            <dd className="text-cool-700">{meeting.targetMinutes}분</dd>
+          </div>
+          <div>
+            <dt className="font-semibold text-cool-900">회의 목적</dt>
+            <dd className="mt-1 leading-6 break-words text-cool-700">{meeting.purpose}</dd>
+          </div>
+          <div>
+            <dt className="font-semibold text-cool-900">비고</dt>
+            <dd className="mt-1 leading-6 break-words text-cool-700">
+              {meeting.note || <span className="text-cool-400">없음</span>}
+            </dd>
+          </div>
+        </dl>
+      )}
     </header>
   );
 };

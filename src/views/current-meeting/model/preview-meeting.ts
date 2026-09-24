@@ -14,6 +14,8 @@ export interface CurrentMeetingViewModel {
   participantCount: number;
   participantLimit: number;
   targetMinutes: number;
+  purpose: string;
+  note: string;
   elapsedSeconds: number;
   recordingStatus: 'waiting' | 'recording' | 'paused' | 'ending';
   connectionStatus: 'connected' | 'disconnected';
@@ -71,12 +73,19 @@ const sampleTranscripts: TranscriptSegment[] = [
   },
 ];
 
+// TODO: 회의 상세 응답(GET /api/v1/meetings/{meetingId})의 purpose, note로 교체한다.
+export const mockMeetingInfo = {
+  purpose: '9월 스프린트 범위를 확정하고 결제 모듈 연동 일정과 담당자를 정합니다.',
+  note: '지난 스프린트 잔여 항목을 먼저 확인합니다. 디자인 시안은 회의 전에 공유됩니다.',
+};
+
 const baseMeeting = {
   title: '기획 리뷰 회의',
   recorderName: '김도현',
   participantCount: 3,
   participantLimit: 5,
   targetMinutes: 30,
+  ...mockMeetingInfo,
   connectionStatus: 'connected' as const,
 };
 
