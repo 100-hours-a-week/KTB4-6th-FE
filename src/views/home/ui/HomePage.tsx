@@ -43,7 +43,7 @@ export const HomePage = ({ teamId }: HomePageProps) => {
     <div className="flex min-h-[844px] flex-1 flex-col bg-cool-50">
       <HomeHeader onMenuClick={() => setIsSidebarOpen(true)} />
       <TeamSummaryCard team={team} />
-      <CreateMeetingButton />
+      <CreateMeetingButton teamId={teamId} />
       <MeetingListSection meetings={meetings} teamId={teamId} />
 
       <NavigationSidebar
