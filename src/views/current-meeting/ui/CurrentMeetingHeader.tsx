@@ -41,10 +41,10 @@ export const CurrentMeetingHeader = ({
   const isOvertime = meeting.elapsedSeconds > meeting.targetMinutes * 60;
   const connectionLabel =
     connectionStatus === 'connecting'
-      ? '서버 연결 중'
+      ? '실시간 연결 중'
       : connectionStatus === 'connected'
-        ? '서버 연결 완료'
-        : '서버 연결 오류';
+        ? '실시간 연결됨'
+        : '실시간 연결 오류';
   const statusLabel = isCompleted
     ? '종료됨'
     : isDisconnected

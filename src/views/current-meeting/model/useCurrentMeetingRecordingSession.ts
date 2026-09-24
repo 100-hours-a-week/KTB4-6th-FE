@@ -133,7 +133,7 @@ export const useCurrentMeetingRecordingSession = ({
     } catch (error) {
       const message =
         error instanceof DOMException && error.name === 'NotAllowedError'
-          ? '마이크 권한을 허용해야 녹음을 시작할 수 있습니다.'
+          ? '마이크 권한이 없어 녹음을 진행할 수 없습니다. 마이크 권한을 다시 설정해주세요.'
           : '마이크를 사용할 수 없습니다. 장치와 브라우저 권한을 확인해주세요.';
       showToast(message, 'danger');
     } finally {
@@ -205,7 +205,7 @@ export const useCurrentMeetingRecordingSession = ({
       showToast(
         useMediaRecorder.getState().conversionError ??
           (uploadCompleted
-            ? '녹음을 종료하지 못했습니다. 다시 시도해주세요.'
+            ? '회의를 종료하지 못했습니다. 다시 시도해주세요.'
             : '녹음 파일을 업로드하지 못했습니다. 다시 시도해주세요.'),
         'danger',
       );

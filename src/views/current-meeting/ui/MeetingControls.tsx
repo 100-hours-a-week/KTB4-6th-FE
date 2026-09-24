@@ -92,7 +92,7 @@ export const MeetingControls = ({
     : isCompleted
       ? '회의가 종료되었습니다'
       : isDisconnected
-        ? '서버 연결이 끊어졌습니다'
+        ? '실시간 연결이 끊어졌습니다'
         : isPaused
           ? recorderName + '님이 녹음을 일시정지했습니다'
           : recorderName + '님이 녹음을 진행 중입니다';

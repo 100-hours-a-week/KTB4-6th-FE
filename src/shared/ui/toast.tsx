@@ -4,7 +4,15 @@ import type { ReactNode } from 'react';
 import { Toast } from '@base-ui/react/toast';
 import { cn, useAppFrameElement } from '@/shared/lib';
 
-export type AppToastVariant = 'success' | 'danger' | 'neutral';
+export type AppToastVariant = 'success' | 'warning' | 'danger' | 'neutral';
+
+const TOAST_DURATION_MS = 3000;
+
+const TOAST_DOT_CLASS_NAMES = {
+  success: 'bg-success',
+  warning: 'bg-warning',
+  danger: 'bg-danger',
+} as const;
 
 interface AppToastData {
   variant?: AppToastVariant;
@@ -20,10 +28,10 @@ export const AppToastProvider = ({ children }: AppToastProviderProps) => {
   const frame = useAppFrameElement();
 
   return (
-    <Toast.Provider>
+    <Toast.Provider timeout={TOAST_DURATION_MS}>
       {children}
       <Toast.Portal container={frame}>
-        <Toast.Viewport className="pointer-events-none absolute inset-x-4 top-4 z-[70] flex flex-col items-stretch gap-2">
+        <Toast.Viewport className="pointer-events-none absolute inset-x-4 top-4 z-[100] flex flex-col items-stretch gap-2">
           <AppToastList />
         </Toast.Viewport>
       </Toast.Portal>
@@ -52,7 +60,7 @@ const AppToastList = () => {
             <span
               className={cn(
                 'mt-1.5 size-1.5 shrink-0 rounded-full',
-                variant === 'success' ? 'bg-success' : 'bg-danger',
+                TOAST_DOT_CLASS_NAMES[variant],
               )}
             />
           ) : null}
