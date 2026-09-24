@@ -16,15 +16,15 @@ export const MeetingListItem = ({ meeting, teamId }: MeetingListItemProps) => {
   const { showToast } = useAppToast();
   const isInProgress = meeting.status === 'in_progress';
   const isWaiting = meeting.status === 'waiting';
+  const isJoinable = isInProgress || isWaiting;
 
   const handleClick = () => {
-    if (isWaiting) return;
-
-    if (isInProgress) {
+    if (isJoinable) {
       router.push(`/teams/${teamId}/meetings/${meeting.id}`);
-    } else {
-      showToast('종료된 회의입니다', 'danger');
+      return;
     }
+
+    showToast('종료된 회의입니다', 'danger');
   };
 
   return (
