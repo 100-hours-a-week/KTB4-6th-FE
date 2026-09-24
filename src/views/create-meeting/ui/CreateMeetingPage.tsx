@@ -34,7 +34,7 @@ export const CreateMeetingPage = ({ teamId }: CreateMeetingPageProps) => {
         <p className="mt-5 text-base font-bold text-cool-900">회의 정보를 입력해주세요</p>
       </main>
 
-      <CreateMeetingDialog onClose={closeModal} />
+      <CreateMeetingDialog teamId={teamId} onClose={closeModal} />
     </div>
   );
 };

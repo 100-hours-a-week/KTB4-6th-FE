@@ -12,4 +12,7 @@ export {
   INITIAL_CREATE_MEETING_FORM_VALUES,
   isCreateMeetingFormValid,
 } from './model/create-meeting-form';
+export { MeetingApiError } from './model/errors';
+export { useCreateMeeting } from './model/useCreateMeeting';
 export type { CreateMeetingFormField, CreateMeetingFormValues } from './model/create-meeting-form';
+export type { CreateMeetingData, CreateMeetingRequest } from './model/types';
