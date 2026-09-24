@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { Toast } from '@base-ui/react/toast';
 import { cn, useAppFrameElement } from '@/shared/lib';
 
-export type AppToastVariant = 'success' | 'warning' | 'danger' | 'neutral';
+export type AppToastVariant = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
 
 const TOAST_DURATION_MS = 3000;
 
@@ -12,6 +12,7 @@ const TOAST_DOT_CLASS_NAMES = {
   success: 'bg-success',
   warning: 'bg-warning',
   danger: 'bg-danger',
+  info: 'bg-brand-300',
 } as const;
 
 interface AppToastData {

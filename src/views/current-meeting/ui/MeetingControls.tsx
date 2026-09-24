@@ -6,6 +6,12 @@ import { useRouter } from 'next/navigation';
 import { useMeetingExit } from '@/features/meeting-sse';
 import { cn } from '@/shared/lib';
 import { useAppToast } from '@/shared/ui';
+import {
+  MEETING_DELETE_BLOCKED_TOAST,
+  MEETING_LEAVE_BLOCKED_TOAST,
+  RECORDING_BLOCKED_TOASTS,
+  type RecordingBlockedReason,
+} from '../model/blocked-action-toasts';
 import { MeetingDeleteDialog } from './MeetingDeleteDialog';
 import { MeetingMoreMenu } from './MeetingMoreMenu';
 
@@ -16,7 +22,10 @@ interface MeetingControlsProps {
   canDelete: boolean;
   canCompleteRecording: boolean;
   canStartRecording: boolean;
+  startBlockedReason: RecordingBlockedReason | null;
   canPauseResumeRecording: boolean;
+  pauseResumeBlockedReason: RecordingBlockedReason | null;
+  isMeetingInProgress: boolean;
   isCompleted: boolean;
   isWaiting: boolean;
   isRecorder: boolean;
@@ -38,7 +47,10 @@ export const MeetingControls = ({
   canDelete,
   canCompleteRecording,
   canStartRecording,
+  startBlockedReason,
   canPauseResumeRecording,
+  pauseResumeBlockedReason,
+  isMeetingInProgress,
   isCompleted,
   isWaiting,
   isRecorder,
@@ -87,6 +99,41 @@ export const MeetingControls = ({
     }
   };
 
+  const isPrimaryBlocked = isWaiting ? !canStartRecording : !canPauseResumeRecording;
+  const primaryBlockedReason = isWaiting ? startBlockedReason : pauseResumeBlockedReason;
+
+  // 막힌 버튼도 눌리게 두고, 사유가 있으면 토스트로 알린다.
+  const handlePrimaryClick = () => {
+    if (isPrimaryBlocked) {
+      if (primaryBlockedReason) {
+        const { message, variant } = RECORDING_BLOCKED_TOASTS[primaryBlockedReason];
+        showToast(message, variant);
+      }
+      return;
+    }
+
+    if (isWaiting) onStartRecording();
+    else onPauseResumeRecording();
+  };
+
+  const handleDeleteRequest = () => {
+    if (isMeetingInProgress) {
+      showToast(MEETING_DELETE_BLOCKED_TOAST.message, MEETING_DELETE_BLOCKED_TOAST.variant);
+      return;
+    }
+
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleLeaveRequest = () => {
+    if (isMeetingInProgress) {
+      showToast(MEETING_LEAVE_BLOCKED_TOAST.message, MEETING_LEAVE_BLOCKED_TOAST.variant);
+      return;
+    }
+
+    void handleLeave();
+  };
+
   const participantMessage = isEnding
     ? '회의 종료 처리 중입니다'
     : isCompleted
@@ -103,11 +150,11 @@ export const MeetingControls = ({
         <div className="grid min-w-0 grid-cols-2 gap-2">
           <button
             type="button"
-            disabled={isWaiting ? !canStartRecording : !canPauseResumeRecording}
-            onClick={isWaiting ? onStartRecording : onPauseResumeRecording}
+            aria-disabled={isPrimaryBlocked}
+            onClick={handlePrimaryClick}
             className={cn(
               'h-12 rounded-xl px-2 text-sm font-semibold',
-              isDisconnected || isEnding || isUpdatingRecordingStatus
+              isPrimaryBlocked
                 ? 'border border-cool-200 bg-white text-cool-400'
                 : isWaiting || isPaused
                   ? 'bg-brand-600 text-white'
@@ -162,8 +209,8 @@ export const MeetingControls = ({
         isRecorder={isRecorder}
         isPreview={isPreview}
         isLeaving={isLeaving}
-        onDelete={() => setIsDeleteDialogOpen(true)}
-        onLeave={handleLeave}
+        onDelete={handleDeleteRequest}
+        onLeave={handleLeaveRequest}
       />
       <MeetingDeleteDialog
         isDeleting={isDeleting}

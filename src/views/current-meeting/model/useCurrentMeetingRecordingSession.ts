@@ -12,6 +12,7 @@ import {
   useUploadRecordingFile,
 } from '@/features/recording';
 import { useAppToast } from '@/shared/ui';
+import type { RecordingBlockedReason } from './blocked-action-toasts';
 
 interface UseCurrentMeetingRecordingSessionParams {
   teamId: string;
@@ -84,12 +85,27 @@ export const useCurrentMeetingRecordingSession = ({
   const isStartingRecording = operation === 'starting';
   const isUploadCompleted =
     pendingUpload?.recordingSessionId === recordingSessionId && pendingUpload.isCompleted;
-  const canStartRecording =
-    isWaiting &&
-    activeRecording === null &&
+  const connectionBlockedReason: RecordingBlockedReason | null =
+    connectionStatus === 'error'
+      ? 'disconnected'
+      : connectionStatus === 'connecting'
+        ? 'connecting'
+        : null;
+  // 버튼은 막혀 있어도 눌렀을 때 사유를 토스트로 알려야 해서 사유를 함께 넘긴다.
+  const startBlockedReason: RecordingBlockedReason | null =
+    !isWaiting || isPreview || isStartingRecording
+      ? null
+      : (connectionBlockedReason ?? (activeRecording !== null ? 'other-recording' : null));
+  const pauseResumeBlockedReason: RecordingBlockedReason | null =
     !isPreview &&
-    connectionStatus === 'connected' &&
-    !isStartingRecording;
+    recordingSessionId !== null &&
+    !isCompleted &&
+    !isUploadCompleted &&
+    operation === 'idle'
+      ? connectionBlockedReason
+      : null;
+  const canStartRecording =
+    isWaiting && !isPreview && !isStartingRecording && startBlockedReason === null;
   const canPauseResumeRecording =
     !isPreview &&
     recordingSessionId !== null &&
@@ -270,7 +286,9 @@ export const useCurrentMeetingRecordingSession = ({
     isCompleted,
     isStartingRecording,
     canStartRecording,
+    startBlockedReason,
     canPauseResumeRecording,
+    pauseResumeBlockedReason,
     canCompleteRecording,
     handleConfirmRecording,
     handlePauseResumeRecording,

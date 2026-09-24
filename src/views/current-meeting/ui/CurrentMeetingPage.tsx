@@ -49,7 +49,9 @@ export const CurrentMeetingPage = ({
     isStartingRecording,
     isUpdatingRecordingStatus,
     canStartRecording,
+    startBlockedReason,
     canPauseResumeRecording,
+    pauseResumeBlockedReason,
     canCompleteRecording,
     setIsRecordingAcknowledged,
     handleStartRecording,
@@ -130,8 +132,11 @@ export const CurrentMeetingPage = ({
         isStartingRecording={isStartingRecording}
         isUpdatingRecordingStatus={isUpdatingRecordingStatus}
         canStartRecording={canStartRecording}
+        startBlockedReason={startBlockedReason}
         onStartRecording={handleStartRecording}
         canPauseResumeRecording={canPauseResumeRecording}
+        pauseResumeBlockedReason={pauseResumeBlockedReason}
+        isMeetingInProgress={!isWaiting && !isCompleted}
         onPauseResumeRecording={handlePauseResumeRecording}
         canCompleteRecording={canCompleteRecording}
         isCompleted={isCompleted}
