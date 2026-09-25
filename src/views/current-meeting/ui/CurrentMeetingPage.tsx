@@ -7,6 +7,7 @@ import { MeetingSseConnection } from '@/features/meeting-sse';
 import { getTeamDetail } from '@/features/team-management';
 import { MeetingInfoDialog } from '@/widgets/meeting-info-form';
 import { NavigationSidebar } from '@/widgets/navigation-sidebar';
+import { useCompletedMeetingRedirect } from '../model/useCompletedMeetingRedirect';
 import { useCurrentMeetingRecording } from '../model/useCurrentMeetingRecording';
 import { useMeetingDeletedRedirect } from '../model/useMeetingDeletedRedirect';
 import { useMeetingInfoEdit } from '../model/useMeetingInfoEdit';
@@ -75,6 +76,13 @@ export const CurrentMeetingPage = ({
     handleCompleteRecording,
   } = useCurrentMeetingRecording({ teamId, meetingId, previewState, previewRole });
   useRecordingStatusSync({ meetingId, isPreview });
+  useCompletedMeetingRedirect({
+    teamId,
+    meetingId,
+    isPreview,
+    isMeetingLoaded: meeting !== null,
+    hasCompleted: isCompleted,
+  });
   const redirectAfterMeetingDeleted = useMeetingDeletedRedirect(teamId);
   const { isRecordingStartedNoticeOpen, setIsRecordingStartedNoticeOpen } =
     useRecordingStartedNotice({ meetingId, isPreview });
