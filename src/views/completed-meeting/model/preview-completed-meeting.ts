@@ -1,7 +1,11 @@
-export type CompletedMeetingPreviewState = 'completed' | 'audio-expired';
+export type CompletedMeetingPreviewState =
+  'completed' | 'summary-generating' | 'summary-failed' | 'audio-expired';
+
+export type MeetingSummaryStatus = 'generating' | 'completed' | 'failed';
 
 export interface CompletedMeetingViewModel {
   title: string;
+  summaryStatus: MeetingSummaryStatus;
   startedAt: string;
   endedAt: string;
   /** 음성 파일이 만료되기까지 남은 일수. 이미 만료됐으면 null */
@@ -12,6 +16,7 @@ export interface CompletedMeetingViewModel {
 // TODO: 회의 상세 응답(GET /api/v1/meetings/{meetingId})과 음성 파일 조회 응답으로 교체한다.
 const baseMeeting = {
   title: '9월 스프린트 계획',
+  summaryStatus: 'completed' as const,
   startedAt: '2026-08-25T10:00:00+09:00',
   endedAt: '2026-08-25T13:00:00+09:00',
   audioDurationSeconds: 1753,
@@ -19,6 +24,8 @@ const baseMeeting = {
 
 const previews: Record<CompletedMeetingPreviewState, CompletedMeetingViewModel> = {
   completed: { ...baseMeeting, audioRemainingDays: 42 },
+  'summary-generating': { ...baseMeeting, summaryStatus: 'generating', audioRemainingDays: 42 },
+  'summary-failed': { ...baseMeeting, summaryStatus: 'failed', audioRemainingDays: 42 },
   'audio-expired': { ...baseMeeting, audioRemainingDays: null },
 };
 

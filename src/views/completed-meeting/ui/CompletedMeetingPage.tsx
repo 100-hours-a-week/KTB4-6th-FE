@@ -8,6 +8,8 @@ import {
 import { AudioPlayer } from './AudioPlayer';
 import { CompletedMeetingHeader } from './CompletedMeetingHeader';
 import { CompletedMeetingTabs } from './CompletedMeetingTabs';
+import { SummaryFailedState } from './SummaryFailedState';
+import { SummaryGeneratingState } from './SummaryGeneratingState';
 import { SummaryTab } from './SummaryTab';
 import { TranscriptTab } from './TranscriptTab';
 
@@ -45,7 +47,13 @@ export const CompletedMeetingPage = ({
       <main data-tab={tab} className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         {tab === 'summary' ? (
           // TODO: AI 요약 조회 API 응답으로 교체한다.
-          <SummaryTab summary={mockMeetingSummary} />
+          <>
+            {meeting.summaryStatus === 'generating' && <SummaryGeneratingState />}
+            {meeting.summaryStatus === 'failed' && (
+              <SummaryFailedState transcriptHref={getTabHref('transcript')} />
+            )}
+            {meeting.summaryStatus === 'completed' && <SummaryTab summary={mockMeetingSummary} />}
+          </>
         ) : (
           // TODO: 전사 목록 조회 API 응답으로 교체한다.
           <TranscriptTab entries={mockTranscriptEntries} />
