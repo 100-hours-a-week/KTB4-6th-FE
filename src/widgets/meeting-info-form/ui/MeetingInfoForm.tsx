@@ -20,14 +20,23 @@ import {
 } from '@/features/meeting';
 import { cn } from '@/shared/lib';
 
-interface CreateMeetingFormProps {
+interface MeetingInfoFormProps {
   formId: string;
+  initialValues?: CreateMeetingFormValues;
   onSubmit?: (values: CreateMeetingFormValues) => void;
   onValidityChange: (isValid: boolean) => void;
 }
 
 type CreateMeetingFormTouched = Record<CreateMeetingFormField, boolean>;
 type DurationSelection = 'manual' | number | null;
+
+const getInitialDurationSelection = (duration: string): DurationSelection => {
+  if (duration === '') return null;
+
+  return (CREATE_MEETING_DURATION_OPTIONS as readonly number[]).includes(Number(duration))
+    ? Number(duration)
+    : 'manual';
+};
 
 const initialTouched: CreateMeetingFormTouched = {
   title: false,
@@ -36,15 +45,18 @@ const initialTouched: CreateMeetingFormTouched = {
   note: false,
 };
 
-export const CreateMeetingForm = ({
+export const MeetingInfoForm = ({
   formId,
+  initialValues = INITIAL_CREATE_MEETING_FORM_VALUES,
   onSubmit,
   onValidityChange,
-}: CreateMeetingFormProps) => {
-  const [values, setValues] = useState(INITIAL_CREATE_MEETING_FORM_VALUES);
+}: MeetingInfoFormProps) => {
+  const [values, setValues] = useState(initialValues);
   const [touched, setTouched] = useState(initialTouched);
   const [isDurationOpen, setIsDurationOpen] = useState(false);
-  const [durationSelection, setDurationSelection] = useState<DurationSelection>(null);
+  const [durationSelection, setDurationSelection] = useState<DurationSelection>(() =>
+    getInitialDurationSelection(initialValues.duration),
+  );
 
   const titleError = getCreateMeetingTitleError(values.title);
   const durationError = getCreateMeetingDurationError(values.duration);

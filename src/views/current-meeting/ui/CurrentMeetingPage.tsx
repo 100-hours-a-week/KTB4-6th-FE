@@ -5,12 +5,18 @@ import { useQuery } from '@tanstack/react-query';
 import { Headphones, LoaderCircle } from 'lucide-react';
 import { MeetingSseConnection } from '@/features/meeting-sse';
 import { getTeamDetail } from '@/features/team-management';
+import { MeetingInfoDialog } from '@/widgets/meeting-info-form';
 import { NavigationSidebar } from '@/widgets/navigation-sidebar';
 import { useCurrentMeetingRecording } from '../model/useCurrentMeetingRecording';
+import { useMeetingInfoEdit } from '../model/useMeetingInfoEdit';
+import { useRecordingStartedNotice } from '../model/useRecordingStartedNotice';
 import { CurrentMeetingHeader } from './CurrentMeetingHeader';
+import { InsufficientCreditDialog } from './InsufficientCreditDialog';
 import { MeetingControls } from './MeetingControls';
+import { MeetingEditNoticeDialog } from './MeetingEditNoticeDialog';
 import { MeetingTranscript } from './MeetingTranscript';
 import { RecordingStartDialog } from './RecordingStartDialog';
+import { RecordingStartedDialog } from './RecordingStartedDialog';
 
 interface CurrentMeetingPageProps {
   teamId: string;
@@ -46,6 +52,7 @@ export const CurrentMeetingPage = ({
     isCompleted,
     isStartDialogOpen,
     isRecordingAcknowledged,
+    isInsufficientCreditDialogOpen,
     isStartingRecording,
     isUpdatingRecordingStatus,
     canStartRecording,
@@ -54,12 +61,25 @@ export const CurrentMeetingPage = ({
     pauseResumeBlockedReason,
     canCompleteRecording,
     setIsRecordingAcknowledged,
+    setIsInsufficientCreditDialogOpen,
     handleStartRecording,
     handleStartDialogOpenChange,
     handleConfirmRecording,
     handlePauseResumeRecording,
     handleCompleteRecording,
   } = useCurrentMeetingRecording({ teamId, meetingId, previewState, previewRole });
+  const { isRecordingStartedNoticeOpen, setIsRecordingStartedNoticeOpen } =
+    useRecordingStartedNotice({ meetingId, isPreview });
+  const {
+    isEditNoticeOpen,
+    isEditFormOpen,
+    editFormInitialValues,
+    setIsEditNoticeOpen,
+    handleEditInfo,
+    handleConfirmEditNotice,
+    handleSubmitEditForm,
+    handleCloseEditForm,
+  } = useMeetingInfoEdit(meeting);
 
   if (!meeting) {
     return (
@@ -124,6 +144,9 @@ export const CurrentMeetingPage = ({
         meetingId={String(meetingId)}
         isPreview={isPreview}
         canDelete={!isPreview && team?.role === 'LEADER'}
+        // TODO: 회의 수정은 팀장 또는 회의 생성자만 가능해서, 생성자 정보가 조회되면 권한을 좁힌다.
+        canEditInfo={isWaiting}
+        onEditInfo={handleEditInfo}
         isWaiting={isWaiting}
         isRecorder={isRecorder}
         isPaused={isPaused}
@@ -152,6 +175,28 @@ export const CurrentMeetingPage = ({
         onConfirm={handleConfirmRecording}
         onOpenChange={handleStartDialogOpenChange}
       />
+      <InsufficientCreditDialog
+        isOpen={isInsufficientCreditDialogOpen}
+        onOpenChange={setIsInsufficientCreditDialogOpen}
+      />
+      <RecordingStartedDialog
+        isOpen={isRecordingStartedNoticeOpen}
+        onOpenChange={setIsRecordingStartedNoticeOpen}
+      />
+      <MeetingEditNoticeDialog
+        isOpen={isEditNoticeOpen}
+        onConfirm={handleConfirmEditNotice}
+        onOpenChange={setIsEditNoticeOpen}
+      />
+      {isEditFormOpen && editFormInitialValues && (
+        <MeetingInfoDialog
+          initialValues={editFormInitialValues}
+          isSubmitting={false}
+          submitError={null}
+          onSubmit={handleSubmitEditForm}
+          onClose={handleCloseEditForm}
+        />
+      )}
 
       {team && (
         <NavigationSidebar

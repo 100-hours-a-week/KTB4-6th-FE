@@ -6,22 +6,28 @@ import { cn, useAppFrameElement } from '@/shared/lib';
 
 interface MeetingMoreMenuProps {
   canDelete: boolean;
+  canEditInfo: boolean;
+  isMeetingInProgress: boolean;
   isDeleting: boolean;
   isRecorder: boolean;
   isPreview: boolean;
   isLeaving: boolean;
   onDelete: () => void;
   onLeave: () => void;
+  onEditInfo: () => void;
 }
 
 export const MeetingMoreMenu = ({
   canDelete,
+  canEditInfo,
+  isMeetingInProgress,
   isDeleting,
   isRecorder,
   isPreview,
   isLeaving,
   onDelete,
   onLeave,
+  onEditInfo,
 }: MeetingMoreMenuProps) => {
   const frame = useAppFrameElement();
 
@@ -41,16 +47,19 @@ export const MeetingMoreMenu = ({
               isRecorder || canDelete ? 'min-w-[190px]' : 'min-w-[152px]',
             )}
           >
-            {isRecorder ? (
-              <>
-                <Menu.Item
-                  disabled
-                  className="flex min-h-12 items-center px-4 py-3 text-sm font-medium text-cool-900 outline-none select-none"
-                >
-                  회의 이름 변경
-                </Menu.Item>
-              </>
-            ) : (
+            {(canEditInfo || isMeetingInProgress) && (
+              <Menu.Item
+                disabled={isMeetingInProgress}
+                onClick={onEditInfo}
+                className={cn(
+                  'flex min-h-12 items-center px-4 py-3 text-sm font-medium outline-none select-none',
+                  isMeetingInProgress ? 'text-cool-400' : 'text-cool-900',
+                )}
+              >
+                회의 정보 수정
+              </Menu.Item>
+            )}
+            {!isRecorder && (
               <Menu.Item
                 disabled={isPreview || isLeaving}
                 onClick={onLeave}
@@ -65,9 +74,12 @@ export const MeetingMoreMenu = ({
             )}
             {canDelete && (
               <Menu.Item
-                disabled={isDeleting}
+                disabled={isDeleting || isMeetingInProgress}
                 onClick={onDelete}
-                className="flex min-h-12 items-center border-t border-cool-100 px-4 py-3 text-sm font-medium text-danger outline-none select-none"
+                className={cn(
+                  'flex min-h-12 items-center border-t border-cool-100 px-4 py-3 text-sm font-medium outline-none select-none',
+                  isMeetingInProgress ? 'text-cool-400' : 'text-danger',
+                )}
               >
                 {isDeleting ? '삭제 중...' : '회의 삭제'}
               </Menu.Item>

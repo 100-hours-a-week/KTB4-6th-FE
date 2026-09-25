@@ -11,7 +11,9 @@ import {
 } from 'react';
 import type { ReactNode } from 'react';
 import { joinMeeting } from '../api/join-meeting';
-import { parseTranscriptCreatedEvent, type TranscriptCreatedEventData } from './transcript-event';
+import { createListenerRegistry } from './listener-registry';
+import type { TranscriptCreatedEventData } from './transcript-event';
+import { useMeetingTranscripts } from './use-meeting-transcripts';
 
 export type MeetingSseStatus = 'idle' | 'unconfigured' | 'connecting' | 'connected' | 'error';
 
@@ -21,6 +23,7 @@ interface MeetingSseContextValue {
   connect: (meetingId: string) => void;
   disconnect: (meetingId: string) => void;
   subscribeDeleted: (meetingId: string, listener: () => void) => () => void;
+  subscribeRecordingStarted: (meetingId: string, listener: () => void) => () => void;
   subscribeTranscriptCreated: (
     meetingId: string,
     listener: (transcript: TranscriptCreatedEventData) => void,
@@ -33,45 +36,15 @@ interface MeetingSseProviderProps {
   children: ReactNode;
 }
 
+/** 회의별 SSE 연결 수명 주기와 연결 상태를 관리하고, 수신한 이벤트를 전사 훅과 구독자에게 넘긴다. */
 export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
   const sources = useRef(new Map<string, EventSource>());
   const joining = useRef(new Map<string, { cancelled: boolean }>());
-  const deletedListeners = useRef(new Map<string, Set<() => void>>());
-  const transcriptListeners = useRef(
-    new Map<string, Set<(transcript: TranscriptCreatedEventData) => void>>(),
-  );
-  const transcriptSequences = useRef(new Map<string, Set<number>>());
+  const [deletedListeners] = useState(() => createListenerRegistry());
+  const [recordingStartedListeners] = useState(() => createListenerRegistry());
   const [statuses, setStatuses] = useState<Record<string, MeetingSseStatus>>({});
-  const [transcriptsByMeetingId, setTranscriptsByMeetingId] = useState<
-    Record<string, TranscriptCreatedEventData[]>
-  >({});
-
-  const subscribeDeleted = useCallback((meetingId: string, listener: () => void) => {
-    const listeners = deletedListeners.current.get(meetingId) ?? new Set<() => void>();
-    listeners.add(listener);
-    deletedListeners.current.set(meetingId, listeners);
-
-    return () => {
-      listeners.delete(listener);
-      if (listeners.size === 0) deletedListeners.current.delete(meetingId);
-    };
-  }, []);
-
-  const subscribeTranscriptCreated = useCallback(
-    (meetingId: string, listener: (transcript: TranscriptCreatedEventData) => void) => {
-      const listeners =
-        transcriptListeners.current.get(meetingId) ??
-        new Set<(transcript: TranscriptCreatedEventData) => void>();
-      listeners.add(listener);
-      transcriptListeners.current.set(meetingId, listeners);
-
-      return () => {
-        listeners.delete(listener);
-        if (listeners.size === 0) transcriptListeners.current.delete(meetingId);
-      };
-    },
-    [],
-  );
+  const { transcriptsByMeetingId, subscribeTranscriptCreated, receiveTranscript } =
+    useMeetingTranscripts();
 
   const disconnect = useCallback((meetingId: string) => {
     const pendingJoin = joining.current.get(meetingId);
@@ -133,21 +106,12 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
           };
 
           source.addEventListener('TRANSCRIPT_CREATED', (event) => {
-            const transcript = parseTranscriptCreatedEvent(event.data);
-            if (!transcript || String(transcript.meetingId) !== meetingId) return;
+            receiveTranscript(meetingId, event.data);
+          });
 
-            const sequences = transcriptSequences.current.get(meetingId) ?? new Set<number>();
-            if (sequences.has(transcript.sequenceNumber)) return;
-
-            sequences.add(transcript.sequenceNumber);
-            transcriptSequences.current.set(meetingId, sequences);
-            setTranscriptsByMeetingId((current) => ({
-              ...current,
-              [meetingId]: [...(current[meetingId] ?? []), transcript].sort(
-                (left, right) => left.sequenceNumber - right.sequenceNumber,
-              ),
-            }));
-            transcriptListeners.current.get(meetingId)?.forEach((listener) => listener(transcript));
+          // 연결이 회의 단위라 페이로드 없이 발생 사실만 알린다.
+          source.addEventListener('RECORDING_STARTED', () => {
+            recordingStartedListeners.emit(meetingId);
           });
 
           source.addEventListener('MEETING_COMPLETED', () => {
@@ -158,7 +122,7 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
             if (sources.current.get(meetingId) !== source) return;
 
             disconnect(meetingId);
-            deletedListeners.current.get(meetingId)?.forEach((listener) => listener());
+            deletedListeners.emit(meetingId);
           });
 
           source.onerror = () => {
@@ -178,26 +142,22 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
         }
       })();
     },
-    [disconnect],
+    [deletedListeners, disconnect, receiveTranscript, recordingStartedListeners],
   );
 
   useEffect(() => {
     const activeSources = sources.current;
     const pendingJoins = joining.current;
-    const activeDeletedListeners = deletedListeners.current;
-    const activeTranscriptListeners = transcriptListeners.current;
-    const activeTranscriptSequences = transcriptSequences.current;
     return () => {
       pendingJoins.forEach((attempt) => {
         attempt.cancelled = true;
       });
       activeSources.forEach((source) => source.close());
       activeSources.clear();
-      activeDeletedListeners.clear();
-      activeTranscriptListeners.clear();
-      activeTranscriptSequences.clear();
+      deletedListeners.clear();
+      recordingStartedListeners.clear();
     };
-  }, []);
+  }, [deletedListeners, recordingStartedListeners]);
 
   const value = useMemo(
     () => ({
@@ -205,7 +165,8 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
       transcriptsByMeetingId,
       connect,
       disconnect,
-      subscribeDeleted,
+      subscribeDeleted: deletedListeners.subscribe,
+      subscribeRecordingStarted: recordingStartedListeners.subscribe,
       subscribeTranscriptCreated,
     }),
     [
@@ -213,7 +174,8 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
       transcriptsByMeetingId,
       connect,
       disconnect,
-      subscribeDeleted,
+      deletedListeners.subscribe,
+      recordingStartedListeners.subscribe,
       subscribeTranscriptCreated,
     ],
   );

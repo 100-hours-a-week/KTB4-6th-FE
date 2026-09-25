@@ -1,10 +1,14 @@
 'use client';
 
 import type { RecordingBlockedReason } from '../model/blocked-action-toasts';
-import { useMeetingControlActions } from '../model/useMeetingControlActions';
+import { useCompleteRecordingDialog } from '../model/useCompleteRecordingDialog';
+import { useMeetingDelete } from '../model/useMeetingDelete';
+import { useMeetingLeave } from '../model/useMeetingLeave';
 import { MeetingDeleteDialog } from './MeetingDeleteDialog';
+import { MeetingManageNotice } from './MeetingManageNotice';
 import { MeetingMoreMenu } from './MeetingMoreMenu';
 import { ParticipantStatusMessage } from './ParticipantStatusMessage';
+import { RecordingCompleteDialog } from './RecordingCompleteDialog';
 import { RecordingControlButtons } from './RecordingControlButtons';
 
 interface MeetingControlsProps {
@@ -12,6 +16,7 @@ interface MeetingControlsProps {
   meetingId: string;
   isPreview: boolean;
   canDelete: boolean;
+  canEditInfo: boolean;
   canCompleteRecording: boolean;
   canStartRecording: boolean;
   startBlockedReason: RecordingBlockedReason | null;
@@ -29,6 +34,7 @@ interface MeetingControlsProps {
   onStartRecording: () => void;
   onPauseResumeRecording: () => void;
   onCompleteRecording: () => void;
+  onEditInfo: () => void;
   recorderName: string;
 }
 
@@ -37,6 +43,7 @@ export const MeetingControls = ({
   meetingId,
   isPreview,
   canDelete,
+  canEditInfo,
   canCompleteRecording,
   canStartRecording,
   startBlockedReason,
@@ -54,18 +61,17 @@ export const MeetingControls = ({
   onStartRecording,
   onPauseResumeRecording,
   onCompleteRecording,
+  onEditInfo,
   recorderName,
 }: MeetingControlsProps) => {
-  const {
-    isLeaving,
-    isDeleting,
-    isDeleteDialogOpen,
-    setIsDeleteDialogOpen,
-    handleLeave,
-    handleDelete,
-    handleDeleteRequest,
-    handleLeaveRequest,
-  } = useMeetingControlActions({ teamId, meetingId, canDelete, isMeetingInProgress });
+  const { isLeaving, handleLeave } = useMeetingLeave({ teamId, meetingId });
+  const { isDeleting, isDeleteDialogOpen, setIsDeleteDialogOpen, handleDelete } = useMeetingDelete({
+    teamId,
+    meetingId,
+    canDelete,
+  });
+  const { isCompleteDialogOpen, setIsCompleteDialogOpen, handleCompleteRequest, handleComplete } =
+    useCompleteRecordingDialog(onCompleteRecording);
 
   return (
     <footer className="grid shrink-0 grid-cols-[minmax(0,1fr)_36px] items-center gap-2 border-t border-cool-200 bg-white px-5 py-3">
@@ -87,7 +93,7 @@ export const MeetingControls = ({
           canCompleteRecording={canCompleteRecording}
           onStartRecording={onStartRecording}
           onPauseResumeRecording={onPauseResumeRecording}
-          onCompleteRecording={onCompleteRecording}
+          onCompleteRecording={handleCompleteRequest}
           onLeave={handleLeave}
         />
       ) : (
@@ -100,20 +106,32 @@ export const MeetingControls = ({
         />
       )}
 
-      <MeetingMoreMenu
-        canDelete={canDelete}
-        isDeleting={isDeleting}
-        isRecorder={isRecorder}
-        isPreview={isPreview}
-        isLeaving={isLeaving}
-        onDelete={handleDeleteRequest}
-        onLeave={handleLeaveRequest}
-      />
+      {isMeetingInProgress && !isRecorder ? (
+        <MeetingManageNotice />
+      ) : (
+        <MeetingMoreMenu
+          canDelete={canDelete}
+          canEditInfo={canEditInfo}
+          isMeetingInProgress={isMeetingInProgress}
+          isDeleting={isDeleting}
+          isRecorder={isRecorder}
+          isPreview={isPreview}
+          isLeaving={isLeaving}
+          onDelete={() => setIsDeleteDialogOpen(true)}
+          onLeave={handleLeave}
+          onEditInfo={onEditInfo}
+        />
+      )}
       <MeetingDeleteDialog
         isDeleting={isDeleting}
         isOpen={isDeleteDialogOpen}
         onConfirm={handleDelete}
         onOpenChange={setIsDeleteDialogOpen}
+      />
+      <RecordingCompleteDialog
+        isOpen={isCompleteDialogOpen}
+        onConfirm={handleComplete}
+        onOpenChange={setIsCompleteDialogOpen}
       />
     </footer>
   );
