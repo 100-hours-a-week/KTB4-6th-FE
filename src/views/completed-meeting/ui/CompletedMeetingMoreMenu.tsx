@@ -6,6 +6,7 @@ import { FileText, Headphones, MoreVertical, Pencil, Trash2 } from 'lucide-react
 import { cn, useAppFrameElement } from '@/shared/lib';
 import { useAppToast } from '@/shared/ui';
 import type { CompletedMeetingViewerRole } from '../model/preview-completed-meeting';
+import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 import { MeetingRenameDialog } from './MeetingRenameDialog';
 
 interface CompletedMeetingMoreMenuProps {
@@ -14,6 +15,8 @@ interface CompletedMeetingMoreMenuProps {
   /** 음성 파일이 만료되기까지 남은 일수. 이미 만료됐으면 null */
   audioRemainingDays: number | null;
 }
+
+type MoreMenuDialog = 'rename' | 'audio-delete' | 'meeting-delete';
 
 interface MoreMenuItemProps {
   icon: ReactNode;
@@ -41,7 +44,7 @@ const MoreMenuItem = ({ icon, label, isDanger, trailingText, onClick }: MoreMenu
   </Menu.Item>
 );
 
-// TODO: 음성 삭제·회의 삭제는 각 모달과 연결하고, 다운로드는 API 연동 때 구현한다.
+// TODO: 다운로드는 API 연동 때 구현한다.
 export const CompletedMeetingMoreMenu = ({
   meetingTitle,
   viewerRole,
@@ -49,14 +52,28 @@ export const CompletedMeetingMoreMenu = ({
 }: CompletedMeetingMoreMenuProps) => {
   const frame = useAppFrameElement();
   const { showToast } = useAppToast();
-  const [isRenameOpen, setIsRenameOpen] = useState(false);
+  const [openDialog, setOpenDialog] = useState<MoreMenuDialog | null>(null);
   const isLeader = viewerRole === 'leader';
   const isAudioExpired = audioRemainingDays === null;
 
+  const closeDialog = () => setOpenDialog(null);
+
   // TODO: 회의 수정 API(PATCH /api/v1/meetings/{meetingId}) 연동 시 저장 요청으로 교체한다.
   const handleConfirmRename = () => {
-    setIsRenameOpen(false);
+    closeDialog();
     showToast('회의 이름이 변경되었습니다', 'success');
+  };
+
+  // TODO: 음성 파일 삭제 API가 생기면 삭제 요청으로 교체한다.
+  const handleConfirmAudioDelete = () => {
+    closeDialog();
+    showToast('음성 파일이 삭제되었습니다', 'success');
+  };
+
+  // TODO: 회의 삭제 API(DELETE /api/v1/meetings/{meetingId}) 연동 시 삭제 요청과 홈 이동으로 교체한다.
+  const handleConfirmMeetingDelete = () => {
+    closeDialog();
+    showToast('회의가 삭제되었습니다', 'success');
   };
 
   const handleDownloadAudio = () => {
@@ -79,7 +96,7 @@ export const CompletedMeetingMoreMenu = ({
                 <MoreMenuItem
                   icon={<Pencil className="size-4" strokeWidth={2} />}
                   label="회의 이름 변경"
-                  onClick={() => setIsRenameOpen(true)}
+                  onClick={() => setOpenDialog('rename')}
                 />
               )}
               <MoreMenuItem
@@ -102,6 +119,7 @@ export const CompletedMeetingMoreMenu = ({
                       icon={<Trash2 className="size-4" strokeWidth={2} />}
                       label="음성 삭제"
                       isDanger
+                      onClick={() => setOpenDialog('audio-delete')}
                       trailingText={`${audioRemainingDays}일 남음`}
                     />
                   )}
@@ -109,6 +127,7 @@ export const CompletedMeetingMoreMenu = ({
                     icon={<Trash2 className="size-4" strokeWidth={2} />}
                     label="회의 삭제"
                     isDanger
+                    onClick={() => setOpenDialog('meeting-delete')}
                   />
                 </>
               )}
@@ -116,11 +135,27 @@ export const CompletedMeetingMoreMenu = ({
           </Menu.Positioner>
         </Menu.Portal>
       </Menu.Root>
-      {isRenameOpen && (
+      {openDialog === 'rename' && (
         <MeetingRenameDialog
           currentTitle={meetingTitle}
           onConfirm={handleConfirmRename}
-          onClose={() => setIsRenameOpen(false)}
+          onClose={closeDialog}
+        />
+      )}
+      {openDialog === 'audio-delete' && (
+        <DeleteConfirmDialog
+          title="음성 파일을 삭제하시겠어요?"
+          description="삭제한 음성 파일은 복구할 수 없어요. 전사·요약 내용은 그대로 유지돼요."
+          onConfirm={handleConfirmAudioDelete}
+          onClose={closeDialog}
+        />
+      )}
+      {openDialog === 'meeting-delete' && (
+        <DeleteConfirmDialog
+          title="회의 내용을 삭제하시겠어요?"
+          description="삭제한 회의 내용은 복구할 수 없습니다. 녹음, 전사, 요약이 모두 함께 삭제됩니다."
+          onConfirm={handleConfirmMeetingDelete}
+          onClose={closeDialog}
         />
       )}
     </>
