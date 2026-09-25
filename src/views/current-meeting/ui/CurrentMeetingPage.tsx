@@ -10,6 +10,7 @@ import { NavigationSidebar } from '@/widgets/navigation-sidebar';
 import { useCurrentMeetingRecording } from '../model/useCurrentMeetingRecording';
 import { useMeetingInfoEdit } from '../model/useMeetingInfoEdit';
 import { useRecordingStartedNotice } from '../model/useRecordingStartedNotice';
+import { useRecordingStatusSync } from '../model/useRecordingStatusSync';
 import { CurrentMeetingHeader } from './CurrentMeetingHeader';
 import { InsufficientCreditDialog } from './InsufficientCreditDialog';
 import { MeetingControls } from './MeetingControls';
@@ -72,6 +73,7 @@ export const CurrentMeetingPage = ({
     handlePauseResumeRecording,
     handleCompleteRecording,
   } = useCurrentMeetingRecording({ teamId, meetingId, previewState, previewRole });
+  useRecordingStatusSync({ meetingId, isPreview });
   const { isRecordingStartedNoticeOpen, setIsRecordingStartedNoticeOpen } =
     useRecordingStartedNotice({ meetingId, isPreview });
   const {
