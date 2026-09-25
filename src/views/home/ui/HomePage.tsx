@@ -10,13 +10,16 @@ import { HomePageSkeleton } from './HomePageSkeleton';
 import { MeetingListSection } from './MeetingListSection';
 import { TeamSummaryCard } from './TeamSummaryCard';
 import { toHomeViewModel } from '../model/home-view-model';
+import { useHomeNotice } from '../model/useHomeNotice';
 import { useRedirectToActiveTeam } from '../model/useRedirectToActiveTeam';
 
 interface HomePageProps {
   teamId: number;
+  notice?: string;
 }
 
-export const HomePage = ({ teamId }: HomePageProps) => {
+export const HomePage = ({ teamId, notice }: HomePageProps) => {
+  useHomeNotice({ teamId, notice });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { data: home, dataUpdatedAt, isFetching, isError, refetch } = useHome({ isEnabled: true });
 
