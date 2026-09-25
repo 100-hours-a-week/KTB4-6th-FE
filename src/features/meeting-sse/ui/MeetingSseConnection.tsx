@@ -1,18 +1,14 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAppToast } from '@/shared/ui';
 import { useMeetingSse } from '../model/meeting-sse-provider';
 
 interface MeetingSseConnectionProps {
   meetingId: string;
-  teamId: string;
+  onMeetingDeleted: () => void;
 }
 
-export function MeetingSseConnection({ meetingId, teamId }: MeetingSseConnectionProps) {
-  const router = useRouter();
-  const { showToast } = useAppToast();
+export function MeetingSseConnection({ meetingId, onMeetingDeleted }: MeetingSseConnectionProps) {
   const { connect, subscribeDeleted } = useMeetingSse();
 
   useEffect(() => {
@@ -20,14 +16,9 @@ export function MeetingSseConnection({ meetingId, teamId }: MeetingSseConnection
   }, [connect, meetingId]);
 
   useEffect(() => {
-    const unsubscribeDeleted = subscribeDeleted(meetingId, () => {
-      showToast('회의가 삭제되었습니다.', 'success');
-      router.replace(`/teams/${encodeURIComponent(teamId)}`);
-    });
-
     // 페이지 이동은 회의 나가기가 아니므로 여기서 연결을 닫지 않는다.
-    return unsubscribeDeleted;
-  }, [meetingId, router, showToast, subscribeDeleted, teamId]);
+    return subscribeDeleted(meetingId, onMeetingDeleted);
+  }, [meetingId, onMeetingDeleted, subscribeDeleted]);
 
   return null;
 }

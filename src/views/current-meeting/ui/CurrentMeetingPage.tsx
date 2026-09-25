@@ -1,15 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Headphones, LoaderCircle } from 'lucide-react';
 import { MeetingSseConnection } from '@/features/meeting-sse';
 import { getTeamDetail } from '@/features/team-management';
 import { MeetingInfoDialog } from '@/widgets/meeting-info-form';
 import { NavigationSidebar } from '@/widgets/navigation-sidebar';
+import { useCompletedMeetingRedirect } from '../model/useCompletedMeetingRedirect';
 import { useCurrentMeetingRecording } from '../model/useCurrentMeetingRecording';
+import { useMeetingDeletedRedirect } from '../model/useMeetingDeletedRedirect';
 import { useMeetingInfoEdit } from '../model/useMeetingInfoEdit';
 import { useRecordingStartedNotice } from '../model/useRecordingStartedNotice';
+import { useRecordingStatusSync } from '../model/useRecordingStatusSync';
 import { CurrentMeetingHeader } from './CurrentMeetingHeader';
 import { InsufficientCreditDialog } from './InsufficientCreditDialog';
 import { MeetingControls } from './MeetingControls';
@@ -23,6 +26,8 @@ interface CurrentMeetingPageProps {
   meetingId: number;
   previewState?: string;
   previewRole?: 'recorder' | 'participant';
+  /** 회의가 종료 상태이면 현재 회의 대신 보여줄 화면 (views끼리는 import할 수 없어 라우트가 넘긴다) */
+  completedView?: ReactNode;
 }
 
 export const CurrentMeetingPage = ({
@@ -30,6 +35,7 @@ export const CurrentMeetingPage = ({
   meetingId,
   previewState,
   previewRole = 'recorder',
+  completedView,
 }: CurrentMeetingPageProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const numericTeamId = Number(teamId);
@@ -50,6 +56,7 @@ export const CurrentMeetingPage = ({
     isRecording,
     isRecorder,
     isCompleted,
+    isServerCompleted,
     isStartDialogOpen,
     isRecordingAcknowledged,
     isInsufficientCreditDialogOpen,
@@ -68,6 +75,15 @@ export const CurrentMeetingPage = ({
     handlePauseResumeRecording,
     handleCompleteRecording,
   } = useCurrentMeetingRecording({ teamId, meetingId, previewState, previewRole });
+  useRecordingStatusSync({ meetingId, isPreview });
+  useCompletedMeetingRedirect({
+    teamId,
+    meetingId,
+    isPreview,
+    isMeetingLoaded: meeting !== null,
+    hasCompleted: isCompleted,
+  });
+  const redirectAfterMeetingDeleted = useMeetingDeletedRedirect(teamId);
   const { isRecordingStartedNoticeOpen, setIsRecordingStartedNoticeOpen } =
     useRecordingStartedNotice({ meetingId, isPreview });
   const {
@@ -80,6 +96,8 @@ export const CurrentMeetingPage = ({
     handleSubmitEditForm,
     handleCloseEditForm,
   } = useMeetingInfoEdit(meeting);
+
+  if (isServerCompleted && completedView) return completedView;
 
   if (!meeting) {
     return (
@@ -103,7 +121,10 @@ export const CurrentMeetingPage = ({
   return (
     <div className="relative flex h-dvh min-h-[844px] flex-col bg-cool-50">
       {!isPreview && !isCompleted && (
-        <MeetingSseConnection meetingId={String(meetingId)} teamId={teamId} />
+        <MeetingSseConnection
+          meetingId={String(meetingId)}
+          onMeetingDeleted={redirectAfterMeetingDeleted}
+        />
       )}
       <CurrentMeetingHeader
         meeting={meeting}

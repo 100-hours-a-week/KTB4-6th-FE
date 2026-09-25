@@ -12,6 +12,7 @@ import {
 import type { ReactNode } from 'react';
 import { joinMeeting } from '../api/join-meeting';
 import { createListenerRegistry } from './listener-registry';
+import { RECORDING_SSE_EVENT_TYPES, type RecordingSseEventType } from './recording-event';
 import type { TranscriptCreatedEventData } from './transcript-event';
 import { useMeetingTranscripts } from './use-meeting-transcripts';
 
@@ -23,7 +24,10 @@ interface MeetingSseContextValue {
   connect: (meetingId: string) => void;
   disconnect: (meetingId: string) => void;
   subscribeDeleted: (meetingId: string, listener: () => void) => () => void;
-  subscribeRecordingStarted: (meetingId: string, listener: () => void) => () => void;
+  subscribeRecordingEvent: (
+    meetingId: string,
+    listener: (type: RecordingSseEventType) => void,
+  ) => () => void;
   subscribeTranscriptCreated: (
     meetingId: string,
     listener: (transcript: TranscriptCreatedEventData) => void,
@@ -41,7 +45,7 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
   const sources = useRef(new Map<string, EventSource>());
   const joining = useRef(new Map<string, { cancelled: boolean }>());
   const [deletedListeners] = useState(() => createListenerRegistry());
-  const [recordingStartedListeners] = useState(() => createListenerRegistry());
+  const [recordingListeners] = useState(() => createListenerRegistry<[RecordingSseEventType]>());
   const [statuses, setStatuses] = useState<Record<string, MeetingSseStatus>>({});
   const { transcriptsByMeetingId, subscribeTranscriptCreated, receiveTranscript } =
     useMeetingTranscripts();
@@ -109,13 +113,16 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
             receiveTranscript(meetingId, event.data);
           });
 
-          // 연결이 회의 단위라 페이로드 없이 발생 사실만 알린다.
-          source.addEventListener('RECORDING_STARTED', () => {
-            recordingStartedListeners.emit(meetingId);
-          });
+          // 연결이 회의 단위라 페이로드 없이 어떤 이벤트인지만 알린다.
+          RECORDING_SSE_EVENT_TYPES.forEach((type) => {
+            source.addEventListener(type, () => {
+              if (sources.current.get(meetingId) !== source) return;
 
-          source.addEventListener('MEETING_COMPLETED', () => {
-            disconnect(meetingId);
+              recordingListeners.emit(meetingId, type);
+
+              // 서버는 종료 이벤트를 보낸 뒤 연결을 닫는다. 연결 오류로 보이지 않도록 먼저 정리한다.
+              if (type === 'RECORDING_COMPLETED') disconnect(meetingId);
+            });
           });
 
           source.addEventListener('MEETING_DELETED', () => {
@@ -142,7 +149,7 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
         }
       })();
     },
-    [deletedListeners, disconnect, receiveTranscript, recordingStartedListeners],
+    [deletedListeners, disconnect, receiveTranscript, recordingListeners],
   );
 
   useEffect(() => {
@@ -155,9 +162,9 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
       activeSources.forEach((source) => source.close());
       activeSources.clear();
       deletedListeners.clear();
-      recordingStartedListeners.clear();
+      recordingListeners.clear();
     };
-  }, [deletedListeners, recordingStartedListeners]);
+  }, [deletedListeners, recordingListeners]);
 
   const value = useMemo(
     () => ({
@@ -166,7 +173,7 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
       connect,
       disconnect,
       subscribeDeleted: deletedListeners.subscribe,
-      subscribeRecordingStarted: recordingStartedListeners.subscribe,
+      subscribeRecordingEvent: recordingListeners.subscribe,
       subscribeTranscriptCreated,
     }),
     [
@@ -175,7 +182,7 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
       connect,
       disconnect,
       deletedListeners.subscribe,
-      recordingStartedListeners.subscribe,
+      recordingListeners.subscribe,
       subscribeTranscriptCreated,
     ],
   );
