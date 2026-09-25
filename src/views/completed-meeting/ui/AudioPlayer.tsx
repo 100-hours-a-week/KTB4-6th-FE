@@ -1,23 +1,40 @@
-import { Play, Volume2 } from 'lucide-react';
+import { Pause, Play, Volume2 } from 'lucide-react';
 import { formatTimestamp } from '../model/format-timestamp';
 
 interface AudioPlayerProps {
-  currentSeconds: number;
+  isPlaying: boolean;
+  canPlay: boolean;
+  currentMs: number;
   durationSeconds: number;
+  onTogglePlay: () => void;
 }
 
-// TODO: 음성 파일 조회 API가 연동되면 실제 재생·탐색·볼륨 조절과 연결한다.
-export const AudioPlayer = ({ currentSeconds, durationSeconds }: AudioPlayerProps) => {
-  const progressPercent = durationSeconds > 0 ? (currentSeconds / durationSeconds) * 100 : 0;
+// TODO: 진행 바 탐색과 볼륨 조절을 연결한다.
+export const AudioPlayer = ({
+  isPlaying,
+  canPlay,
+  currentMs,
+  durationSeconds,
+  onTogglePlay,
+}: AudioPlayerProps) => {
+  const currentSeconds = Math.min(Math.floor(currentMs / 1000), durationSeconds);
+  const progressPercent = durationSeconds > 0 ? (currentMs / 1000 / durationSeconds) * 100 : 0;
+  const clampedProgressPercent = Math.min(100, progressPercent);
 
   return (
     <div className="flex shrink-0 items-center gap-3 border-t border-cool-200 bg-white px-5 py-3.5">
       <button
         type="button"
-        aria-label="재생"
-        className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-600 text-white"
+        aria-label={isPlaying ? '일시정지' : '재생'}
+        disabled={!canPlay}
+        onClick={onTogglePlay}
+        className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-600 text-white disabled:bg-cool-200 disabled:text-cool-400"
       >
-        <Play aria-hidden="true" className="size-4 translate-x-px fill-current" strokeWidth={2} />
+        {isPlaying ? (
+          <Pause aria-hidden="true" className="size-4 fill-current" strokeWidth={2} />
+        ) : (
+          <Play aria-hidden="true" className="size-4 translate-x-px fill-current" strokeWidth={2} />
+        )}
       </button>
       <span className="font-mono text-sm whitespace-nowrap text-cool-600 tabular-nums">
         {formatTimestamp(currentSeconds)} / {formatTimestamp(durationSeconds)}
@@ -32,12 +49,12 @@ export const AudioPlayer = ({ currentSeconds, durationSeconds }: AudioPlayerProp
       >
         <div
           className="h-full rounded-full bg-brand-600"
-          style={{ width: `${progressPercent}%` }}
+          style={{ width: `${clampedProgressPercent}%` }}
         />
         <span
           aria-hidden="true"
           className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-600"
-          style={{ left: `${progressPercent}%` }}
+          style={{ left: `${clampedProgressPercent}%` }}
         />
       </div>
       <button

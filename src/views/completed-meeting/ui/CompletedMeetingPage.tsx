@@ -5,6 +5,8 @@ import { useQuery } from '@tanstack/react-query';
 import { getTeamDetail } from '@/features/team-management';
 import { NavigationSidebar } from '@/widgets/navigation-sidebar';
 import type { CompletedMeetingTab } from '../model/completed-meeting-tab';
+import { useAudioPlayer } from '../model/useAudioPlayer';
+import { usePreviewAudioSource } from '../model/usePreviewAudioSource';
 import { mockMeetingSummary } from '../model/preview-meeting-summary';
 import {
   getCompletedMeetingPreview,
@@ -49,6 +51,9 @@ export const CompletedMeetingPage = ({
   const viewerRole = previewRole;
   const hasTranscript = meeting.transcriptEntries.length > 0;
   const isAudioExpired = meeting.audioRemainingDays === null;
+  const isAudioPlayerVisible = tab === 'transcript' && hasTranscript && !isAudioExpired;
+  const audioSource = usePreviewAudioSource(meeting.audioDurationSeconds, isAudioPlayerVisible);
+  const { isPlaying, canPlay, currentMs, togglePlay } = useAudioPlayer(audioSource);
 
   const getTabHref = (nextTab: CompletedMeetingTab) => {
     const params = new URLSearchParams({ tab: nextTab });
@@ -87,13 +92,16 @@ export const CompletedMeetingPage = ({
         )}
       </main>
 
-      {tab === 'transcript' &&
-        hasTranscript &&
-        (isAudioExpired ? (
-          <AudioExpiredNotice />
-        ) : (
-          <AudioPlayer currentSeconds={0} durationSeconds={meeting.audioDurationSeconds} />
-        ))}
+      {tab === 'transcript' && hasTranscript && isAudioExpired && <AudioExpiredNotice />}
+      {isAudioPlayerVisible && (
+        <AudioPlayer
+          isPlaying={isPlaying}
+          canPlay={canPlay}
+          currentMs={currentMs}
+          durationSeconds={meeting.audioDurationSeconds}
+          onTogglePlay={togglePlay}
+        />
+      )}
 
       {team && (
         <NavigationSidebar
