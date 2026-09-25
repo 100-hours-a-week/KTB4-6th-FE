@@ -1,13 +1,20 @@
 import { mockTranscriptEntries, type TranscriptEntry } from './preview-meeting-transcript';
 
 export type CompletedMeetingPreviewState =
-  'completed' | 'summary-generating' | 'summary-failed' | 'transcript-empty' | 'audio-expired';
+  | 'completed'
+  | 'summary-generating'
+  | 'summary-failed'
+  | 'transcript-empty'
+  | 'audio-expired'
+  | 'credit-short';
 
 export type MeetingSummaryStatus = 'generating' | 'completed' | 'failed';
 
 export interface CompletedMeetingViewModel {
   title: string;
   summaryStatus: MeetingSummaryStatus;
+  /** 팀이 보유한 크레딧 */
+  teamCredits: number;
   transcriptEntries: TranscriptEntry[];
   startedAt: string;
   endedAt: string;
@@ -16,10 +23,11 @@ export interface CompletedMeetingViewModel {
   audioDurationSeconds: number;
 }
 
-// TODO: 회의 상세 응답(GET /api/v1/meetings/{meetingId})과 음성 파일 조회 응답으로 교체한다.
+// TODO: 회의 상세 응답(GET /api/v1/meetings/{meetingId}), 음성 파일 조회 응답, 팀 크레딧 조회 응답으로 교체한다.
 const baseMeeting = {
   title: '9월 스프린트 계획',
   summaryStatus: 'completed' as const,
+  teamCredits: 10,
   transcriptEntries: mockTranscriptEntries,
   startedAt: '2026-08-25T10:00:00+09:00',
   endedAt: '2026-08-25T13:00:00+09:00',
@@ -32,6 +40,7 @@ const previews: Record<CompletedMeetingPreviewState, CompletedMeetingViewModel> 
   'summary-failed': { ...baseMeeting, summaryStatus: 'failed', audioRemainingDays: 42 },
   'transcript-empty': { ...baseMeeting, transcriptEntries: [], audioRemainingDays: 42 },
   'audio-expired': { ...baseMeeting, audioRemainingDays: null },
+  'credit-short': { ...baseMeeting, teamCredits: 1, audioRemainingDays: 42 },
 };
 
 /** 개발 환경 전용 ?preview= 값이 종료 회의 미리보기 상태이면 그 상태를, 아니면 undefined를 돌려준다. */

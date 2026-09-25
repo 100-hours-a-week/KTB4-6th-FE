@@ -54,7 +54,9 @@ export const CompletedMeetingPage = ({
             {meeting.summaryStatus === 'failed' && (
               <SummaryFailedState transcriptHref={getTabHref('transcript')} />
             )}
-            {meeting.summaryStatus === 'completed' && <SummaryTab summary={mockMeetingSummary} />}
+            {meeting.summaryStatus === 'completed' && (
+              <SummaryTab summary={mockMeetingSummary} currentCredits={meeting.teamCredits} />
+            )}
           </>
         ) : (
           // TODO: 전사 목록 조회 API 응답으로 교체한다.

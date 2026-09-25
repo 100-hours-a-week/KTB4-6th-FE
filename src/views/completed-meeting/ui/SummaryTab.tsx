@@ -4,6 +4,7 @@ import { SummaryCard } from './SummaryCard';
 
 interface SummaryTabProps {
   summary: MeetingSummary;
+  currentCredits: number;
 }
 
 const BulletItem = ({ label, children }: { label?: string; children: string }) => (
@@ -21,12 +22,12 @@ const BulletItem = ({ label, children }: { label?: string; children: string }) =
   </li>
 );
 
-export const SummaryTab = ({ summary }: SummaryTabProps) => {
+export const SummaryTab = ({ summary, currentCredits }: SummaryTabProps) => {
   const { overview, decisions, assignees, unresolvedItems } = summary;
 
   return (
     <div className="flex flex-col gap-3 px-5 py-5">
-      <AiSummaryBanner />
+      <AiSummaryBanner currentCredits={currentCredits} />
 
       <SummaryCard title="회의 개요">
         <ul className="flex flex-col gap-2">
