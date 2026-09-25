@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { cn } from '@/shared/lib';
-import { useAppToast } from '@/shared/ui';
 import {
   SUMMARY_REGENERATE_CREDIT_COST,
   canRegenerateSummary,
@@ -12,20 +11,36 @@ import { SummaryRegenerateConfirmDialog } from './SummaryRegenerateConfirmDialog
 import { SummaryRegenerateReasonDialog } from './SummaryRegenerateReasonDialog';
 
 interface AiSummaryBannerProps {
-  currentCredits: number;
+  /** 팀 크레딧 잔액. 아직 알 수 없으면 null (서버가 요청 때 다시 확인한다) */
+  currentCredits: number | null;
+  isRegenerating: boolean;
+  /** 재생성을 요청한다. 시작됐으면 true, 실패했으면 false */
+  onRegenerate: (reason: string) => Promise<boolean>;
 }
 
-export const AiSummaryBanner = ({ currentCredits }: AiSummaryBannerProps) => {
-  const { showToast } = useAppToast();
+export const AiSummaryBanner = ({
+  currentCredits,
+  isRegenerating,
+  onRegenerate,
+}: AiSummaryBannerProps) => {
   const [step, setStep] = useState<'reason' | 'confirm' | null>(null);
-  const canRegenerate = canRegenerateSummary(currentCredits);
+  const [reason, setReason] = useState('');
+  const isCreditShort = currentCredits !== null && !canRegenerateSummary(currentCredits);
+  const canRegenerate = !isCreditShort;
 
-  const closeDialog = () => setStep(null);
+  const closeDialog = () => {
+    setStep(null);
+    setReason('');
+  };
 
-  // TODO: 요약 재생성 API가 생기면 입력한 사유와 함께 재생성 요청으로 교체한다.
-  const handleConfirmRegenerate = () => {
-    closeDialog();
-    showToast('요약 재생성을 시작했습니다', 'success');
+  const handleNext = (nextReason: string) => {
+    setReason(nextReason);
+    setStep('confirm');
+  };
+
+  const handleConfirmRegenerate = async () => {
+    const isStarted = await onRegenerate(reason);
+    if (isStarted) closeDialog();
   };
 
   return (
@@ -55,10 +70,14 @@ export const AiSummaryBanner = ({ currentCredits }: AiSummaryBannerProps) => {
         </button>
       </section>
       {step === 'reason' && (
-        <SummaryRegenerateReasonDialog onNext={() => setStep('confirm')} onClose={closeDialog} />
+        <SummaryRegenerateReasonDialog onNext={handleNext} onClose={closeDialog} />
       )}
       {step === 'confirm' && (
-        <SummaryRegenerateConfirmDialog onConfirm={handleConfirmRegenerate} onClose={closeDialog} />
+        <SummaryRegenerateConfirmDialog
+          isRegenerating={isRegenerating}
+          onConfirm={handleConfirmRegenerate}
+          onClose={closeDialog}
+        />
       )}
     </>
   );

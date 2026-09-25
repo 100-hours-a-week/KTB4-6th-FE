@@ -5,15 +5,26 @@ import { SummarySectionCard } from './SummarySectionCard';
 interface SummaryTabProps {
   /** AI 요약 본문(Markdown) */
   content: string;
-  currentCredits: number;
+  currentCredits: number | null;
+  isRegenerating: boolean;
+  onRegenerate: (reason: string) => Promise<boolean>;
 }
 
-export const SummaryTab = ({ content, currentCredits }: SummaryTabProps) => {
+export const SummaryTab = ({
+  content,
+  currentCredits,
+  isRegenerating,
+  onRegenerate,
+}: SummaryTabProps) => {
   const sections = parseSummaryMarkdown(content);
 
   return (
     <div className="flex flex-col gap-3 px-5 py-5">
-      <AiSummaryBanner currentCredits={currentCredits} />
+      <AiSummaryBanner
+        currentCredits={currentCredits}
+        isRegenerating={isRegenerating}
+        onRegenerate={onRegenerate}
+      />
 
       {sections.map((section, index) => (
         <SummarySectionCard key={index} section={section} />
