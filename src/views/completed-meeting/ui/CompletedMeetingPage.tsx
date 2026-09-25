@@ -1,10 +1,12 @@
 import type { CompletedMeetingTab } from '../model/completed-meeting-tab';
+import { mockMeetingSummary } from '../model/preview-meeting-summary';
 import {
   getCompletedMeetingPreview,
   type CompletedMeetingPreviewState,
 } from '../model/preview-completed-meeting';
 import { CompletedMeetingHeader } from './CompletedMeetingHeader';
 import { CompletedMeetingTabs } from './CompletedMeetingTabs';
+import { SummaryTab } from './SummaryTab';
 
 interface CompletedMeetingPageProps {
   teamId: string;
@@ -37,11 +39,14 @@ export const CompletedMeetingPage = ({
         <CompletedMeetingTabs currentTab={tab} getTabHref={getTabHref} />
       </header>
 
-      {/* TODO: 요약·전사 탭 내용을 구현한다. */}
-      <main data-tab={tab} className="flex flex-1 items-center justify-center px-6 text-center">
-        <p className="text-sm text-cool-500">
-          {tab === 'summary' ? '요약' : '전사'} 화면은 준비 중입니다
-        </p>
+      <main data-tab={tab} className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+        {tab === 'summary' ? (
+          // TODO: AI 요약 조회 API 응답으로 교체한다.
+          <SummaryTab summary={mockMeetingSummary} />
+        ) : (
+          // TODO: 전사 탭 내용을 구현한다.
+          <p className="m-auto text-sm text-cool-500">전사 화면은 준비 중입니다</p>
+        )}
       </main>
     </div>
   );
