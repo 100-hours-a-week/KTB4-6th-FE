@@ -159,3 +159,16 @@ export interface AudioFileResponse {
   data: AudioFileData | null;
   error: ApiErrorPayload | null;
 }
+
+export interface AudioDownloadUrlData {
+  /** 음성 파일을 내려받는 임시 주소(프리사인드 URL) */
+  downloadUrl: string;
+  /** 임시 주소가 만료되는 시각. 이후에는 재생·탐색 요청이 실패한다. */
+  downloadUrlExpiresAt: string;
+}
+
+export interface AudioDownloadUrlResponse {
+  success: boolean;
+  data: AudioDownloadUrlData | null;
+  error: ApiErrorPayload | null;
+}

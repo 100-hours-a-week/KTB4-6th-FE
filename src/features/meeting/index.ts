@@ -12,9 +12,11 @@ export {
   INITIAL_CREATE_MEETING_FORM_VALUES,
   isCreateMeetingFormValid,
 } from './model/create-meeting-form';
+export { isAudioFileExpiredError, isAudioFileNotAvailableError } from './model/audio-file-errors';
 export { MeetingApiError } from './model/errors';
 export { getMeetingSummaryPhase } from './model/meeting-summary-phase';
 export { meetingKeys } from './model/query-keys';
+export { useAudioDownloadUrl } from './model/useAudioDownloadUrl';
 export { useAudioFile } from './model/useAudioFile';
 export { useCreateMeeting } from './model/useCreateMeeting';
 export { useMeetingSummary } from './model/useMeetingSummary';
@@ -29,6 +31,7 @@ export {
 export type { CreateMeetingFormField, CreateMeetingFormValues } from './model/create-meeting-form';
 export type { MeetingSummaryPhase } from './model/meeting-summary-phase';
 export type {
+  AudioDownloadUrlData,
   AudioFileData,
   AudioFileStatus,
   CreateMeetingData,
