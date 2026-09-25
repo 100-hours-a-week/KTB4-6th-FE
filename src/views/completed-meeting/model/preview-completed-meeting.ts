@@ -8,6 +8,8 @@ export type CompletedMeetingPreviewState =
   | 'audio-expired'
   | 'credit-short';
 
+export type CompletedMeetingViewerRole = 'leader' | 'member';
+
 export type MeetingSummaryStatus = 'generating' | 'completed' | 'failed';
 
 export interface CompletedMeetingViewModel {
@@ -50,3 +52,8 @@ export const parseCompletedMeetingPreview = (
   (Object.keys(previews) as CompletedMeetingPreviewState[]).find((state) => state === value);
 
 export const getCompletedMeetingPreview = (state: CompletedMeetingPreviewState) => previews[state];
+
+/** 개발 환경 전용 ?role= 값이 member이면 팀원, 아니면 팀장으로 본다. */
+export const parseCompletedMeetingViewerRole = (
+  value: string | string[] | undefined,
+): CompletedMeetingViewerRole => (value === 'member' ? 'member' : 'leader');
