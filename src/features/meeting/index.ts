@@ -18,6 +18,7 @@ export { meetingKeys } from './model/query-keys';
 export { useCreateMeeting } from './model/useCreateMeeting';
 export { useMeetingSummary } from './model/useMeetingSummary';
 export { useMeetingTranscript } from './model/useMeetingTranscript';
+export { useSpeakerMapping } from './model/useSpeakerMapping';
 export {
   isInsufficientCreditError,
   isSummaryAlreadyProcessingError,
@@ -31,4 +32,7 @@ export type {
   MeetingSummaryData,
   MeetingSummaryRequestData,
   MeetingTranscriptSegmentData,
+  SpeakerMappingData,
+  SpeakerMappingParticipantData,
+  SpeakerMappingType,
 } from './model/types';
