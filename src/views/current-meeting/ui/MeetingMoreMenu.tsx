@@ -1,27 +1,31 @@
 'use client';
 
 import { Menu } from '@base-ui/react/menu';
-import { LogOut, MoreVertical } from 'lucide-react';
+import { LogOut, MoreVertical, Pencil } from 'lucide-react';
 import { cn, useAppFrameElement } from '@/shared/lib';
 
 interface MeetingMoreMenuProps {
   canDelete: boolean;
+  canEditInfo: boolean;
   isDeleting: boolean;
   isRecorder: boolean;
   isPreview: boolean;
   isLeaving: boolean;
   onDelete: () => void;
   onLeave: () => void;
+  onEditInfo: () => void;
 }
 
 export const MeetingMoreMenu = ({
   canDelete,
+  canEditInfo,
   isDeleting,
   isRecorder,
   isPreview,
   isLeaving,
   onDelete,
   onLeave,
+  onEditInfo,
 }: MeetingMoreMenuProps) => {
   const frame = useAppFrameElement();
 
@@ -41,16 +45,16 @@ export const MeetingMoreMenu = ({
               isRecorder || canDelete ? 'min-w-[190px]' : 'min-w-[152px]',
             )}
           >
-            {isRecorder ? (
-              <>
-                <Menu.Item
-                  disabled
-                  className="flex min-h-12 items-center px-4 py-3 text-sm font-medium text-cool-900 outline-none select-none"
-                >
-                  회의 이름 변경
-                </Menu.Item>
-              </>
-            ) : (
+            {canEditInfo && (
+              <Menu.Item
+                onClick={onEditInfo}
+                className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-cool-700 outline-none select-none"
+              >
+                <Pencil className="size-4" strokeWidth={2} />
+                회의 정보 수정
+              </Menu.Item>
+            )}
+            {!isRecorder && (
               <Menu.Item
                 disabled={isPreview || isLeaving}
                 onClick={onLeave}
@@ -67,7 +71,10 @@ export const MeetingMoreMenu = ({
               <Menu.Item
                 disabled={isDeleting}
                 onClick={onDelete}
-                className="flex min-h-12 items-center border-t border-cool-100 px-4 py-3 text-sm font-medium text-danger outline-none select-none"
+                className={cn(
+                  'flex min-h-12 items-center px-4 py-3 text-sm font-medium text-danger outline-none select-none',
+                  !isRecorder && 'border-t border-cool-100',
+                )}
               >
                 {isDeleting ? '삭제 중...' : '회의 삭제'}
               </Menu.Item>
