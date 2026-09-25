@@ -136,3 +136,26 @@ export interface UpdateSpeakerMappingResponse {
   data: SpeakerMappingResultData | null;
   error: ApiErrorPayload | null;
 }
+
+/** 음성 파일 상태. 재생할 수 있는 것은 AVAILABLE뿐이다. */
+export type AudioFileStatus =
+  'UPLOADING' | 'AVAILABLE' | 'UPLOAD_FAILED' | 'DELETE_PENDING' | 'DELETED' | 'DELETE_FAILED';
+
+export interface AudioFileData {
+  audioFileId: number;
+  recordingSessionId: number;
+  contentType: string;
+  fileSizeBytes: number;
+  durationMs: number;
+  status: AudioFileStatus;
+  /** 음성 파일을 저장한 시각 */
+  storedAt: string;
+  /** 음성 파일이 만료되는 시각 */
+  expiresAt: string;
+}
+
+export interface AudioFileResponse {
+  success: boolean;
+  data: AudioFileData | null;
+  error: ApiErrorPayload | null;
+}

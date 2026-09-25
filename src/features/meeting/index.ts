@@ -15,6 +15,7 @@ export {
 export { MeetingApiError } from './model/errors';
 export { getMeetingSummaryPhase } from './model/meeting-summary-phase';
 export { meetingKeys } from './model/query-keys';
+export { useAudioFile } from './model/useAudioFile';
 export { useCreateMeeting } from './model/useCreateMeeting';
 export { useMeetingSummary } from './model/useMeetingSummary';
 export { useMeetingTranscript } from './model/useMeetingTranscript';
@@ -28,6 +29,8 @@ export {
 export type { CreateMeetingFormField, CreateMeetingFormValues } from './model/create-meeting-form';
 export type { MeetingSummaryPhase } from './model/meeting-summary-phase';
 export type {
+  AudioFileData,
+  AudioFileStatus,
   CreateMeetingData,
   CreateMeetingRequest,
   MeetingSummaryData,
