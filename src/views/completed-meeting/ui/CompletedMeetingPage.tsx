@@ -10,6 +10,7 @@ import {
   type CompletedMeetingPreviewState,
   type CompletedMeetingViewerRole,
 } from '../model/preview-completed-meeting';
+import { useAudioViewState } from '../model/useAudioViewState';
 import { CompletedMeetingHeader } from './CompletedMeetingHeader';
 import { CompletedMeetingTabs } from './CompletedMeetingTabs';
 import { SummaryScreen } from './SummaryScreen';
@@ -42,6 +43,15 @@ export const CompletedMeetingPage = ({
   // TODO: 회의 상세·음성 파일 조회 응답과 팀 역할 조회 응답으로 교체한다.
   const meeting = getCompletedMeetingPreview(previewState ?? 'completed');
   const viewerRole = previewRole;
+  const audio = useAudioViewState({
+    meetingId,
+    previewAudio: previewState
+      ? {
+          remainingDays: meeting.audioRemainingDays,
+          durationSeconds: meeting.audioDurationSeconds,
+        }
+      : undefined,
+  });
 
   const getTabHref = (nextTab: CompletedMeetingTab) => {
     const params = new URLSearchParams({ tab: nextTab });
@@ -55,6 +65,7 @@ export const CompletedMeetingPage = ({
       <header className="shrink-0 bg-white">
         <CompletedMeetingHeader
           meeting={meeting}
+          audio={audio}
           viewerRole={viewerRole}
           isMenuDisabled={!team}
           onMenuClick={() => setIsSidebarOpen(true)}
@@ -74,8 +85,7 @@ export const CompletedMeetingPage = ({
         <TranscriptScreen
           meetingId={meetingId}
           previewEntries={previewState ? meeting.transcriptEntries : undefined}
-          audioDurationSeconds={meeting.audioDurationSeconds}
-          audioRemainingDays={meeting.audioRemainingDays}
+          audio={audio}
         />
       )}
 

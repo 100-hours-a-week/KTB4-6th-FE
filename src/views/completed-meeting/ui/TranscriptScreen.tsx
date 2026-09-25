@@ -4,6 +4,7 @@ import { ArrowDown } from 'lucide-react';
 import { getActiveTranscriptId } from '../model/get-active-transcript-id';
 import type { TranscriptEntry } from '../model/preview-meeting-transcript';
 import { useAudioPlayer } from '../model/useAudioPlayer';
+import type { AudioViewState } from '../model/useAudioViewState';
 import { usePreviewAudioSource } from '../model/usePreviewAudioSource';
 import { useTranscriptAutoFollow } from '../model/useTranscriptAutoFollow';
 import { useTranscriptViewState } from '../model/useTranscriptViewState';
@@ -17,25 +18,19 @@ interface TranscriptScreenProps {
   meetingId: number;
   /** 개발 환경 전용 미리보기 전사. 없으면 전사를 조회한다. */
   previewEntries?: TranscriptEntry[];
-  audioDurationSeconds: number;
-  /** 음성 파일이 만료되기까지 남은 일수. 이미 만료됐으면 null */
-  audioRemainingDays: number | null;
+  audio: AudioViewState;
 }
 
 /**
  * 전사 탭 화면. 전사 목록과 음성 플레이어를 함께 다룬다.
  * 재생 위치에 맞춰 전사를 강조하고 따라가며 스크롤하며, 이 화면을 벗어나면 재생도 멈춘다.
  */
-export const TranscriptScreen = ({
-  meetingId,
-  previewEntries,
-  audioDurationSeconds,
-  audioRemainingDays,
-}: TranscriptScreenProps) => {
+export const TranscriptScreen = ({ meetingId, previewEntries, audio }: TranscriptScreenProps) => {
   const { status, entries, retry } = useTranscriptViewState({ meetingId, previewEntries });
   const hasTranscript = entries.length > 0;
-  const isAudioExpired = audioRemainingDays === null;
-  const isAudioPlayerVisible = hasTranscript && !isAudioExpired;
+  const isAudioExpired = audio.kind === 'expired';
+  const isAudioPlayerVisible = hasTranscript && audio.kind === 'available';
+  const audioDurationSeconds = audio.kind === 'available' ? audio.durationSeconds : 0;
   const audioSource = usePreviewAudioSource(audioDurationSeconds, isAudioPlayerVisible);
   const {
     isPlaying,
