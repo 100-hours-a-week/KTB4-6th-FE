@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getTeamDetail } from '@/features/team-management';
 import { NavigationSidebar } from '@/widgets/navigation-sidebar';
 import type { CompletedMeetingTab } from '../model/completed-meeting-tab';
+import { getActiveTranscriptId } from '../model/get-active-transcript-id';
 import { useAudioPlayer } from '../model/useAudioPlayer';
 import { usePreviewAudioSource } from '../model/usePreviewAudioSource';
 import { mockMeetingSummary } from '../model/preview-meeting-summary';
@@ -65,6 +66,10 @@ export const CompletedMeetingPage = ({
     endScrub,
     toggleMute,
   } = useAudioPlayer(audioSource);
+  // 재생 위치(끄는 중이면 끄는 위치)에 해당하는 발화를 강조한다. 플레이어가 없으면 강조하지 않는다.
+  const activeEntryId = isAudioPlayerVisible
+    ? getActiveTranscriptId(meeting.transcriptEntries, displayMs)
+    : null;
 
   const getTabHref = (nextTab: CompletedMeetingTab) => {
     const params = new URLSearchParams({ tab: nextTab });
@@ -99,7 +104,7 @@ export const CompletedMeetingPage = ({
           </>
         ) : (
           // TODO: 전사 목록 조회 API 응답으로 교체한다.
-          <TranscriptTab entries={meeting.transcriptEntries} />
+          <TranscriptTab entries={meeting.transcriptEntries} activeEntryId={activeEntryId} />
         )}
       </main>
 
