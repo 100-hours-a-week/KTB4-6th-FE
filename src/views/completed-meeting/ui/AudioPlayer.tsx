@@ -1,25 +1,36 @@
-import { Pause, Play, Volume2 } from 'lucide-react';
+import { Pause, Play, Volume2, VolumeX } from 'lucide-react';
 import { formatTimestamp } from '../model/format-timestamp';
+import { AudioSeekBar } from './AudioSeekBar';
 
 interface AudioPlayerProps {
   isPlaying: boolean;
+  isMuted: boolean;
   canPlay: boolean;
-  currentMs: number;
+  /** 화면에 보여줄 재생 위치. 진행 바를 끄는 중에는 끄는 위치 */
+  displayMs: number;
   durationSeconds: number;
   onTogglePlay: () => void;
+  onToggleMute: () => void;
+  onSeek: (ms: number) => void;
+  onScrubStart: (ms: number) => void;
+  onScrubMove: (ms: number) => void;
+  onScrubEnd: () => void;
 }
 
-// TODO: 진행 바 탐색과 볼륨 조절을 연결한다.
 export const AudioPlayer = ({
   isPlaying,
+  isMuted,
   canPlay,
-  currentMs,
+  displayMs,
   durationSeconds,
   onTogglePlay,
+  onToggleMute,
+  onSeek,
+  onScrubStart,
+  onScrubMove,
+  onScrubEnd,
 }: AudioPlayerProps) => {
-  const currentSeconds = Math.min(Math.floor(currentMs / 1000), durationSeconds);
-  const progressPercent = durationSeconds > 0 ? (currentMs / 1000 / durationSeconds) * 100 : 0;
-  const clampedProgressPercent = Math.min(100, progressPercent);
+  const currentSeconds = Math.min(Math.floor(displayMs / 1000), durationSeconds);
 
   return (
     <div className="flex shrink-0 items-center gap-3 border-t border-cool-200 bg-white px-5 py-3.5">
@@ -39,30 +50,28 @@ export const AudioPlayer = ({
       <span className="font-mono text-sm whitespace-nowrap text-cool-600 tabular-nums">
         {formatTimestamp(currentSeconds)} / {formatTimestamp(durationSeconds)}
       </span>
-      <div
-        role="progressbar"
-        aria-label="재생 위치"
-        aria-valuemin={0}
-        aria-valuemax={durationSeconds}
-        aria-valuenow={currentSeconds}
-        className="relative h-1 min-w-0 flex-1 rounded-full bg-cool-200"
-      >
-        <div
-          className="h-full rounded-full bg-brand-600"
-          style={{ width: `${clampedProgressPercent}%` }}
-        />
-        <span
-          aria-hidden="true"
-          className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-600"
-          style={{ left: `${clampedProgressPercent}%` }}
-        />
-      </div>
+      <AudioSeekBar
+        valueMs={displayMs}
+        durationMs={durationSeconds * 1000}
+        isDisabled={!canPlay}
+        onSeek={onSeek}
+        onScrubStart={onScrubStart}
+        onScrubMove={onScrubMove}
+        onScrubEnd={onScrubEnd}
+      />
       <button
         type="button"
-        aria-label="볼륨"
-        className="flex size-8 shrink-0 items-center justify-center text-cool-600"
+        aria-label={isMuted ? '음소거 해제' : '음소거'}
+        aria-pressed={isMuted}
+        disabled={!canPlay}
+        onClick={onToggleMute}
+        className="flex size-8 shrink-0 items-center justify-center text-cool-600 disabled:text-cool-400"
       >
-        <Volume2 aria-hidden="true" className="size-[18px]" strokeWidth={2} />
+        {isMuted ? (
+          <VolumeX aria-hidden="true" className="size-[18px]" strokeWidth={2} />
+        ) : (
+          <Volume2 aria-hidden="true" className="size-[18px]" strokeWidth={2} />
+        )}
       </button>
     </div>
   );

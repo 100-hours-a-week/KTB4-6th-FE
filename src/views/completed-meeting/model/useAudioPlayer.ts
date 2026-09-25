@@ -8,12 +8,17 @@ type AudioSource = string | Blob;
 /**
  * 음성을 재생하고 재생 상태와 현재 재생 위치(ms)를 알려준다.
  * audioSource가 null이면 재생할 수 없고, 값이 바뀌거나 사용이 끝나면 재생을 멈추고 정리한다.
+ *
+ * 재생 위치 탐색은 두 가지다. seek는 바로 이동하고, 진행 바를 끄는 동안은 scrub으로 위치만 미리 보여준 뒤
+ * 손을 뗄 때 한 번만 이동한다. displayMs는 화면에 보여줄 위치라 끄는 중에는 끄는 위치를 가리킨다.
  */
 export const useAudioPlayer = (audioSource: AudioSource | null) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const [currentMs, setCurrentMs] = useState(0);
+  const [scrubMs, setScrubMs] = useState<number | null>(null);
 
   useEffect(() => {
     if (!audioSource) return;
@@ -27,12 +32,15 @@ export const useAudioPlayer = (audioSource: AudioSource | null) => {
 
     const handleLoadStart = () => {
       setIsPlaying(false);
+      setIsMuted(false);
       setCurrentMs(0);
+      setScrubMs(null);
     };
     // 재생할 수 있는지는 음성 정보를 불러온 뒤에 알 수 있어, 서버 렌더링과 첫 렌더는 항상 false다.
     const handleLoadedMetadata = () => setIsReady(true);
     const handlePlay = () => setIsPlaying(true);
     const handlePause = () => setIsPlaying(false);
+    const handleVolumeChange = () => setIsMuted(audio.muted);
     const handleTimeUpdate = () => setCurrentMs(Math.round(audio.currentTime * 1000));
 
     audio.addEventListener('loadstart', handleLoadStart);
@@ -40,6 +48,7 @@ export const useAudioPlayer = (audioSource: AudioSource | null) => {
     audio.addEventListener('play', handlePlay);
     audio.addEventListener('pause', handlePause);
     audio.addEventListener('ended', handlePause);
+    audio.addEventListener('volumechange', handleVolumeChange);
     audio.addEventListener('timeupdate', handleTimeUpdate);
 
     return () => {
@@ -48,6 +57,7 @@ export const useAudioPlayer = (audioSource: AudioSource | null) => {
       audio.removeEventListener('play', handlePlay);
       audio.removeEventListener('pause', handlePause);
       audio.removeEventListener('ended', handlePause);
+      audio.removeEventListener('volumechange', handleVolumeChange);
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.pause();
       audio.removeAttribute('src');
@@ -70,5 +80,42 @@ export const useAudioPlayer = (audioSource: AudioSource | null) => {
     }
   };
 
-  return { isPlaying, currentMs, canPlay: isReady, togglePlay };
+  // 재생 중이 아니어도 화면의 위치가 바로 바뀌도록 timeupdate를 기다리지 않고 현재 위치를 함께 갱신한다.
+  const seek = (ms: number) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    audio.currentTime = ms / 1000;
+    setCurrentMs(ms);
+  };
+
+  const beginScrub = (ms: number) => setScrubMs(ms);
+
+  const updateScrub = (ms: number) => setScrubMs(ms);
+
+  const endScrub = () => {
+    if (scrubMs !== null) seek(scrubMs);
+    setScrubMs(null);
+  };
+
+  const toggleMute = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    audio.muted = !audio.muted;
+  };
+
+  return {
+    isPlaying,
+    isMuted,
+    canPlay: isReady,
+    currentMs,
+    displayMs: scrubMs ?? currentMs,
+    togglePlay,
+    seek,
+    beginScrub,
+    updateScrub,
+    endScrub,
+    toggleMute,
+  };
 };

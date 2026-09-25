@@ -53,7 +53,18 @@ export const CompletedMeetingPage = ({
   const isAudioExpired = meeting.audioRemainingDays === null;
   const isAudioPlayerVisible = tab === 'transcript' && hasTranscript && !isAudioExpired;
   const audioSource = usePreviewAudioSource(meeting.audioDurationSeconds, isAudioPlayerVisible);
-  const { isPlaying, canPlay, currentMs, togglePlay } = useAudioPlayer(audioSource);
+  const {
+    isPlaying,
+    isMuted,
+    canPlay,
+    displayMs,
+    togglePlay,
+    seek,
+    beginScrub,
+    updateScrub,
+    endScrub,
+    toggleMute,
+  } = useAudioPlayer(audioSource);
 
   const getTabHref = (nextTab: CompletedMeetingTab) => {
     const params = new URLSearchParams({ tab: nextTab });
@@ -96,10 +107,16 @@ export const CompletedMeetingPage = ({
       {isAudioPlayerVisible && (
         <AudioPlayer
           isPlaying={isPlaying}
+          isMuted={isMuted}
           canPlay={canPlay}
-          currentMs={currentMs}
+          displayMs={displayMs}
           durationSeconds={meeting.audioDurationSeconds}
           onTogglePlay={togglePlay}
+          onToggleMute={toggleMute}
+          onSeek={seek}
+          onScrubStart={beginScrub}
+          onScrubMove={updateScrub}
+          onScrubEnd={endScrub}
         />
       )}
 
