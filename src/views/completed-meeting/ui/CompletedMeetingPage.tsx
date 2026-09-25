@@ -1,10 +1,10 @@
 import type { CompletedMeetingTab } from '../model/completed-meeting-tab';
 import { mockMeetingSummary } from '../model/preview-meeting-summary';
-import { mockTranscriptEntries } from '../model/preview-meeting-transcript';
 import {
   getCompletedMeetingPreview,
   type CompletedMeetingPreviewState,
 } from '../model/preview-completed-meeting';
+import { AudioExpiredNotice } from './AudioExpiredNotice';
 import { AudioPlayer } from './AudioPlayer';
 import { CompletedMeetingHeader } from './CompletedMeetingHeader';
 import { CompletedMeetingTabs } from './CompletedMeetingTabs';
@@ -30,6 +30,8 @@ export const CompletedMeetingPage = ({
   // TODO: 회의 상세·음성 파일 조회 응답으로 교체한다.
   const meeting = getCompletedMeetingPreview(previewState);
   const isPreviewing = previewState !== 'completed';
+  const hasTranscript = meeting.transcriptEntries.length > 0;
+  const isAudioExpired = meeting.audioRemainingDays === null;
 
   const getTabHref = (nextTab: CompletedMeetingTab) => {
     const params = new URLSearchParams({ tab: nextTab });
@@ -56,14 +58,17 @@ export const CompletedMeetingPage = ({
           </>
         ) : (
           // TODO: 전사 목록 조회 API 응답으로 교체한다.
-          <TranscriptTab entries={mockTranscriptEntries} />
+          <TranscriptTab entries={meeting.transcriptEntries} />
         )}
       </main>
 
-      {tab === 'transcript' && (
-        // TODO: 음성이 만료된 상태에서는 플레이어 대신 만료 안내를 보여준다.
-        <AudioPlayer currentSeconds={0} durationSeconds={meeting.audioDurationSeconds} />
-      )}
+      {tab === 'transcript' &&
+        hasTranscript &&
+        (isAudioExpired ? (
+          <AudioExpiredNotice />
+        ) : (
+          <AudioPlayer currentSeconds={0} durationSeconds={meeting.audioDurationSeconds} />
+        ))}
     </div>
   );
 };
