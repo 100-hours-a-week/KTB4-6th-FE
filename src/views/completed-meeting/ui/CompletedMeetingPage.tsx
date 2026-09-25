@@ -43,7 +43,7 @@ export const CompletedMeetingPage = ({
   // TODO: 회의 상세·음성 파일 조회 응답과 팀 역할 조회 응답으로 교체한다.
   const meeting = getCompletedMeetingPreview(previewState ?? 'completed');
   const viewerRole = previewRole;
-  const audio = useAudioViewState({
+  const { state: audio, retry: retryAudioFile } = useAudioViewState({
     meetingId,
     previewAudio: previewState
       ? {
@@ -86,6 +86,7 @@ export const CompletedMeetingPage = ({
           meetingId={meetingId}
           previewEntries={previewState ? meeting.transcriptEntries : undefined}
           audio={audio}
+          onAudioFileRetry={retryAudioFile}
         />
       )}
 

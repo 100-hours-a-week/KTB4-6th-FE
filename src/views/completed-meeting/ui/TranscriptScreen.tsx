@@ -8,6 +8,7 @@ import type { AudioViewState } from '../model/useAudioViewState';
 import { useAudioSource } from '../model/useAudioSource';
 import { useTranscriptAutoFollow } from '../model/useTranscriptAutoFollow';
 import { useTranscriptViewState } from '../model/useTranscriptViewState';
+import { AudioErrorNotice } from './AudioErrorNotice';
 import { AudioExpiredNotice } from './AudioExpiredNotice';
 import { AudioPlayer } from './AudioPlayer';
 import { TranscriptLoadErrorState } from './TranscriptLoadErrorState';
@@ -19,19 +20,34 @@ interface TranscriptScreenProps {
   /** 개발 환경 전용 미리보기 전사. 없으면 전사를 조회한다. */
   previewEntries?: TranscriptEntry[];
   audio: AudioViewState;
+  /** 음성 파일 정보 조회에 실패했을 때 다시 조회한다. */
+  onAudioFileRetry: () => void;
 }
 
 /**
  * 전사 탭 화면. 전사 목록과 음성 플레이어를 함께 다룬다.
  * 재생 위치에 맞춰 전사를 강조하고 따라가며 스크롤하며, 이 화면을 벗어나면 재생도 멈춘다.
  */
-export const TranscriptScreen = ({ meetingId, previewEntries, audio }: TranscriptScreenProps) => {
+export const TranscriptScreen = ({
+  meetingId,
+  previewEntries,
+  audio,
+  onAudioFileRetry,
+}: TranscriptScreenProps) => {
   const { status, entries, retry } = useTranscriptViewState({ meetingId, previewEntries });
   const hasTranscript = entries.length > 0;
-  const isAudioExpired = audio.kind === 'expired';
-  const isAudioPlayerVisible = hasTranscript && audio.kind === 'available';
   const audioDurationSeconds = audio.kind === 'available' ? audio.durationSeconds : 0;
-  const { audioSource, refreshAudioSource } = useAudioSource(audio, isAudioPlayerVisible);
+  const {
+    audioSource,
+    status: audioSourceStatus,
+    refreshAudioSource,
+    retry: retryAudioSource,
+  } = useAudioSource(audio, hasTranscript && audio.kind === 'available');
+  // 음성 파일이 만료됐거나(조회 결과, 재생 주소 발급 결과), 정보·재생 주소를 받지 못하면 플레이어 대신 안내를 보여준다.
+  const isAudioExpired = audio.kind === 'expired' || audioSourceStatus === 'expired';
+  const isAudioError = audio.kind === 'error' || audioSourceStatus === 'error';
+  const isAudioPlayerVisible =
+    hasTranscript && audio.kind === 'available' && !isAudioExpired && !isAudioError;
   const {
     isPlaying,
     isMuted,
@@ -93,6 +109,9 @@ export const TranscriptScreen = ({ meetingId, previewEntries, audio }: Transcrip
       </div>
 
       {hasTranscript && isAudioExpired && <AudioExpiredNotice />}
+      {hasTranscript && !isAudioExpired && isAudioError && (
+        <AudioErrorNotice onRetry={audio.kind === 'error' ? onAudioFileRetry : retryAudioSource} />
+      )}
       {isAudioPlayerVisible && (
         <AudioPlayer
           isPlaying={isPlaying}

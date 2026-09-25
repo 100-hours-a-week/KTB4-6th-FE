@@ -2,9 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-// 음성 주소(URL) 또는 음성 파일 자체
-type AudioSource = string | Blob;
-
 interface UseAudioPlayerOptions {
   /** 음성을 불러오거나 재생하다 실패했을 때 호출한다. 예: 재생 주소가 만료됨 */
   onError?: () => void;
@@ -26,7 +23,7 @@ interface ResumeState {
  * 손을 뗄 때 한 번만 이동한다. displayMs는 화면에 보여줄 위치라 끄는 중에는 끄는 위치를 가리킨다.
  */
 export const useAudioPlayer = (
-  audioSource: AudioSource | null,
+  audioSource: string | null,
   { onError }: UseAudioPlayerOptions = {},
 ) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -48,10 +45,7 @@ export const useAudioPlayer = (
     const resume = resumeRef.current;
     resumeRef.current = null;
 
-    // Blob이면 재생용 임시 주소를 만들고, 정리할 때 함께 해제한다.
-    const isObjectUrl = typeof audioSource !== 'string';
-    const src = isObjectUrl ? URL.createObjectURL(audioSource) : audioSource;
-    const audio = new Audio(src);
+    const audio = new Audio(audioSource);
     audio.preload = 'metadata';
     if (resume) audio.muted = resume.isMuted;
     audioRef.current = audio;
@@ -105,7 +99,6 @@ export const useAudioPlayer = (
       audio.load();
       audioRef.current = null;
       setIsReady(false);
-      if (isObjectUrl) URL.revokeObjectURL(src);
     };
   }, [audioSource]);
 

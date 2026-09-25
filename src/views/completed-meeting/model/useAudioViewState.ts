@@ -31,36 +31,40 @@ interface UseAudioViewStateParams {
   previewAudio?: PreviewAudio;
 }
 
-/** 헤더·더보기 메뉴·전사 화면이 함께 쓰는 음성 파일 상태를 음성 파일 조회 결과(또는 개발용 미리보기)로 정한다. */
-export const useAudioViewState = ({
-  meetingId,
-  previewAudio,
-}: UseAudioViewStateParams): AudioViewState => {
+/**
+ * 헤더·더보기 메뉴·전사 화면이 함께 쓰는 음성 파일 상태를 음성 파일 조회 결과(또는 개발용 미리보기)로 정한다.
+ * 음성 파일 조회에 실패했을 때 retry로 다시 조회한다.
+ */
+export const useAudioViewState = ({ meetingId, previewAudio }: UseAudioViewStateParams) => {
   const audioFileQuery = useAudioFile(meetingId, { isEnabled: previewAudio === undefined });
   // 남은 일수의 기준 시각은 화면을 연 시점으로 고정한다.
   const [now] = useState(() => Date.now());
 
-  if (previewAudio) {
-    return previewAudio.remainingDays === null
-      ? { kind: 'expired' }
-      : {
-          kind: 'available',
-          audioFileId: null,
-          remainingDays: previewAudio.remainingDays,
-          durationSeconds: previewAudio.durationSeconds,
-        };
-  }
-  if (audioFileQuery.isPending) return { kind: 'loading' };
-  if (audioFileQuery.data === undefined) return { kind: 'error' };
+  const getState = (): AudioViewState => {
+    if (previewAudio) {
+      return previewAudio.remainingDays === null
+        ? { kind: 'expired' }
+        : {
+            kind: 'available',
+            audioFileId: null,
+            remainingDays: previewAudio.remainingDays,
+            durationSeconds: previewAudio.durationSeconds,
+          };
+    }
+    if (audioFileQuery.isPending) return { kind: 'loading' };
+    if (audioFileQuery.data === undefined) return { kind: 'error' };
 
-  const { audioFileId, status, expiresAt, durationMs } = audioFileQuery.data;
-  const remainingDays = getAudioRemainingDays(expiresAt, now);
-  if (status !== 'AVAILABLE' || remainingDays === null) return { kind: 'expired' };
+    const { audioFileId, status, expiresAt, durationMs } = audioFileQuery.data;
+    const remainingDays = getAudioRemainingDays(expiresAt, now);
+    if (status !== 'AVAILABLE' || remainingDays === null) return { kind: 'expired' };
 
-  return {
-    kind: 'available',
-    audioFileId,
-    remainingDays,
-    durationSeconds: Math.round(durationMs / 1000),
+    return {
+      kind: 'available',
+      audioFileId,
+      remainingDays,
+      durationSeconds: Math.round(durationMs / 1000),
+    };
   };
+
+  return { state: getState(), retry: () => void audioFileQuery.refetch() };
 };
