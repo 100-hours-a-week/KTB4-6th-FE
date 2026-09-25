@@ -5,7 +5,7 @@ import { getActiveTranscriptId } from '../model/get-active-transcript-id';
 import type { TranscriptEntry } from '../model/preview-meeting-transcript';
 import { useAudioPlayer } from '../model/useAudioPlayer';
 import type { AudioViewState } from '../model/useAudioViewState';
-import { usePreviewAudioSource } from '../model/usePreviewAudioSource';
+import { useAudioSource } from '../model/useAudioSource';
 import { useTranscriptAutoFollow } from '../model/useTranscriptAutoFollow';
 import { useTranscriptViewState } from '../model/useTranscriptViewState';
 import { AudioExpiredNotice } from './AudioExpiredNotice';
@@ -31,7 +31,7 @@ export const TranscriptScreen = ({ meetingId, previewEntries, audio }: Transcrip
   const isAudioExpired = audio.kind === 'expired';
   const isAudioPlayerVisible = hasTranscript && audio.kind === 'available';
   const audioDurationSeconds = audio.kind === 'available' ? audio.durationSeconds : 0;
-  const audioSource = usePreviewAudioSource(audioDurationSeconds, isAudioPlayerVisible);
+  const audioSource = useAudioSource(audio, isAudioPlayerVisible);
   const {
     isPlaying,
     isMuted,

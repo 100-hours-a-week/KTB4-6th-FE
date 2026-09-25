@@ -11,7 +11,13 @@ export type AudioViewState =
   | { kind: 'error' }
   /** 저장 기한이 지났거나 삭제되어 재생할 수 없음 */
   | { kind: 'expired' }
-  | { kind: 'available'; remainingDays: number; durationSeconds: number };
+  | {
+      kind: 'available';
+      /** 재생 주소를 발급받을 음성 파일. 개발용 미리보기에서는 null */
+      audioFileId: number | null;
+      remainingDays: number;
+      durationSeconds: number;
+    };
 
 interface PreviewAudio {
   /** 만료됐으면 null */
@@ -39,6 +45,7 @@ export const useAudioViewState = ({
       ? { kind: 'expired' }
       : {
           kind: 'available',
+          audioFileId: null,
           remainingDays: previewAudio.remainingDays,
           durationSeconds: previewAudio.durationSeconds,
         };
@@ -46,9 +53,14 @@ export const useAudioViewState = ({
   if (audioFileQuery.isPending) return { kind: 'loading' };
   if (audioFileQuery.data === undefined) return { kind: 'error' };
 
-  const { status, expiresAt, durationMs } = audioFileQuery.data;
+  const { audioFileId, status, expiresAt, durationMs } = audioFileQuery.data;
   const remainingDays = getAudioRemainingDays(expiresAt, now);
   if (status !== 'AVAILABLE' || remainingDays === null) return { kind: 'expired' };
 
-  return { kind: 'available', remainingDays, durationSeconds: Math.round(durationMs / 1000) };
+  return {
+    kind: 'available',
+    audioFileId,
+    remainingDays,
+    durationSeconds: Math.round(durationMs / 1000),
+  };
 };
