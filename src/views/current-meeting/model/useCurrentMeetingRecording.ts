@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { getMeetingPhase } from './meeting-phase';
 import { useCurrentMeetingData } from './useCurrentMeetingData';
 import { useCurrentMeetingRecordingSession } from './useCurrentMeetingRecordingSession';
@@ -30,6 +31,7 @@ export const useCurrentMeetingRecording = ({
     setIsRecordingAcknowledged,
     handleStartDialogOpenChange,
   } = useRecordingStartDialog();
+  const [isInsufficientCreditDialogOpen, setIsInsufficientCreditDialogOpen] = useState(false);
 
   const {
     recordingSessionId,
@@ -54,6 +56,10 @@ export const useCurrentMeetingRecording = ({
     previewConnectionStatus: meeting?.connectionStatus ?? 'connected',
     isRecordingAcknowledged,
     onRecordingStarted: () => handleStartDialogOpenChange(false),
+    onInsufficientCredit: () => {
+      handleStartDialogOpenChange(false);
+      setIsInsufficientCreditDialogOpen(true);
+    },
   });
 
   const hasCompleted = isServerCompleted || isCompleted;
@@ -89,6 +95,7 @@ export const useCurrentMeetingRecording = ({
     isCompleted: hasCompleted,
     isStartDialogOpen,
     isRecordingAcknowledged,
+    isInsufficientCreditDialogOpen,
     isStartingRecording,
     isUpdatingRecordingStatus: operation === 'updating',
     canStartRecording: canStartRecording && !isStartDialogOpen,
@@ -97,6 +104,7 @@ export const useCurrentMeetingRecording = ({
     canPauseResumeRecording: canPauseResumeRecording && !hasCompleted,
     canCompleteRecording: canCompleteRecording && !hasCompleted,
     setIsRecordingAcknowledged,
+    setIsInsufficientCreditDialogOpen,
     handleStartRecording,
     handleStartDialogOpenChange,
     handleConfirmRecording,

@@ -7,10 +7,13 @@ import { MeetingSseConnection } from '@/features/meeting-sse';
 import { getTeamDetail } from '@/features/team-management';
 import { NavigationSidebar } from '@/widgets/navigation-sidebar';
 import { useCurrentMeetingRecording } from '../model/useCurrentMeetingRecording';
+import { useRecordingStartedNotice } from '../model/useRecordingStartedNotice';
 import { CurrentMeetingHeader } from './CurrentMeetingHeader';
+import { InsufficientCreditDialog } from './InsufficientCreditDialog';
 import { MeetingControls } from './MeetingControls';
 import { MeetingTranscript } from './MeetingTranscript';
 import { RecordingStartDialog } from './RecordingStartDialog';
+import { RecordingStartedDialog } from './RecordingStartedDialog';
 
 interface CurrentMeetingPageProps {
   teamId: string;
@@ -46,6 +49,7 @@ export const CurrentMeetingPage = ({
     isCompleted,
     isStartDialogOpen,
     isRecordingAcknowledged,
+    isInsufficientCreditDialogOpen,
     isStartingRecording,
     isUpdatingRecordingStatus,
     canStartRecording,
@@ -54,12 +58,15 @@ export const CurrentMeetingPage = ({
     pauseResumeBlockedReason,
     canCompleteRecording,
     setIsRecordingAcknowledged,
+    setIsInsufficientCreditDialogOpen,
     handleStartRecording,
     handleStartDialogOpenChange,
     handleConfirmRecording,
     handlePauseResumeRecording,
     handleCompleteRecording,
   } = useCurrentMeetingRecording({ teamId, meetingId, previewState, previewRole });
+  const { isRecordingStartedNoticeOpen, setIsRecordingStartedNoticeOpen } =
+    useRecordingStartedNotice({ meetingId, isPreview });
 
   if (!meeting) {
     return (
@@ -151,6 +158,14 @@ export const CurrentMeetingPage = ({
         onAcknowledgedChange={setIsRecordingAcknowledged}
         onConfirm={handleConfirmRecording}
         onOpenChange={handleStartDialogOpenChange}
+      />
+      <InsufficientCreditDialog
+        isOpen={isInsufficientCreditDialogOpen}
+        onOpenChange={setIsInsufficientCreditDialogOpen}
+      />
+      <RecordingStartedDialog
+        isOpen={isRecordingStartedNoticeOpen}
+        onOpenChange={setIsRecordingStartedNoticeOpen}
       />
 
       {team && (

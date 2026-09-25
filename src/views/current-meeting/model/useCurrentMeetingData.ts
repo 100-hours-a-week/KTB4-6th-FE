@@ -6,6 +6,7 @@ import {
   type TranscriptCreatedEventData,
   useMeetingSse,
 } from '@/features/meeting-sse';
+import { getCurrentMeetingQueryKey } from './current-meeting-query-key';
 import {
   getMeetingPreview,
   mockMeetingInfo,
@@ -30,7 +31,7 @@ export const useCurrentMeetingData = ({ meetingId, previewState }: UseCurrentMee
   const { transcriptsByMeetingId } = useMeetingSse();
   const isPreview = previewState !== undefined;
   const currentMeetingQuery = useQuery({
-    queryKey: ['meetings', meetingId, 'current-state'],
+    queryKey: getCurrentMeetingQueryKey(meetingId),
     queryFn: () => getCurrentMeetingState(meetingId),
     enabled: !isPreview,
   });

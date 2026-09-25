@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  isInsufficientCreditError,
   useMediaRecorder,
   useRecordingSessionStore,
   useStartRecording,
@@ -15,9 +16,13 @@ interface UseStartRecordingFlowParams {
   isPreview: boolean;
   isRecordingAcknowledged: boolean;
   onRecordingStarted: () => void;
+  onInsufficientCredit: () => void;
 }
 
-/** 마이크 준비 → 녹음 시작 요청 → 녹음 세션 저장 → 오디오 소켓 연결 순서로 녹음을 시작한다. */
+/**
+ * 마이크 준비 → 녹음 시작 요청 → 녹음 세션 저장 → 오디오 소켓 연결 순서로 녹음을 시작한다.
+ * 크레딧 부족으로 실패하면 토스트 대신 onInsufficientCredit으로 알린다.
+ */
 export const useStartRecordingFlow = ({
   teamId,
   meetingId,
@@ -25,6 +30,7 @@ export const useStartRecordingFlow = ({
   isPreview,
   isRecordingAcknowledged,
   onRecordingStarted,
+  onInsufficientCredit,
 }: UseStartRecordingFlowParams) => {
   const startRecording = useStartRecording();
   const prepareMicrophone = useMediaRecorder((state) => state.prepare);
@@ -59,9 +65,13 @@ export const useStartRecordingFlow = ({
         });
         connect(startedSessionId, audioFormat);
         onRecordingStarted();
-      } catch {
+      } catch (error) {
         releaseMicrophone();
-        showToast('녹음을 시작하지 못했습니다. 다시 시도해주세요.', 'danger');
+        if (isInsufficientCreditError(error)) {
+          onInsufficientCredit();
+        } else {
+          showToast('녹음을 시작하지 못했습니다. 다시 시도해주세요.', 'danger');
+        }
       }
     } catch (error) {
       const message =

@@ -16,6 +16,7 @@ interface UseCurrentMeetingRecordingSessionParams {
   previewConnectionStatus: 'connected' | 'disconnected';
   isRecordingAcknowledged: boolean;
   onRecordingStarted: () => void;
+  onInsufficientCredit: () => void;
 }
 
 /**
@@ -30,6 +31,7 @@ export const useCurrentMeetingRecordingSession = ({
   previewConnectionStatus,
   isRecordingAcknowledged,
   onRecordingStarted,
+  onInsufficientCredit,
 }: UseCurrentMeetingRecordingSessionParams) => {
   const [isCompleted, setIsCompleted] = useState(false);
   const recorderStatus = useMediaRecorder((state) => state.status);
@@ -71,6 +73,7 @@ export const useCurrentMeetingRecordingSession = ({
     isPreview,
     isRecordingAcknowledged,
     onRecordingStarted,
+    onInsufficientCredit,
   });
   const handleCompleteRecording = useCompleteRecordingFlow({
     recordingSessionId,
