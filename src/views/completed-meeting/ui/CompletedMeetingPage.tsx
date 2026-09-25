@@ -10,7 +10,7 @@ import { getActiveTranscriptId } from '../model/get-active-transcript-id';
 import { useTranscriptAutoFollow } from '../model/useTranscriptAutoFollow';
 import { useAudioPlayer } from '../model/useAudioPlayer';
 import { usePreviewAudioSource } from '../model/usePreviewAudioSource';
-import { mockMeetingSummary } from '../model/preview-meeting-summary';
+import { mockMeetingSummaryMarkdown } from '../model/preview-meeting-summary';
 import {
   getCompletedMeetingPreview,
   type CompletedMeetingPreviewState,
@@ -121,7 +121,10 @@ export const CompletedMeetingPage = ({
                 <SummaryFailedState transcriptHref={getTabHref('transcript')} />
               )}
               {meeting.summaryStatus === 'completed' && (
-                <SummaryTab summary={mockMeetingSummary} currentCredits={meeting.teamCredits} />
+                <SummaryTab
+                  content={mockMeetingSummaryMarkdown}
+                  currentCredits={meeting.teamCredits}
+                />
               )}
             </>
           ) : (
