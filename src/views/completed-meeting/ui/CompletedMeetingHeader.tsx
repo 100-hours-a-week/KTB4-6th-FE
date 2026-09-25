@@ -10,10 +10,16 @@ import { CompletedMeetingMoreMenu } from './CompletedMeetingMoreMenu';
 interface CompletedMeetingHeaderProps {
   meeting: CompletedMeetingViewModel;
   viewerRole: CompletedMeetingViewerRole;
+  isMenuDisabled: boolean;
+  onMenuClick: () => void;
 }
 
-// TODO: 메뉴 버튼은 사이드바 열기와 연결한다.
-export const CompletedMeetingHeader = ({ meeting, viewerRole }: CompletedMeetingHeaderProps) => {
+export const CompletedMeetingHeader = ({
+  meeting,
+  viewerRole,
+  isMenuDisabled,
+  onMenuClick,
+}: CompletedMeetingHeaderProps) => {
   const isAudioExpired = meeting.audioRemainingDays === null;
 
   return (
@@ -21,7 +27,9 @@ export const CompletedMeetingHeader = ({ meeting, viewerRole }: CompletedMeeting
       <button
         type="button"
         aria-label="메뉴 열기"
-        className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full text-cool-900"
+        disabled={isMenuDisabled}
+        onClick={onMenuClick}
+        className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full text-cool-900 disabled:text-cool-400"
       >
         <Menu className="size-5" strokeWidth={2} />
       </button>
