@@ -45,9 +45,9 @@ export const CompletedMeetingPage = ({
   };
 
   return (
-    <div data-viewer-role={viewerRole} className="flex h-dvh min-h-[844px] flex-col bg-cool-50">
+    <div className="flex h-dvh min-h-[844px] flex-col bg-cool-50">
       <header className="shrink-0 bg-white">
-        <CompletedMeetingHeader meeting={meeting} />
+        <CompletedMeetingHeader meeting={meeting} viewerRole={viewerRole} />
         <CompletedMeetingTabs currentTab={tab} getTabHref={getTabHref} />
       </header>
 

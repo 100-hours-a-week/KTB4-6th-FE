@@ -1,14 +1,19 @@
-import { Menu, MoreVertical } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { cn } from '@/shared/lib';
 import { formatMeetingPeriod } from '../model/format-meeting-period';
-import type { CompletedMeetingViewModel } from '../model/preview-completed-meeting';
+import type {
+  CompletedMeetingViewerRole,
+  CompletedMeetingViewModel,
+} from '../model/preview-completed-meeting';
+import { CompletedMeetingMoreMenu } from './CompletedMeetingMoreMenu';
 
 interface CompletedMeetingHeaderProps {
   meeting: CompletedMeetingViewModel;
+  viewerRole: CompletedMeetingViewerRole;
 }
 
-// TODO: 메뉴 버튼은 사이드바 열기, 더보기 버튼은 더보기 메뉴와 연결한다.
-export const CompletedMeetingHeader = ({ meeting }: CompletedMeetingHeaderProps) => {
+// TODO: 메뉴 버튼은 사이드바 열기와 연결한다.
+export const CompletedMeetingHeader = ({ meeting, viewerRole }: CompletedMeetingHeaderProps) => {
   const isAudioExpired = meeting.audioRemainingDays === null;
 
   return (
@@ -38,13 +43,10 @@ export const CompletedMeetingHeader = ({ meeting }: CompletedMeetingHeaderProps)
             {isAudioExpired ? '만료됨' : `${meeting.audioRemainingDays}일 남음`}
           </span>
         </div>
-        <button
-          type="button"
-          aria-label="더 보기"
-          className="flex size-9 items-center justify-center rounded-full text-cool-600"
-        >
-          <MoreVertical className="size-5" strokeWidth={2} />
-        </button>
+        <CompletedMeetingMoreMenu
+          viewerRole={viewerRole}
+          audioRemainingDays={meeting.audioRemainingDays}
+        />
       </div>
     </div>
   );
