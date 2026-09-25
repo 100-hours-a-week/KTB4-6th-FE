@@ -3,6 +3,7 @@ import {
   CompletedMeetingPage,
   parseCompletedMeetingPreview,
   parseCompletedMeetingTab,
+  parseCompletedMeetingViewerRole,
 } from '@/views/completed-meeting';
 import { CurrentMeetingPage } from '@/views/current-meeting';
 
@@ -29,7 +30,7 @@ export default async function MeetingRoute({ params, searchParams }: MeetingRout
   const isDevelopment = process.env.NODE_ENV === 'development';
   const completedPreviewState = isDevelopment ? parseCompletedMeetingPreview(preview) : undefined;
 
-  // 종료 회의 미리보기(?preview=completed 등)는 회의 조회 없이 종료 회의 화면만 보여준다.
+  // 종료 회의 미리보기(?preview=completed 등, 팀원 화면은 &role=member)는 회의 조회 없이 종료 회의 화면만 보여준다.
   if (completedPreviewState) {
     return (
       <CompletedMeetingPage
@@ -37,6 +38,7 @@ export default async function MeetingRoute({ params, searchParams }: MeetingRout
         meetingId={Number(meetingId)}
         tab={parseCompletedMeetingTab(tab)}
         previewState={completedPreviewState}
+        previewRole={parseCompletedMeetingViewerRole(role)}
       />
     );
   }
