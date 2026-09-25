@@ -17,6 +17,7 @@ export { getMeetingSummaryPhase } from './model/meeting-summary-phase';
 export { meetingKeys } from './model/query-keys';
 export { useCreateMeeting } from './model/useCreateMeeting';
 export { useMeetingSummary } from './model/useMeetingSummary';
+export { useMeetingTranscript } from './model/useMeetingTranscript';
 export {
   isInsufficientCreditError,
   isSummaryAlreadyProcessingError,
@@ -29,4 +30,5 @@ export type {
   CreateMeetingRequest,
   MeetingSummaryData,
   MeetingSummaryRequestData,
+  MeetingTranscriptSegmentData,
 } from './model/types';
