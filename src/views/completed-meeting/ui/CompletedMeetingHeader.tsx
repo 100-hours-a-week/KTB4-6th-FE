@@ -1,14 +1,25 @@
-import { Menu, MoreVertical } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { cn } from '@/shared/lib';
 import { formatMeetingPeriod } from '../model/format-meeting-period';
-import type { CompletedMeetingViewModel } from '../model/preview-completed-meeting';
+import type {
+  CompletedMeetingViewerRole,
+  CompletedMeetingViewModel,
+} from '../model/preview-completed-meeting';
+import { CompletedMeetingMoreMenu } from './CompletedMeetingMoreMenu';
 
 interface CompletedMeetingHeaderProps {
   meeting: CompletedMeetingViewModel;
+  viewerRole: CompletedMeetingViewerRole;
+  isMenuDisabled: boolean;
+  onMenuClick: () => void;
 }
 
-// TODO: 메뉴 버튼은 사이드바 열기, 더보기 버튼은 더보기 메뉴와 연결한다.
-export const CompletedMeetingHeader = ({ meeting }: CompletedMeetingHeaderProps) => {
+export const CompletedMeetingHeader = ({
+  meeting,
+  viewerRole,
+  isMenuDisabled,
+  onMenuClick,
+}: CompletedMeetingHeaderProps) => {
   const isAudioExpired = meeting.audioRemainingDays === null;
 
   return (
@@ -16,7 +27,9 @@ export const CompletedMeetingHeader = ({ meeting }: CompletedMeetingHeaderProps)
       <button
         type="button"
         aria-label="메뉴 열기"
-        className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full text-cool-900"
+        disabled={isMenuDisabled}
+        onClick={onMenuClick}
+        className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full text-cool-900 disabled:text-cool-400"
       >
         <Menu className="size-5" strokeWidth={2} />
       </button>
@@ -38,13 +51,11 @@ export const CompletedMeetingHeader = ({ meeting }: CompletedMeetingHeaderProps)
             {isAudioExpired ? '만료됨' : `${meeting.audioRemainingDays}일 남음`}
           </span>
         </div>
-        <button
-          type="button"
-          aria-label="더 보기"
-          className="flex size-9 items-center justify-center rounded-full text-cool-600"
-        >
-          <MoreVertical className="size-5" strokeWidth={2} />
-        </button>
+        <CompletedMeetingMoreMenu
+          meetingTitle={meeting.title}
+          viewerRole={viewerRole}
+          audioRemainingDays={meeting.audioRemainingDays}
+        />
       </div>
     </div>
   );

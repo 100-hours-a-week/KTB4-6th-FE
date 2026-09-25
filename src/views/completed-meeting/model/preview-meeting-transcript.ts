@@ -3,6 +3,8 @@ export interface TranscriptEntry {
   /** 팀 멤버와 연결된 발화자는 이름, 연결되지 않은 발화자는 `발화자 N` */
   speakerLabel: string;
   isSpeakerLinked: boolean;
+  /** 팀 멤버와 연결된 발화자의 멤버 ID. 직접 입력한 별칭으로 연결됐거나 연결되지 않았으면 없음 */
+  linkedMemberId?: string;
   startedAtSeconds: number;
   text: string;
 }
@@ -20,6 +22,7 @@ export const mockTranscriptEntries: TranscriptEntry[] = [
     id: 'entry-2',
     speakerLabel: '김철수',
     isSpeakerLinked: true,
+    linkedMemberId: 'member-1',
     startedAtSeconds: 41,
     text: '온보딩 개선은 디자인이 아직 안 끝나서 이번 스프린트에 넣기 어려울 것 같습니다.',
   },
@@ -34,6 +37,7 @@ export const mockTranscriptEntries: TranscriptEntry[] = [
     id: 'entry-4',
     speakerLabel: '김철수',
     isSpeakerLinked: true,
+    linkedMemberId: 'member-1',
     startedAtSeconds: 95,
     text: '동의합니다. 대신 결제 쪽은 외부 연동 범위를 오늘 확정해야 일정이 나옵니다.',
   },

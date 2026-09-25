@@ -1,3 +1,9 @@
+'use client';
+
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { getTeamDetail } from '@/features/team-management';
+import { NavigationSidebar } from '@/widgets/navigation-sidebar';
 import type { CompletedMeetingTab } from '../model/completed-meeting-tab';
 import { mockMeetingSummary } from '../model/preview-meeting-summary';
 import {
@@ -31,6 +37,13 @@ export const CompletedMeetingPage = ({
   previewState,
   previewRole = 'leader',
 }: CompletedMeetingPageProps) => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const numericTeamId = Number(teamId);
+  const { data: team } = useQuery({
+    queryKey: ['teams', numericTeamId, 'detail'],
+    queryFn: () => getTeamDetail(numericTeamId),
+    enabled: Number.isSafeInteger(numericTeamId) && numericTeamId > 0,
+  });
   // TODO: 회의 상세·음성 파일 조회 응답과 팀 역할 조회 응답으로 교체한다.
   const meeting = getCompletedMeetingPreview(previewState ?? 'completed');
   const viewerRole = previewRole;
@@ -45,9 +58,14 @@ export const CompletedMeetingPage = ({
   };
 
   return (
-    <div data-viewer-role={viewerRole} className="flex h-dvh min-h-[844px] flex-col bg-cool-50">
+    <div className="flex h-dvh min-h-[844px] flex-col bg-cool-50">
       <header className="shrink-0 bg-white">
-        <CompletedMeetingHeader meeting={meeting} />
+        <CompletedMeetingHeader
+          meeting={meeting}
+          viewerRole={viewerRole}
+          isMenuDisabled={!team}
+          onMenuClick={() => setIsSidebarOpen(true)}
+        />
         <CompletedMeetingTabs currentTab={tab} getTabHref={getTabHref} />
       </header>
 
@@ -76,6 +94,15 @@ export const CompletedMeetingPage = ({
         ) : (
           <AudioPlayer currentSeconds={0} durationSeconds={meeting.audioDurationSeconds} />
         ))}
+
+      {team && (
+        <NavigationSidebar
+          isOpen={isSidebarOpen}
+          onOpenChange={setIsSidebarOpen}
+          teamId={numericTeamId}
+          teamName={team.name}
+        />
+      )}
     </div>
   );
 };
