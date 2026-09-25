@@ -6,7 +6,7 @@ import { RefreshCw, X } from 'lucide-react';
 import { useAppFrameElement } from '@/shared/lib';
 
 interface SummaryRegenerateReasonDialogProps {
-  onNext: () => void;
+  onNext: (reason: string) => void;
   onClose: () => void;
 }
 
@@ -23,7 +23,7 @@ export const SummaryRegenerateReasonDialog = ({
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (hasReason) onNext();
+    if (hasReason) onNext(reason.trim());
   };
 
   return (

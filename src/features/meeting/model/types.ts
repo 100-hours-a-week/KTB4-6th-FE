@@ -45,3 +45,23 @@ export interface MeetingSummaryResponse {
   data: MeetingSummaryData | null;
   error: ApiErrorPayload | null;
 }
+
+export interface RequestMeetingSummaryRequest {
+  /** 요약을 다시 만드는 사유 */
+  reason: string;
+}
+
+export interface MeetingSummaryRequestData {
+  summaryId: number;
+  /** 이 회의의 요약 회차 */
+  version: number;
+  status: string;
+  /** 요청으로 크레딧이 차감된 뒤의 팀 크레딧 잔액 */
+  creditBalance: number;
+}
+
+export interface MeetingSummaryRequestResponse {
+  success: boolean;
+  data: MeetingSummaryRequestData | null;
+  error: ApiErrorPayload | null;
+}

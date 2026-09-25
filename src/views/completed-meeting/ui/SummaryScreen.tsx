@@ -1,4 +1,5 @@
 import type { MeetingSummaryStatus } from '../model/preview-completed-meeting';
+import { useSummaryRegeneration } from '../model/useSummaryRegeneration';
 import { useSummaryViewState } from '../model/useSummaryViewState';
 import { SummaryFailedState } from './SummaryFailedState';
 import { SummaryGeneratingState } from './SummaryGeneratingState';
@@ -29,6 +30,10 @@ export const SummaryScreen = ({
     meetingId,
     previewStatus: previewSummaryStatus,
   });
+  const { isRegenerating, regenerate } = useSummaryRegeneration({
+    meetingId,
+    isPreview: previewSummaryStatus !== undefined,
+  });
 
   return (
     <main data-tab="summary" className="flex min-h-0 flex-1 flex-col overflow-y-auto">
@@ -37,7 +42,12 @@ export const SummaryScreen = ({
       {state.kind === 'failed' && <SummaryFailedState transcriptHref={transcriptHref} />}
       {state.kind === 'error' && <SummaryLoadErrorState onRetry={retry} />}
       {state.kind === 'completed' && (
-        <SummaryTab content={state.content} currentCredits={currentCredits} />
+        <SummaryTab
+          content={state.content}
+          currentCredits={currentCredits}
+          isRegenerating={isRegenerating}
+          onRegenerate={regenerate}
+        />
       )}
     </main>
   );
