@@ -4,9 +4,11 @@ import { ArrowDown } from 'lucide-react';
 import { getActiveTranscriptId } from '../model/get-active-transcript-id';
 import type { TranscriptEntry } from '../model/preview-meeting-transcript';
 import { useAudioPlayer } from '../model/useAudioPlayer';
-import { usePreviewAudioSource } from '../model/usePreviewAudioSource';
+import type { AudioViewState } from '../model/useAudioViewState';
+import { useAudioSource } from '../model/useAudioSource';
 import { useTranscriptAutoFollow } from '../model/useTranscriptAutoFollow';
 import { useTranscriptViewState } from '../model/useTranscriptViewState';
+import { AudioErrorNotice } from './AudioErrorNotice';
 import { AudioExpiredNotice } from './AudioExpiredNotice';
 import { AudioPlayer } from './AudioPlayer';
 import { TranscriptLoadErrorState } from './TranscriptLoadErrorState';
@@ -17,9 +19,9 @@ interface TranscriptScreenProps {
   meetingId: number;
   /** 개발 환경 전용 미리보기 전사. 없으면 전사를 조회한다. */
   previewEntries?: TranscriptEntry[];
-  audioDurationSeconds: number;
-  /** 음성 파일이 만료되기까지 남은 일수. 이미 만료됐으면 null */
-  audioRemainingDays: number | null;
+  audio: AudioViewState;
+  /** 음성 파일 정보 조회에 실패했을 때 다시 조회한다. */
+  onAudioFileRetry: () => void;
 }
 
 /**
@@ -29,14 +31,23 @@ interface TranscriptScreenProps {
 export const TranscriptScreen = ({
   meetingId,
   previewEntries,
-  audioDurationSeconds,
-  audioRemainingDays,
+  audio,
+  onAudioFileRetry,
 }: TranscriptScreenProps) => {
   const { status, entries, retry } = useTranscriptViewState({ meetingId, previewEntries });
   const hasTranscript = entries.length > 0;
-  const isAudioExpired = audioRemainingDays === null;
-  const isAudioPlayerVisible = hasTranscript && !isAudioExpired;
-  const audioSource = usePreviewAudioSource(audioDurationSeconds, isAudioPlayerVisible);
+  const audioDurationSeconds = audio.kind === 'available' ? audio.durationSeconds : 0;
+  const {
+    audioSource,
+    status: audioSourceStatus,
+    refreshAudioSource,
+    retry: retryAudioSource,
+  } = useAudioSource(audio, hasTranscript && audio.kind === 'available');
+  // 음성 파일이 만료됐거나(조회 결과, 재생 주소 발급 결과), 정보·재생 주소를 받지 못하면 플레이어 대신 안내를 보여준다.
+  const isAudioExpired = audio.kind === 'expired' || audioSourceStatus === 'expired';
+  const isAudioError = audio.kind === 'error' || audioSourceStatus === 'error';
+  const isAudioPlayerVisible =
+    hasTranscript && audio.kind === 'available' && !isAudioExpired && !isAudioError;
   const {
     isPlaying,
     isMuted,
@@ -48,7 +59,7 @@ export const TranscriptScreen = ({
     updateScrub,
     endScrub,
     toggleMute,
-  } = useAudioPlayer(audioSource);
+  } = useAudioPlayer(audioSource, { onError: refreshAudioSource });
   // 재생 위치(끄는 중이면 끄는 위치)에 해당하는 발화를 강조한다. 플레이어가 없으면 강조하지 않는다.
   const activeEntryId = isAudioPlayerVisible ? getActiveTranscriptId(entries, displayMs) : null;
   const { containerRef, isFollowing, resumeFollowing } = useTranscriptAutoFollow(
@@ -98,6 +109,9 @@ export const TranscriptScreen = ({
       </div>
 
       {hasTranscript && isAudioExpired && <AudioExpiredNotice />}
+      {hasTranscript && !isAudioExpired && isAudioError && (
+        <AudioErrorNotice onRetry={audio.kind === 'error' ? onAudioFileRetry : retryAudioSource} />
+      )}
       {isAudioPlayerVisible && (
         <AudioPlayer
           isPlaying={isPlaying}

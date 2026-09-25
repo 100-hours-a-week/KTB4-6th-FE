@@ -6,14 +6,14 @@ import { FileText, Headphones, MoreVertical, Pencil, Trash2 } from 'lucide-react
 import { cn, useAppFrameElement } from '@/shared/lib';
 import { useAppToast } from '@/shared/ui';
 import type { CompletedMeetingViewerRole } from '../model/preview-completed-meeting';
+import type { AudioViewState } from '../model/useAudioViewState';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 import { MeetingRenameDialog } from './MeetingRenameDialog';
 
 interface CompletedMeetingMoreMenuProps {
   meetingTitle: string;
   viewerRole: CompletedMeetingViewerRole;
-  /** 음성 파일이 만료되기까지 남은 일수. 이미 만료됐으면 null */
-  audioRemainingDays: number | null;
+  audio: AudioViewState;
 }
 
 type MoreMenuDialog = 'rename' | 'audio-delete' | 'meeting-delete';
@@ -48,13 +48,13 @@ const MoreMenuItem = ({ icon, label, isDanger, trailingText, onClick }: MoreMenu
 export const CompletedMeetingMoreMenu = ({
   meetingTitle,
   viewerRole,
-  audioRemainingDays,
+  audio,
 }: CompletedMeetingMoreMenuProps) => {
   const frame = useAppFrameElement();
   const { showToast } = useAppToast();
   const [openDialog, setOpenDialog] = useState<MoreMenuDialog | null>(null);
   const isLeader = viewerRole === 'leader';
-  const isAudioExpired = audioRemainingDays === null;
+  const isAudioExpired = audio.kind === 'expired';
 
   const closeDialog = () => setOpenDialog(null);
 
@@ -114,13 +114,13 @@ export const CompletedMeetingMoreMenu = ({
               />
               {isLeader && (
                 <>
-                  {audioRemainingDays !== null && (
+                  {audio.kind === 'available' && (
                     <MoreMenuItem
                       icon={<Trash2 className="size-4" strokeWidth={2} />}
                       label="음성 삭제"
                       isDanger
                       onClick={() => setOpenDialog('audio-delete')}
-                      trailingText={`${audioRemainingDays}일 남음`}
+                      trailingText={`${audio.remainingDays}일 남음`}
                     />
                   )}
                   <MoreMenuItem
