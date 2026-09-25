@@ -5,6 +5,7 @@ import {
   getCompletedMeetingPreview,
   type CompletedMeetingPreviewState,
 } from '../model/preview-completed-meeting';
+import { AudioPlayer } from './AudioPlayer';
 import { CompletedMeetingHeader } from './CompletedMeetingHeader';
 import { CompletedMeetingTabs } from './CompletedMeetingTabs';
 import { SummaryTab } from './SummaryTab';
@@ -50,6 +51,11 @@ export const CompletedMeetingPage = ({
           <TranscriptTab entries={mockTranscriptEntries} />
         )}
       </main>
+
+      {tab === 'transcript' && (
+        // TODO: 음성이 만료된 상태에서는 플레이어 대신 만료 안내를 보여준다.
+        <AudioPlayer currentSeconds={0} durationSeconds={meeting.audioDurationSeconds} />
+      )}
     </div>
   );
 };

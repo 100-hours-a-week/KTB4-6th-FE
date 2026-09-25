@@ -1,6 +1,6 @@
 import { Link2 } from 'lucide-react';
 import { cn } from '@/shared/lib';
-import { formatTranscriptTime } from '../model/format-transcript-time';
+import { formatTimestamp } from '../model/format-timestamp';
 import type { TranscriptEntry } from '../model/preview-meeting-transcript';
 
 interface TranscriptItemProps {
@@ -23,7 +23,7 @@ export const TranscriptItem = ({ entry }: TranscriptItemProps) => (
         )}
       </p>
       <p className="mt-1 font-mono text-xs text-cool-500 tabular-nums">
-        {formatTranscriptTime(entry.startedAtSeconds)}
+        {formatTimestamp(entry.startedAtSeconds)}
       </p>
     </div>
     <p className="min-w-0 flex-1 text-sm leading-6 break-all text-cool-800">{entry.text}</p>
