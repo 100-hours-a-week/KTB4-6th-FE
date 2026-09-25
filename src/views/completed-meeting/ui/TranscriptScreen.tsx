@@ -9,6 +9,8 @@ import { useTranscriptAutoFollow } from '../model/useTranscriptAutoFollow';
 import { useTranscriptViewState } from '../model/useTranscriptViewState';
 import { AudioExpiredNotice } from './AudioExpiredNotice';
 import { AudioPlayer } from './AudioPlayer';
+import { TranscriptLoadErrorState } from './TranscriptLoadErrorState';
+import { TranscriptLoadingState } from './TranscriptLoadingState';
 import { TranscriptTab } from './TranscriptTab';
 
 interface TranscriptScreenProps {
@@ -30,7 +32,7 @@ export const TranscriptScreen = ({
   audioDurationSeconds,
   audioRemainingDays,
 }: TranscriptScreenProps) => {
-  const { status, entries } = useTranscriptViewState({ meetingId, previewEntries });
+  const { status, entries, retry } = useTranscriptViewState({ meetingId, previewEntries });
   const hasTranscript = entries.length > 0;
   const isAudioExpired = audioRemainingDays === null;
   const isAudioPlayerVisible = hasTranscript && !isAudioExpired;
@@ -72,7 +74,8 @@ export const TranscriptScreen = ({
           data-tab="transcript"
           className="flex min-h-0 flex-1 flex-col overflow-y-auto"
         >
-          {/* TODO: 처음 불러오는 중과 조회 오류 화면은 다음 커밋에서 추가한다. */}
+          {status === 'loading' && <TranscriptLoadingState />}
+          {status === 'error' && <TranscriptLoadErrorState onRetry={retry} />}
           {status === 'ready' && <TranscriptTab entries={entries} activeEntryId={activeEntryId} />}
         </main>
         {isAudioPlayerVisible && !isFollowing && activeEntryId && (

@@ -25,11 +25,16 @@ export const useTranscriptViewState = ({
     [transcriptQuery.data],
   );
 
-  if (previewEntries) return { status: 'ready' as const, entries: previewEntries };
-  if (transcriptQuery.isPending) return { status: 'loading' as const, entries: fetchedEntries };
-  // 한 번이라도 조회에 성공했다면 이후의 일시적인 오류는 무시한다.
-  if (transcriptQuery.data === undefined)
-    return { status: 'error' as const, entries: fetchedEntries };
+  const retry = () => void transcriptQuery.refetch();
 
-  return { status: 'ready' as const, entries: fetchedEntries };
+  if (previewEntries) return { status: 'ready' as const, entries: previewEntries, retry };
+  if (transcriptQuery.isPending) {
+    return { status: 'loading' as const, entries: fetchedEntries, retry };
+  }
+  // 한 번이라도 조회에 성공했다면 이후의 일시적인 오류는 무시한다.
+  if (transcriptQuery.data === undefined) {
+    return { status: 'error' as const, entries: fetchedEntries, retry };
+  }
+
+  return { status: 'ready' as const, entries: fetchedEntries, retry };
 };
