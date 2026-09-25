@@ -13,6 +13,7 @@ interface TranscriptItemProps {
 // 재생 중에는 재생 위치가 자주 바뀌므로, 강조 여부가 바뀐 항목만 다시 그리도록 memo로 감싼다.
 export const TranscriptItem = memo(({ entry, isActive }: TranscriptItemProps) => (
   <li
+    data-entry-id={entry.id}
     aria-current={isActive ? 'true' : undefined}
     className={cn(
       'flex items-start gap-3.5 rounded-2xl px-3 py-3.5 transition-colors',
