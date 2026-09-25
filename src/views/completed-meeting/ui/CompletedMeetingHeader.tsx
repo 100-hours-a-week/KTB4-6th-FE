@@ -44,6 +44,7 @@ export const CompletedMeetingHeader = ({ meeting, viewerRole }: CompletedMeeting
           </span>
         </div>
         <CompletedMeetingMoreMenu
+          meetingTitle={meeting.title}
           viewerRole={viewerRole}
           audioRemainingDays={meeting.audioRemainingDays}
         />
