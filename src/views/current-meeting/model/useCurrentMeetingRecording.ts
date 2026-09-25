@@ -93,6 +93,7 @@ export const useCurrentMeetingRecording = ({
     isRecording,
     isRecorder,
     isCompleted: hasCompleted,
+    isServerCompleted,
     isStartDialogOpen,
     isRecordingAcknowledged,
     isInsufficientCreditDialogOpen,

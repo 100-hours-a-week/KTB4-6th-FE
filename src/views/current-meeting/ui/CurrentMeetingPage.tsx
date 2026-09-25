@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Headphones, LoaderCircle } from 'lucide-react';
 import { MeetingSseConnection } from '@/features/meeting-sse';
@@ -23,6 +23,8 @@ interface CurrentMeetingPageProps {
   meetingId: number;
   previewState?: string;
   previewRole?: 'recorder' | 'participant';
+  /** 회의가 종료 상태이면 현재 회의 대신 보여줄 화면 (views끼리는 import할 수 없어 라우트가 넘긴다) */
+  completedView?: ReactNode;
 }
 
 export const CurrentMeetingPage = ({
@@ -30,6 +32,7 @@ export const CurrentMeetingPage = ({
   meetingId,
   previewState,
   previewRole = 'recorder',
+  completedView,
 }: CurrentMeetingPageProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const numericTeamId = Number(teamId);
@@ -50,6 +53,7 @@ export const CurrentMeetingPage = ({
     isRecording,
     isRecorder,
     isCompleted,
+    isServerCompleted,
     isStartDialogOpen,
     isRecordingAcknowledged,
     isInsufficientCreditDialogOpen,
@@ -80,6 +84,8 @@ export const CurrentMeetingPage = ({
     handleSubmitEditForm,
     handleCloseEditForm,
   } = useMeetingInfoEdit(meeting);
+
+  if (isServerCompleted && completedView) return completedView;
 
   if (!meeting) {
     return (
