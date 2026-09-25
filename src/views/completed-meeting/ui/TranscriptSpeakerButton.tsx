@@ -1,8 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { withWaGwa } from '@/shared/lib';
-import { useAppToast } from '@/shared/ui';
 import type { TranscriptEntry } from '../model/preview-meeting-transcript';
 import { SpeakerLinkDialog } from './SpeakerLinkDialog';
 
@@ -19,22 +17,9 @@ export const TranscriptSpeakerButton = ({
   entry,
   isPreview,
 }: TranscriptSpeakerButtonProps) => {
-  const { showToast } = useAppToast();
   const [isOpen, setIsOpen] = useState(false);
 
   const closeDialog = () => setIsOpen(false);
-
-  // TODO: 발화자 연결 API가 생기면 연결 저장 요청으로 교체한다. (같은 발화자의 모든 발화에 반영)
-  const handleConnect = (name: string) => {
-    closeDialog();
-    showToast(`발화자가 ${withWaGwa(name)} 연결되었습니다`, 'success');
-  };
-
-  // TODO: 발화자 연결 API가 생기면 연결 해제 요청으로 교체한다.
-  const handleUnlink = () => {
-    closeDialog();
-    showToast('발화자 연결이 해제되었습니다', 'success');
-  };
 
   return (
     <>
@@ -50,8 +35,6 @@ export const TranscriptSpeakerButton = ({
           meetingId={meetingId}
           entry={entry}
           isPreview={isPreview}
-          onConnect={handleConnect}
-          onUnlink={handleUnlink}
           onClose={closeDialog}
         />
       )}

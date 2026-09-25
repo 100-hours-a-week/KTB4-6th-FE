@@ -3,6 +3,8 @@ import type { TeamMember } from './preview-team-members';
 
 /** 발화자 연결 모달이 그릴 데이터 */
 export interface SpeakerLinkDialogData {
+  /** 연결을 저장할 때 쓰는 발화자 ID */
+  speakerId: number;
   /** 연결되지 않은 발화자의 이름(`화자 1`) */
   speakerLabel: string;
   /** 연결할 수 있는 회의 참석자 */
@@ -23,6 +25,7 @@ export const toSpeakerLinkDialogData = ({
 
   if (speaker.mappingType === 'TEAM_MEMBER' && speaker.mappedTeamMemberId !== null) {
     return {
+      speakerId: speaker.transcriptSpeakerId,
       speakerLabel: speaker.speakerLabel,
       members,
       currentLink: { name: speaker.displayName, memberId: String(speaker.mappedTeamMemberId) },
@@ -30,11 +33,17 @@ export const toSpeakerLinkDialogData = ({
   }
   if (speaker.mappingType === 'CUSTOM_ALIAS') {
     return {
+      speakerId: speaker.transcriptSpeakerId,
       speakerLabel: speaker.speakerLabel,
       members,
       currentLink: { name: speaker.customAlias ?? speaker.displayName },
     };
   }
 
-  return { speakerLabel: speaker.speakerLabel, members, currentLink: null };
+  return {
+    speakerId: speaker.transcriptSpeakerId,
+    speakerLabel: speaker.speakerLabel,
+    members,
+    currentLink: null,
+  };
 };

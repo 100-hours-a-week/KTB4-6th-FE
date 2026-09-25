@@ -8,6 +8,12 @@ import type { TeamMember } from '../model/preview-team-members';
 
 const CUSTOM_NAME_MAX_LENGTH = 8;
 
+/** 연결하려는 대상. 팀 멤버면 memberId가 있고, 직접 입력한 이름·별칭이면 null이다. */
+export interface SpeakerLinkSelection {
+  memberId: string | null;
+  name: string;
+}
+
 type LinkSelection = { type: 'member'; memberId: string } | { type: 'custom' } | null;
 
 interface CurrentLink {
@@ -22,7 +28,9 @@ interface TeamMemberLinkDialogProps {
   members: TeamMember[];
   /** 이미 연결된 발화자라면 현재 연결 정보 */
   currentLink: CurrentLink | null;
-  onConnect: (name: string) => void;
+  /** 저장 요청 중이면 버튼과 닫기를 막는다. */
+  isSubmitting: boolean;
+  onConnect: (selection: SpeakerLinkSelection) => void;
   onUnlink: () => void;
   onClose: () => void;
 }
@@ -92,6 +100,7 @@ export const TeamMemberLinkDialog = ({
   speakerLabel,
   members,
   currentLink,
+  isSubmitting,
   onConnect,
   onUnlink,
   onClose,
@@ -119,11 +128,16 @@ export const TeamMemberLinkDialog = ({
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (canConnect) onConnect(connectName);
+    if (canConnect && !isSubmitting) {
+      onConnect({
+        memberId: selection?.type === 'member' ? selection.memberId : null,
+        name: connectName,
+      });
+    }
   };
 
   return (
-    <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
+    <Dialog.Root open onOpenChange={(open) => !open && !isSubmitting && onClose()}>
       <Dialog.Portal container={frame}>
         <Dialog.Backdrop className="absolute inset-0 z-[85] bg-cool-900/40" />
         <Dialog.Popup className="absolute top-1/2 left-1/2 z-[90] flex max-h-[calc(100%-3rem)] w-[calc(100%-2rem)] max-w-[358px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl bg-white shadow-[0_16px_40px_rgba(20,34,56,0.2)] outline-none">
@@ -135,6 +149,7 @@ export const TeamMemberLinkDialog = ({
                 </Dialog.Title>
                 <Dialog.Close
                   aria-label="닫기"
+                  disabled={isSubmitting}
                   className="-mr-1.5 flex size-8 items-center justify-center rounded-lg text-cool-600 hover:bg-cool-50"
                 >
                   <X aria-hidden="true" className="size-5" />
@@ -189,23 +204,27 @@ export const TeamMemberLinkDialog = ({
                 <div className="flex justify-end">
                   <button
                     type="button"
+                    disabled={isSubmitting}
                     onClick={onUnlink}
-                    className="py-1.5 text-sm font-semibold text-danger"
+                    className="py-1.5 text-sm font-semibold text-danger disabled:opacity-50"
                   >
                     연결 해제
                   </button>
                 </div>
               )}
               <div className={cn('grid grid-cols-2 gap-2', currentLink ? 'mt-1' : 'mt-2')}>
-                <Dialog.Close className="h-12 rounded-xl border border-cool-200 text-sm font-semibold text-cool-700 transition-colors hover:bg-cool-50">
+                <Dialog.Close
+                  disabled={isSubmitting}
+                  className="h-12 rounded-xl border border-cool-200 text-sm font-semibold text-cool-700 transition-colors hover:bg-cool-50 disabled:opacity-50"
+                >
                   취소
                 </Dialog.Close>
                 <button
                   type="submit"
-                  disabled={!canConnect}
+                  disabled={!canConnect || isSubmitting}
                   className="h-12 rounded-xl bg-brand-600 text-sm font-semibold text-white transition-colors hover:bg-brand-700 disabled:bg-cool-100 disabled:text-cool-400"
                 >
-                  연결
+                  {isSubmitting ? '연결 중...' : '연결'}
                 </button>
               </div>
             </div>

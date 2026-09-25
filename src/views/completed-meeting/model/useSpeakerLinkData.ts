@@ -24,6 +24,7 @@ export const useSpeakerLinkData = ({ meetingId, entry, isPreview }: UseSpeakerLi
 
   if (isPreview) {
     const previewData: SpeakerLinkDialogData = {
+      speakerId: 0,
       speakerLabel: entry.speakerName,
       members: mockTeamMembers,
       currentLink: entry.isSpeakerLinked

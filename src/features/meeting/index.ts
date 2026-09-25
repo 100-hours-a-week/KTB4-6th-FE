@@ -19,6 +19,7 @@ export { useCreateMeeting } from './model/useCreateMeeting';
 export { useMeetingSummary } from './model/useMeetingSummary';
 export { useMeetingTranscript } from './model/useMeetingTranscript';
 export { useSpeakerMapping } from './model/useSpeakerMapping';
+export { useUpdateSpeakerMapping } from './model/useUpdateSpeakerMapping';
 export {
   isInsufficientCreditError,
   isSummaryAlreadyProcessingError,

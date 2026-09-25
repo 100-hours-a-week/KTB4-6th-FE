@@ -117,3 +117,22 @@ export interface SpeakerMappingResponse {
   data: SpeakerMappingData | null;
   error: ApiErrorPayload | null;
 }
+
+/** 발화자 연결 요청. teamMemberId와 customAlias 중 하나만 값을 넣고, 둘 다 null이면 연결을 해제한다. */
+export interface UpdateSpeakerMappingRequest {
+  teamMemberId: number | null;
+  customAlias: string | null;
+}
+
+export interface SpeakerMappingResultData {
+  transcriptSpeakerId: number;
+  speakerLabel: string;
+  mappedTeamMemberId: number | null;
+  customAlias: string | null;
+}
+
+export interface UpdateSpeakerMappingResponse {
+  success: boolean;
+  data: SpeakerMappingResultData | null;
+  error: ApiErrorPayload | null;
+}
