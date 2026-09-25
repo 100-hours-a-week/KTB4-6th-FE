@@ -31,7 +31,7 @@ export const TranscriptScreen = ({ meetingId, previewEntries, audio }: Transcrip
   const isAudioExpired = audio.kind === 'expired';
   const isAudioPlayerVisible = hasTranscript && audio.kind === 'available';
   const audioDurationSeconds = audio.kind === 'available' ? audio.durationSeconds : 0;
-  const audioSource = useAudioSource(audio, isAudioPlayerVisible);
+  const { audioSource, refreshAudioSource } = useAudioSource(audio, isAudioPlayerVisible);
   const {
     isPlaying,
     isMuted,
@@ -43,7 +43,7 @@ export const TranscriptScreen = ({ meetingId, previewEntries, audio }: Transcrip
     updateScrub,
     endScrub,
     toggleMute,
-  } = useAudioPlayer(audioSource);
+  } = useAudioPlayer(audioSource, { onError: refreshAudioSource });
   // 재생 위치(끄는 중이면 끄는 위치)에 해당하는 발화를 강조한다. 플레이어가 없으면 강조하지 않는다.
   const activeEntryId = isAudioPlayerVisible ? getActiveTranscriptId(entries, displayMs) : null;
   const { containerRef, isFollowing, resumeFollowing } = useTranscriptAutoFollow(
