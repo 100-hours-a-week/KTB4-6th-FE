@@ -1,9 +1,10 @@
 export interface TranscriptEntry {
   id: string;
-  /** 팀 멤버와 연결된 발화자는 이름, 연결되지 않은 발화자는 `발화자 N` */
-  speakerLabel: string;
-  isSpeakerLinked: boolean;
-  /** 팀 멤버와 연결된 발화자의 멤버 ID. 직접 입력한 별칭으로 연결됐거나 연결되지 않았으면 없음 */
+  /** 서버가 준 발화자 표시 이름 (팀원 이름, 별칭, 또는 연결되지 않은 `화자 1` 같은 이름) */
+  speakerName: string;
+  /** 개발 미리보기의 연결 모달 초기 상태용. 실제 연결 상태는 발화자 매핑 조회로 확인한다. */
+  isSpeakerLinked?: boolean;
+  /** 개발 미리보기용. 팀 멤버와 연결된 발화자의 멤버 ID */
   linkedMemberId?: string;
   /** 음성 파일 시작을 기준으로 이 발화가 시작된 시각(ms) */
   startedAtMs: number;
@@ -15,7 +16,7 @@ export interface TranscriptEntry {
 export const mockTranscriptEntries: TranscriptEntry[] = [
   {
     id: 'entry-1',
-    speakerLabel: '발화자 1',
+    speakerName: '화자 1',
     isSpeakerLinked: false,
     startedAtMs: 12000,
     endedAtMs: 39500,
@@ -23,7 +24,7 @@ export const mockTranscriptEntries: TranscriptEntry[] = [
   },
   {
     id: 'entry-2',
-    speakerLabel: '김철수',
+    speakerName: '김철수',
     isSpeakerLinked: true,
     linkedMemberId: 'member-1',
     startedAtMs: 41000,
@@ -32,7 +33,7 @@ export const mockTranscriptEntries: TranscriptEntry[] = [
   },
   {
     id: 'entry-3',
-    speakerLabel: '발화자 2',
+    speakerName: '화자 2',
     isSpeakerLinked: false,
     startedAtMs: 68000,
     endedAtMs: 93500,
@@ -40,7 +41,7 @@ export const mockTranscriptEntries: TranscriptEntry[] = [
   },
   {
     id: 'entry-4',
-    speakerLabel: '김철수',
+    speakerName: '김철수',
     isSpeakerLinked: true,
     linkedMemberId: 'member-1',
     startedAtMs: 95000,
@@ -49,7 +50,7 @@ export const mockTranscriptEntries: TranscriptEntry[] = [
   },
   {
     id: 'entry-5',
-    speakerLabel: '맹구',
+    speakerName: '맹구',
     isSpeakerLinked: true,
     startedAtMs: 122000,
     endedAtMs: 148500,
@@ -57,7 +58,7 @@ export const mockTranscriptEntries: TranscriptEntry[] = [
   },
   {
     id: 'entry-6',
-    speakerLabel: '발화자 1',
+    speakerName: '화자 1',
     isSpeakerLinked: false,
     startedAtMs: 150000,
     endedAtMs: 176500,
@@ -65,7 +66,7 @@ export const mockTranscriptEntries: TranscriptEntry[] = [
   },
   {
     id: 'entry-7',
-    speakerLabel: '유리',
+    speakerName: '유리',
     isSpeakerLinked: true,
     startedAtMs: 178000,
     endedAtMs: 199500,
@@ -73,7 +74,7 @@ export const mockTranscriptEntries: TranscriptEntry[] = [
   },
   {
     id: 'entry-8',
-    speakerLabel: '발화자 2',
+    speakerName: '화자 2',
     isSpeakerLinked: false,
     startedAtMs: 201000,
     endedAtMs: 205000,

@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Link2 } from 'lucide-react';
-import { cn, withWaGwa } from '@/shared/lib';
+import { withWaGwa } from '@/shared/lib';
 import { useAppToast } from '@/shared/ui';
 import { mockTeamMembers } from '../model/preview-team-members';
 import type { TranscriptEntry } from '../model/preview-meeting-transcript';
@@ -36,23 +35,17 @@ export const TranscriptSpeakerButton = ({ entry }: TranscriptSpeakerButtonProps)
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className={cn(
-          'flex items-center gap-1 rounded text-[13px] font-bold whitespace-nowrap',
-          entry.isSpeakerLinked ? 'text-cool-900' : 'text-brand-500',
-        )}
+        className="rounded text-left text-[13px] font-bold break-all text-cool-900"
       >
-        {entry.speakerLabel}
-        {!entry.isSpeakerLinked && (
-          <Link2 aria-label="팀 멤버 미연결" className="size-3.5 shrink-0" strokeWidth={2} />
-        )}
+        {entry.speakerName}
       </button>
       {isOpen && (
         <TeamMemberLinkDialog
-          speakerLabel={entry.speakerLabel}
+          speakerLabel={entry.speakerName}
           members={mockTeamMembers}
           currentLink={
             entry.isSpeakerLinked
-              ? { name: entry.speakerLabel, memberId: entry.linkedMemberId }
+              ? { name: entry.speakerName, memberId: entry.linkedMemberId }
               : null
           }
           onConnect={handleConnect}

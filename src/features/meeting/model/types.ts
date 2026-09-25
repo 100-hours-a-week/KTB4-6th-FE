@@ -65,3 +65,22 @@ export interface MeetingSummaryRequestResponse {
   data: MeetingSummaryRequestData | null;
   error: ApiErrorPayload | null;
 }
+
+export interface MeetingTranscriptSegmentData {
+  segmentId: number;
+  /** 화면에 보여줄 발화자 이름. 팀원 연결이면 멤버 이름, 별칭 연결이면 별칭, 미연결이면 `화자 1` 같은 이름 */
+  speakerDisplayName: string;
+  /** 회의 안에서의 발화 순서 */
+  sequenceNumber: number;
+  content: string;
+  /** 음성 파일 시작을 기준으로 이 발화가 시작된 시각(ms) */
+  startedAtMs: number;
+  endedAtMs: number;
+  recognizedAt: string;
+}
+
+export interface MeetingTranscriptResponse {
+  success: boolean;
+  data: { segments: MeetingTranscriptSegmentData[] } | null;
+  error: ApiErrorPayload | null;
+}

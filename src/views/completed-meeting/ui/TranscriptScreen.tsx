@@ -6,12 +6,17 @@ import type { TranscriptEntry } from '../model/preview-meeting-transcript';
 import { useAudioPlayer } from '../model/useAudioPlayer';
 import { usePreviewAudioSource } from '../model/usePreviewAudioSource';
 import { useTranscriptAutoFollow } from '../model/useTranscriptAutoFollow';
+import { useTranscriptViewState } from '../model/useTranscriptViewState';
 import { AudioExpiredNotice } from './AudioExpiredNotice';
 import { AudioPlayer } from './AudioPlayer';
+import { TranscriptLoadErrorState } from './TranscriptLoadErrorState';
+import { TranscriptLoadingState } from './TranscriptLoadingState';
 import { TranscriptTab } from './TranscriptTab';
 
 interface TranscriptScreenProps {
-  entries: TranscriptEntry[];
+  meetingId: number;
+  /** 개발 환경 전용 미리보기 전사. 없으면 전사를 조회한다. */
+  previewEntries?: TranscriptEntry[];
   audioDurationSeconds: number;
   /** 음성 파일이 만료되기까지 남은 일수. 이미 만료됐으면 null */
   audioRemainingDays: number | null;
@@ -22,10 +27,12 @@ interface TranscriptScreenProps {
  * 재생 위치에 맞춰 전사를 강조하고 따라가며 스크롤하며, 이 화면을 벗어나면 재생도 멈춘다.
  */
 export const TranscriptScreen = ({
-  entries,
+  meetingId,
+  previewEntries,
   audioDurationSeconds,
   audioRemainingDays,
 }: TranscriptScreenProps) => {
+  const { status, entries, retry } = useTranscriptViewState({ meetingId, previewEntries });
   const hasTranscript = entries.length > 0;
   const isAudioExpired = audioRemainingDays === null;
   const isAudioPlayerVisible = hasTranscript && !isAudioExpired;
@@ -67,8 +74,9 @@ export const TranscriptScreen = ({
           data-tab="transcript"
           className="flex min-h-0 flex-1 flex-col overflow-y-auto"
         >
-          {/* TODO: 전사 목록 조회 API 응답으로 교체한다. */}
-          <TranscriptTab entries={entries} activeEntryId={activeEntryId} />
+          {status === 'loading' && <TranscriptLoadingState />}
+          {status === 'error' && <TranscriptLoadErrorState onRetry={retry} />}
+          {status === 'ready' && <TranscriptTab entries={entries} activeEntryId={activeEntryId} />}
         </main>
         {isAudioPlayerVisible && !isFollowing && activeEntryId && (
           <button
