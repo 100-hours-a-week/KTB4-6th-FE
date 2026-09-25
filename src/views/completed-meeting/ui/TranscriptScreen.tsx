@@ -76,7 +76,14 @@ export const TranscriptScreen = ({
         >
           {status === 'loading' && <TranscriptLoadingState />}
           {status === 'error' && <TranscriptLoadErrorState onRetry={retry} />}
-          {status === 'ready' && <TranscriptTab entries={entries} activeEntryId={activeEntryId} />}
+          {status === 'ready' && (
+            <TranscriptTab
+              meetingId={meetingId}
+              entries={entries}
+              isPreview={previewEntries !== undefined}
+              activeEntryId={activeEntryId}
+            />
+          )}
         </main>
         {isAudioPlayerVisible && !isFollowing && activeEntryId && (
           <button

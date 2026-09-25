@@ -84,3 +84,55 @@ export interface MeetingTranscriptResponse {
   data: { segments: MeetingTranscriptSegmentData[] } | null;
   error: ApiErrorPayload | null;
 }
+
+/** 발화자가 어떻게 연결되어 있는지. TEAM_MEMBER는 팀 멤버, CUSTOM_ALIAS는 직접 입력한 별칭, NONE은 연결되지 않음 */
+export type SpeakerMappingType = 'TEAM_MEMBER' | 'CUSTOM_ALIAS' | 'NONE';
+
+export interface SpeakerMappingSpeakerData {
+  transcriptSpeakerId: number;
+  /** 연결되지 않았을 때 쓰는 이름 (`화자 1`) */
+  speakerLabel: string;
+  /** 현재 화면에 보여주는 이름 (멤버 이름, 별칭, 또는 `화자 1`) */
+  displayName: string;
+  mappingType: SpeakerMappingType;
+  /** mappingType이 TEAM_MEMBER일 때 연결된 팀 멤버 ID */
+  mappedTeamMemberId: number | null;
+  /** mappingType이 CUSTOM_ALIAS일 때 직접 입력한 별칭 */
+  customAlias: string | null;
+}
+
+export interface SpeakerMappingParticipantData {
+  teamMemberId: number;
+  nickname: string;
+}
+
+export interface SpeakerMappingData {
+  speaker: SpeakerMappingSpeakerData;
+  /** 발화자에 연결할 수 있는 회의 참석자 목록 */
+  participants: SpeakerMappingParticipantData[];
+}
+
+export interface SpeakerMappingResponse {
+  success: boolean;
+  data: SpeakerMappingData | null;
+  error: ApiErrorPayload | null;
+}
+
+/** 발화자 연결 요청. teamMemberId와 customAlias 중 하나만 값을 넣고, 둘 다 null이면 연결을 해제한다. */
+export interface UpdateSpeakerMappingRequest {
+  teamMemberId: number | null;
+  customAlias: string | null;
+}
+
+export interface SpeakerMappingResultData {
+  transcriptSpeakerId: number;
+  speakerLabel: string;
+  mappedTeamMemberId: number | null;
+  customAlias: string | null;
+}
+
+export interface UpdateSpeakerMappingResponse {
+  success: boolean;
+  data: SpeakerMappingResultData | null;
+  error: ApiErrorPayload | null;
+}
