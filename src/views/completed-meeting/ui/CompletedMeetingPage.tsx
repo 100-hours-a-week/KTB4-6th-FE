@@ -1,5 +1,6 @@
 import type { CompletedMeetingTab } from '../model/completed-meeting-tab';
 import { mockMeetingSummary } from '../model/preview-meeting-summary';
+import { mockTranscriptEntries } from '../model/preview-meeting-transcript';
 import {
   getCompletedMeetingPreview,
   type CompletedMeetingPreviewState,
@@ -7,6 +8,7 @@ import {
 import { CompletedMeetingHeader } from './CompletedMeetingHeader';
 import { CompletedMeetingTabs } from './CompletedMeetingTabs';
 import { SummaryTab } from './SummaryTab';
+import { TranscriptTab } from './TranscriptTab';
 
 interface CompletedMeetingPageProps {
   teamId: string;
@@ -44,8 +46,8 @@ export const CompletedMeetingPage = ({
           // TODO: AI 요약 조회 API 응답으로 교체한다.
           <SummaryTab summary={mockMeetingSummary} />
         ) : (
-          // TODO: 전사 탭 내용을 구현한다.
-          <p className="m-auto text-sm text-cool-500">전사 화면은 준비 중입니다</p>
+          // TODO: 전사 목록 조회 API 응답으로 교체한다.
+          <TranscriptTab entries={mockTranscriptEntries} />
         )}
       </main>
     </div>
