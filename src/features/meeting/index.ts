@@ -18,6 +18,7 @@ export { meetingKeys } from './model/query-keys';
 export { useCreateMeeting } from './model/useCreateMeeting';
 export { useMeetingSummary } from './model/useMeetingSummary';
 export {
+  isInsufficientCreditError,
   isSummaryAlreadyProcessingError,
   useRequestMeetingSummary,
 } from './model/useRequestMeetingSummary';

@@ -5,7 +5,7 @@ import { SummarySectionCard } from './SummarySectionCard';
 interface SummaryTabProps {
   /** AI 요약 본문(Markdown) */
   content: string;
-  currentCredits: number;
+  currentCredits: number | null;
   isRegenerating: boolean;
   onRegenerate: (reason: string) => Promise<boolean>;
 }

@@ -6,10 +6,15 @@ import { MeetingApiError } from './errors';
 import { meetingKeys } from './query-keys';
 
 const SUMMARY_ALREADY_PROCESSING_CODE = 'SUMMARY_ALREADY_PROCESSING';
+const INSUFFICIENT_CREDIT_CODE = 'INSUFFICIENT_CREDIT';
 
 /** 이미 생성 중인 요약이 있어서 요청이 받아들여지지 않은 경우인지 */
 export const isSummaryAlreadyProcessingError = (error: unknown) =>
   error instanceof MeetingApiError && error.code === SUMMARY_ALREADY_PROCESSING_CODE;
+
+/** 팀 크레딧이 부족해서 요청이 받아들여지지 않은 경우인지 */
+export const isInsufficientCreditError = (error: unknown) =>
+  error instanceof MeetingApiError && error.code === INSUFFICIENT_CREDIT_CODE;
 
 /**
  * 요약 재생성을 요청한다.

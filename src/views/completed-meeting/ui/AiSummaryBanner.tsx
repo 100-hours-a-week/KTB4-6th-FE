@@ -11,7 +11,8 @@ import { SummaryRegenerateConfirmDialog } from './SummaryRegenerateConfirmDialog
 import { SummaryRegenerateReasonDialog } from './SummaryRegenerateReasonDialog';
 
 interface AiSummaryBannerProps {
-  currentCredits: number;
+  /** 팀 크레딧 잔액. 아직 알 수 없으면 null (서버가 요청 때 다시 확인한다) */
+  currentCredits: number | null;
   isRegenerating: boolean;
   /** 재생성을 요청한다. 시작됐으면 true, 실패했으면 false */
   onRegenerate: (reason: string) => Promise<boolean>;
@@ -24,7 +25,8 @@ export const AiSummaryBanner = ({
 }: AiSummaryBannerProps) => {
   const [step, setStep] = useState<'reason' | 'confirm' | null>(null);
   const [reason, setReason] = useState('');
-  const canRegenerate = canRegenerateSummary(currentCredits);
+  const isCreditShort = currentCredits !== null && !canRegenerateSummary(currentCredits);
+  const canRegenerate = !isCreditShort;
 
   const closeDialog = () => {
     setStep(null);

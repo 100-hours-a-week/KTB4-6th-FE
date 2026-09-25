@@ -6,8 +6,13 @@ import { RefreshCw, X } from 'lucide-react';
 import { useAppFrameElement } from '@/shared/lib';
 
 interface SummaryRegenerateReasonDialogProps {
+  /** 사유 입력을 마쳤을 때. 사유는 앞뒤 공백을 지운 값이다. */
   onNext: (reason: string) => void;
   onClose: () => void;
+  /** 진행 버튼 문구. 재생성 확인 단계가 이어지면 `다음`, 바로 요청하면 `다시 시도` 등을 쓴다. */
+  submitLabel?: string;
+  /** 요청 중이면 닫기와 진행 버튼을 막는다. */
+  isSubmitting?: boolean;
 }
 
 const REASON_MAX_LENGTH = 100;
@@ -16,6 +21,8 @@ const REASON_MAX_LENGTH = 100;
 export const SummaryRegenerateReasonDialog = ({
   onNext,
   onClose,
+  submitLabel = '다음',
+  isSubmitting = false,
 }: SummaryRegenerateReasonDialogProps) => {
   const frame = useAppFrameElement();
   const [reason, setReason] = useState('');
@@ -23,11 +30,11 @@ export const SummaryRegenerateReasonDialog = ({
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (hasReason) onNext(reason.trim());
+    if (hasReason && !isSubmitting) onNext(reason.trim());
   };
 
   return (
-    <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
+    <Dialog.Root open onOpenChange={(open) => !open && !isSubmitting && onClose()}>
       <Dialog.Portal container={frame}>
         <Dialog.Backdrop className="absolute inset-0 z-[85] bg-cool-900/40" />
         <Dialog.Popup className="absolute top-1/2 left-1/2 z-[90] w-[calc(100%-3rem)] max-w-[340px] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-5 shadow-[0_16px_40px_rgba(20,34,56,0.2)] outline-none">
@@ -41,6 +48,7 @@ export const SummaryRegenerateReasonDialog = ({
               </div>
               <Dialog.Close
                 aria-label="닫기"
+                disabled={isSubmitting}
                 className="flex size-8 items-center justify-center rounded-lg text-cool-600 hover:bg-cool-50"
               >
                 <X aria-hidden="true" className="size-5" />
@@ -68,15 +76,18 @@ export const SummaryRegenerateReasonDialog = ({
               </span>
             </div>
             <div className="mt-5 grid grid-cols-2 gap-2">
-              <Dialog.Close className="h-12 rounded-xl border border-cool-200 text-sm font-semibold text-cool-700 transition-colors hover:bg-cool-50">
+              <Dialog.Close
+                disabled={isSubmitting}
+                className="h-12 rounded-xl border border-cool-200 text-sm font-semibold text-cool-700 transition-colors hover:bg-cool-50 disabled:opacity-50"
+              >
                 취소
               </Dialog.Close>
               <button
                 type="submit"
-                disabled={!hasReason}
+                disabled={!hasReason || isSubmitting}
                 className="h-12 rounded-xl bg-brand-600 text-sm font-semibold text-white transition-colors hover:bg-brand-700 disabled:bg-cool-100 disabled:text-cool-400"
               >
-                다음
+                {isSubmitting ? '요청 중...' : submitLabel}
               </button>
             </div>
           </form>

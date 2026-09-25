@@ -65,8 +65,9 @@ export const CompletedMeetingPage = ({
       {tab === 'summary' ? (
         <SummaryScreen
           meetingId={meetingId}
+          teamId={numericTeamId}
           previewSummaryStatus={previewState ? meeting.summaryStatus : undefined}
-          currentCredits={meeting.teamCredits}
+          previewCredits={previewState ? meeting.teamCredits : undefined}
           transcriptHref={getTabHref('transcript')}
         />
       ) : (
