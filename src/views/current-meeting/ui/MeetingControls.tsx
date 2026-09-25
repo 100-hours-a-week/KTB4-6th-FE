@@ -1,10 +1,11 @@
 'use client';
 
-import { cn } from '@/shared/lib';
 import type { RecordingBlockedReason } from '../model/blocked-action-toasts';
 import { useCompleteRecordingDialog } from '../model/useCompleteRecordingDialog';
-import { useMeetingControlActions } from '../model/useMeetingControlActions';
+import { useMeetingDelete } from '../model/useMeetingDelete';
+import { useMeetingLeave } from '../model/useMeetingLeave';
 import { MeetingDeleteDialog } from './MeetingDeleteDialog';
+import { MeetingManageNotice } from './MeetingManageNotice';
 import { MeetingMoreMenu } from './MeetingMoreMenu';
 import { ParticipantStatusMessage } from './ParticipantStatusMessage';
 import { RecordingCompleteDialog } from './RecordingCompleteDialog';
@@ -63,29 +64,17 @@ export const MeetingControls = ({
   onEditInfo,
   recorderName,
 }: MeetingControlsProps) => {
-  const {
-    isLeaving,
-    isDeleting,
-    isDeleteDialogOpen,
-    setIsDeleteDialogOpen,
-    handleLeave,
-    handleDelete,
-    handleDeleteRequest,
-    handleLeaveRequest,
-  } = useMeetingControlActions({ teamId, meetingId, canDelete, isMeetingInProgress });
+  const { isLeaving, handleLeave } = useMeetingLeave({ teamId, meetingId });
+  const { isDeleting, isDeleteDialogOpen, setIsDeleteDialogOpen, handleDelete } = useMeetingDelete({
+    teamId,
+    meetingId,
+    canDelete,
+  });
   const { isCompleteDialogOpen, setIsCompleteDialogOpen, handleCompleteRequest, handleComplete } =
     useCompleteRecordingDialog(onCompleteRecording);
 
-  // 진행자는 나가기 항목이 없어서, 삭제 권한도 없으면 더보기 메뉴에 담을 항목이 없다.
-  const hasMoreMenu = !isRecorder || canDelete;
-
   return (
-    <footer
-      className={cn(
-        'grid shrink-0 items-center gap-2 border-t border-cool-200 bg-white px-5 py-3',
-        hasMoreMenu ? 'grid-cols-[minmax(0,1fr)_36px]' : 'grid-cols-1',
-      )}
-    >
+    <footer className="grid shrink-0 grid-cols-[minmax(0,1fr)_36px] items-center gap-2 border-t border-cool-200 bg-white px-5 py-3">
       {isWaiting || isRecorder ? (
         <RecordingControlButtons
           isPreview={isPreview}
@@ -117,16 +106,19 @@ export const MeetingControls = ({
         />
       )}
 
-      {hasMoreMenu && (
+      {isMeetingInProgress && !isRecorder ? (
+        <MeetingManageNotice />
+      ) : (
         <MeetingMoreMenu
           canDelete={canDelete}
           canEditInfo={canEditInfo}
+          isMeetingInProgress={isMeetingInProgress}
           isDeleting={isDeleting}
           isRecorder={isRecorder}
           isPreview={isPreview}
           isLeaving={isLeaving}
-          onDelete={handleDeleteRequest}
-          onLeave={handleLeaveRequest}
+          onDelete={() => setIsDeleteDialogOpen(true)}
+          onLeave={handleLeave}
           onEditInfo={onEditInfo}
         />
       )}

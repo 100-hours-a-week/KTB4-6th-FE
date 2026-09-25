@@ -1,12 +1,13 @@
 'use client';
 
 import { Menu } from '@base-ui/react/menu';
-import { LogOut, MoreVertical, Pencil } from 'lucide-react';
+import { LogOut, MoreVertical } from 'lucide-react';
 import { cn, useAppFrameElement } from '@/shared/lib';
 
 interface MeetingMoreMenuProps {
   canDelete: boolean;
   canEditInfo: boolean;
+  isMeetingInProgress: boolean;
   isDeleting: boolean;
   isRecorder: boolean;
   isPreview: boolean;
@@ -19,6 +20,7 @@ interface MeetingMoreMenuProps {
 export const MeetingMoreMenu = ({
   canDelete,
   canEditInfo,
+  isMeetingInProgress,
   isDeleting,
   isRecorder,
   isPreview,
@@ -45,12 +47,15 @@ export const MeetingMoreMenu = ({
               isRecorder || canDelete ? 'min-w-[190px]' : 'min-w-[152px]',
             )}
           >
-            {canEditInfo && (
+            {(canEditInfo || isMeetingInProgress) && (
               <Menu.Item
+                disabled={isMeetingInProgress}
                 onClick={onEditInfo}
-                className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-cool-700 outline-none select-none"
+                className={cn(
+                  'flex min-h-12 items-center px-4 py-3 text-sm font-medium outline-none select-none',
+                  isMeetingInProgress ? 'text-cool-400' : 'text-cool-900',
+                )}
               >
-                <Pencil className="size-4" strokeWidth={2} />
                 회의 정보 수정
               </Menu.Item>
             )}
@@ -69,11 +74,11 @@ export const MeetingMoreMenu = ({
             )}
             {canDelete && (
               <Menu.Item
-                disabled={isDeleting}
+                disabled={isDeleting || isMeetingInProgress}
                 onClick={onDelete}
                 className={cn(
-                  'flex min-h-12 items-center px-4 py-3 text-sm font-medium text-danger outline-none select-none',
-                  !isRecorder && 'border-t border-cool-100',
+                  'flex min-h-12 items-center border-t border-cool-100 px-4 py-3 text-sm font-medium outline-none select-none',
+                  isMeetingInProgress ? 'text-cool-400' : 'text-danger',
                 )}
               >
                 {isDeleting ? '삭제 중...' : '회의 삭제'}
