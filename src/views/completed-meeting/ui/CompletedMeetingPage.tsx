@@ -72,7 +72,8 @@ export const CompletedMeetingPage = ({
         />
       ) : (
         <TranscriptScreen
-          entries={meeting.transcriptEntries}
+          meetingId={meetingId}
+          previewEntries={previewState ? meeting.transcriptEntries : undefined}
           audioDurationSeconds={meeting.audioDurationSeconds}
           audioRemainingDays={meeting.audioRemainingDays}
         />
