@@ -7,9 +7,9 @@ import { MeetingSseConnection } from '@/features/meeting-sse';
 import { getTeamDetail } from '@/features/team-management';
 import { MeetingInfoDialog } from '@/widgets/meeting-info-form';
 import { NavigationSidebar } from '@/widgets/navigation-sidebar';
-import { useCompletedMeetingRedirect } from '../model/useCompletedMeetingRedirect';
 import { useCurrentMeetingRecording } from '../model/useCurrentMeetingRecording';
 import { useMeetingDeletedRedirect } from '../model/useMeetingDeletedRedirect';
+import { useMeetingEndedNotice } from '../model/useMeetingEndedNotice';
 import { useMeetingInfoEdit } from '../model/useMeetingInfoEdit';
 import { useRecordingStartedNotice } from '../model/useRecordingStartedNotice';
 import { useRecordingStatusSync } from '../model/useRecordingStatusSync';
@@ -17,6 +17,7 @@ import { CurrentMeetingHeader } from './CurrentMeetingHeader';
 import { InsufficientCreditDialog } from './InsufficientCreditDialog';
 import { MeetingControls } from './MeetingControls';
 import { MeetingEditNoticeDialog } from './MeetingEditNoticeDialog';
+import { MeetingEndedDialog } from './MeetingEndedDialog';
 import { MeetingTranscript } from './MeetingTranscript';
 import { RecordingStartDialog } from './RecordingStartDialog';
 import { RecordingStartedDialog } from './RecordingStartedDialog';
@@ -76,7 +77,7 @@ export const CurrentMeetingPage = ({
     handleCompleteRecording,
   } = useCurrentMeetingRecording({ teamId, meetingId, previewState, previewRole });
   useRecordingStatusSync({ meetingId, isPreview });
-  useCompletedMeetingRedirect({
+  const { isMeetingEndedNoticeOpen, goToResult, goHome } = useMeetingEndedNotice({
     teamId,
     meetingId,
     isPreview,
@@ -97,7 +98,8 @@ export const CurrentMeetingPage = ({
     handleCloseEditForm,
   } = useMeetingInfoEdit(meeting);
 
-  if (isServerCompleted && completedView) return completedView;
+  // 종료 안내 모달에서 이동을 고르기 전에는 현재 회의 화면을 유지한다.
+  if (isServerCompleted && completedView && !isMeetingEndedNoticeOpen) return completedView;
 
   if (!meeting) {
     return (
@@ -203,6 +205,11 @@ export const CurrentMeetingPage = ({
       <RecordingStartedDialog
         isOpen={isRecordingStartedNoticeOpen}
         onOpenChange={setIsRecordingStartedNoticeOpen}
+      />
+      <MeetingEndedDialog
+        isOpen={isMeetingEndedNoticeOpen}
+        onConfirm={goToResult}
+        onGoHome={goHome}
       />
       <MeetingEditNoticeDialog
         isOpen={isEditNoticeOpen}
