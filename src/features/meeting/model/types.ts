@@ -68,8 +68,8 @@ export interface MeetingSummaryRequestResponse {
 
 export interface MeetingTranscriptSegmentData {
   segmentId: number;
-  /** 화면에 보여줄 발화자 이름. 팀원 연결이면 멤버 이름, 별칭 연결이면 별칭, 미연결이면 `화자 1` 같은 이름 */
-  speakerDisplayName: string;
+  /** 화면에 보여줄 발화자 이름. 팀원 연결이면 멤버 이름, 별칭 연결이면 별칭, 미연결이면 `화자 1` 같은 이름. 이름을 정하지 못하면 null */
+  speakerDisplayName: string | null;
   /** 회의 안에서의 발화 순서 */
   sequenceNumber: number;
   content: string;
