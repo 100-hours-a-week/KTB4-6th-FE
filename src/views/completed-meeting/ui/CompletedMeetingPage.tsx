@@ -40,9 +40,14 @@ export const CompletedMeetingPage = ({
     queryFn: () => getTeamDetail(numericTeamId),
     enabled: Number.isSafeInteger(numericTeamId) && numericTeamId > 0,
   });
-  // TODO: 회의 상세·음성 파일 조회 응답과 팀 역할 조회 응답으로 교체한다.
+  // TODO: 회의 상세 조회 응답으로 교체한다.
   const meeting = getCompletedMeetingPreview(previewState ?? 'completed');
-  const viewerRole = previewRole;
+  // 팀 정보가 오기 전에는 팀장인지 알 수 없어 팀원으로 본다. 미리보기는 지정한 권한을 쓴다.
+  const viewerRole: CompletedMeetingViewerRole = previewState
+    ? previewRole
+    : team?.role === 'LEADER'
+      ? 'leader'
+      : 'member';
   const { state: audio, retry: retryAudioFile } = useAudioViewState({
     meetingId,
     previewAudio: previewState
