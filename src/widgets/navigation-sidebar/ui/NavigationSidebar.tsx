@@ -6,7 +6,7 @@ import { Home, ListChecks, Radio, Users, X } from 'lucide-react';
 import { useActiveMeeting } from '@/features/home';
 import { useTeamCredits } from '@/features/team-management';
 import { useAppFrameElement } from '@/shared/lib';
-import { NoActiveMeetingDialog } from './NoActiveMeetingDialog';
+import { useAppToast } from '@/shared/ui';
 import { SidebarMoreMenu } from './SidebarMoreMenu';
 import { SidebarNavItem } from './SidebarNavItem';
 
@@ -28,6 +28,7 @@ export const NavigationSidebar = ({
   const frame = useAppFrameElement();
   const { data: credits } = useTeamCredits(teamId);
   const { activeMeeting, isPending: isActiveMeetingPending } = useActiveMeeting(teamId);
+  const { showToast } = useAppToast();
   const router = useRouter();
   const pathname = usePathname();
   const homePath = `/teams/${teamId}`;
@@ -42,15 +43,15 @@ export const NavigationSidebar = ({
     onOpenChange(false);
   };
 
-  const currentMeetingNavItem = (
-    <SidebarNavItem
-      icon={<Radio className="size-5" strokeWidth={2} />}
-      label="현재 회의"
-      disabled={isActiveMeetingPending}
-      isActive={currentMeetingPath !== null && pathname === currentMeetingPath}
-      onClick={currentMeetingPath ? () => navigateTo(currentMeetingPath) : undefined}
-    />
-  );
+  const handleCurrentMeetingClick = () => {
+    if (currentMeetingPath) {
+      navigateTo(currentMeetingPath);
+      return;
+    }
+
+    showToast('진행 중인 회의가 없어요');
+  };
+
   const teamNameCharacters = Array.from(teamName);
   const displayTeamName =
     teamNameCharacters.length > 8 ? `${teamNameCharacters.slice(0, 8).join('')}…` : teamName;
@@ -97,11 +98,13 @@ export const NavigationSidebar = ({
                 isActive={pathname === managePath}
                 onClick={() => navigateTo(managePath)}
               />
-              {activeMeeting ? (
-                currentMeetingNavItem
-              ) : (
-                <NoActiveMeetingDialog trigger={currentMeetingNavItem} />
-              )}
+              <SidebarNavItem
+                icon={<Radio className="size-5" strokeWidth={2} />}
+                label="진행 중인 회의"
+                disabled={isActiveMeetingPending}
+                isActive={currentMeetingPath !== null && pathname === currentMeetingPath}
+                onClick={handleCurrentMeetingClick}
+              />
               <SidebarNavItem
                 icon={<ListChecks className="size-5" strokeWidth={2} />}
                 label="회의 목록"
