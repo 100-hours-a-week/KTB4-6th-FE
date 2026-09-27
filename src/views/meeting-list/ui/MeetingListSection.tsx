@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { DeleteConfirmDialog, useAppToast } from '@/shared/ui';
 import type { Meeting, TeamMemberRole } from '../model/type';
+import { useDeleteMeeting } from '../model/useDeleteMeeting';
 import { InProgressMeetingItem } from './InProgressMeetingItem';
 import { MeetingItem } from './MeetingItem';
 import { MeetingRenameDialog } from './MeetingRenameDialog';
@@ -30,6 +31,7 @@ export const MeetingListSection = ({
   onLoadMore,
 }: MeetingListSectionProps) => {
   const { showToast } = useAppToast();
+  const { mutate: deleteMeeting } = useDeleteMeeting(teamId);
   const [dialog, setDialog] = useState<MeetingDialog>(null);
   const isLeader = viewerRole === 'leader';
 
@@ -41,10 +43,15 @@ export const MeetingListSection = ({
     showToast('회의 이름이 변경되었습니다', 'success');
   };
 
-  // TODO: 회의 삭제 API(DELETE /api/v1/meetings/{meetingId}) 연동 시 삭제 요청으로 교체한다.
   const handleConfirmDelete = () => {
+    if (dialog?.type !== 'delete') return;
+
+    const { meeting } = dialog;
     closeDialog();
-    showToast('회의가 삭제되었습니다', 'success');
+    deleteMeeting(meeting.id, {
+      onSuccess: () => showToast('회의가 삭제되었습니다', 'success'),
+      onError: () => showToast('회의 삭제에 실패했습니다. 다시 시도해주세요.', 'danger'),
+    });
   };
 
   return (
