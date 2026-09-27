@@ -25,7 +25,7 @@ const getDurationLabel = (startedAt: string | null, endedAt: string | null) => {
 
   const durationMs = new Date(endedAt).getTime() - new Date(startedAt).getTime();
 
-  return formatMinutes(Math.max(0, Math.round(durationMs / 60000)));
+  return formatMinutes(Math.max(0, Math.ceil(durationMs / 60000)));
 };
 
 const toMeeting = (meeting: HomeTodayMeetingData): Meeting => {
