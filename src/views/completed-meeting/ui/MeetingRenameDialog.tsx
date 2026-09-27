@@ -8,7 +8,7 @@ import { cn, useAppFrameElement } from '@/shared/lib';
 
 interface MeetingRenameDialogProps {
   currentTitle: string;
-  onConfirm: () => void;
+  onConfirm: (title: string) => void;
   onClose: () => void;
 }
 
@@ -28,7 +28,7 @@ export const MeetingRenameDialog = ({
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (isValid) onConfirm();
+    if (isValid) onConfirm(title.trim());
   };
 
   return (

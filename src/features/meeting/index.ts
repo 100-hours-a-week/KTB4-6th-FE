@@ -22,6 +22,8 @@ export { useCreateMeeting } from './model/useCreateMeeting';
 export { useMeetingSummary } from './model/useMeetingSummary';
 export { useMeetingTranscript } from './model/useMeetingTranscript';
 export { useSpeakerMapping } from './model/useSpeakerMapping';
+export { updateMeeting } from './api/update-meeting';
+export { useUpdateMeeting } from './model/useUpdateMeeting';
 export { useUpdateSpeakerMapping } from './model/useUpdateSpeakerMapping';
 export {
   isInsufficientCreditError,
@@ -39,6 +41,8 @@ export type {
   MeetingSummaryData,
   MeetingSummaryRequestData,
   MeetingTranscriptSegmentData,
+  MeetingUpdateData,
+  MeetingUpdateRequest,
   SpeakerMappingData,
   SpeakerMappingParticipantData,
   SpeakerMappingType,

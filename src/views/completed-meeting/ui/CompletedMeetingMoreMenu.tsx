@@ -5,11 +5,13 @@ import { Menu } from '@base-ui/react/menu';
 import { FileText, Headphones, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { cn, useAppFrameElement } from '@/shared/lib';
 import { DeleteConfirmDialog, useAppToast } from '@/shared/ui';
+import { useMeetingRename } from '../model/useMeetingRename';
 import type { CompletedMeetingViewerRole } from '../model/preview-completed-meeting';
 import type { AudioViewState } from '../model/useAudioViewState';
 import { MeetingRenameDialog } from './MeetingRenameDialog';
 
 interface CompletedMeetingMoreMenuProps {
+  meetingId: number;
   meetingTitle: string;
   viewerRole: CompletedMeetingViewerRole;
   audio: AudioViewState;
@@ -45,22 +47,23 @@ const MoreMenuItem = ({ icon, label, isDanger, trailingText, onClick }: MoreMenu
 
 // TODO: 다운로드는 API 연동 때 구현한다.
 export const CompletedMeetingMoreMenu = ({
+  meetingId,
   meetingTitle,
   viewerRole,
   audio,
 }: CompletedMeetingMoreMenuProps) => {
   const frame = useAppFrameElement();
   const { showToast } = useAppToast();
+  const { rename } = useMeetingRename({ meetingId });
   const [openDialog, setOpenDialog] = useState<MoreMenuDialog | null>(null);
   const isLeader = viewerRole === 'leader';
   const isAudioExpired = audio.kind === 'expired';
 
   const closeDialog = () => setOpenDialog(null);
 
-  // TODO: 회의 수정 API(PATCH /api/v1/meetings/{meetingId}) 연동 시 저장 요청으로 교체한다.
-  const handleConfirmRename = () => {
+  const handleConfirmRename = (title: string) => {
     closeDialog();
-    showToast('회의 이름이 변경되었습니다', 'success');
+    rename(title);
   };
 
   // TODO: 음성 파일 삭제 API가 생기면 삭제 요청으로 교체한다.

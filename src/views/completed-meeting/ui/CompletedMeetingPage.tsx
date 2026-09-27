@@ -69,6 +69,7 @@ export const CompletedMeetingPage = ({
     <div className="flex h-dvh min-h-[844px] flex-col bg-cool-50">
       <header className="shrink-0 bg-white">
         <CompletedMeetingHeader
+          meetingId={meetingId}
           meeting={meeting}
           audio={audio}
           viewerRole={viewerRole}

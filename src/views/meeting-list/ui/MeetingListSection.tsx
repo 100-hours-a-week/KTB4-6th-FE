@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { MeetingApiError } from '@/features/meeting';
 import { DeleteConfirmDialog, useAppToast } from '@/shared/ui';
 import type { Meeting, TeamMemberRole } from '../model/type';
 import { useDeleteMeeting } from '../model/useDeleteMeeting';
+import { useRenameMeeting } from '../model/useRenameMeeting';
 import { InProgressMeetingItem } from './InProgressMeetingItem';
 import { MeetingItem } from './MeetingItem';
 import { MeetingRenameDialog } from './MeetingRenameDialog';
@@ -31,16 +33,29 @@ export const MeetingListSection = ({
   onLoadMore,
 }: MeetingListSectionProps) => {
   const { showToast } = useAppToast();
+  const { mutate: renameMeeting } = useRenameMeeting(teamId);
   const { mutate: deleteMeeting } = useDeleteMeeting(teamId);
   const [dialog, setDialog] = useState<MeetingDialog>(null);
   const isLeader = viewerRole === 'leader';
 
   const closeDialog = () => setDialog(null);
 
-  // TODO: 회의 수정 API(PATCH /api/v1/meetings/{meetingId}) 연동 시 저장 요청으로 교체한다.
-  const handleConfirmRename = () => {
+  const handleConfirmRename = (title: string) => {
+    if (dialog?.type !== 'rename') return;
+
+    const meetingId = dialog.meeting.id;
     closeDialog();
-    showToast('회의 이름이 변경되었습니다', 'success');
+    renameMeeting(
+      { meetingId, title },
+      {
+        onSuccess: () => showToast('회의 이름이 변경되었습니다', 'success'),
+        onError: (error) =>
+          showToast(
+            error instanceof MeetingApiError ? error.message : '회의 이름 변경에 실패했습니다.',
+            'danger',
+          ),
+      },
+    );
   };
 
   const handleConfirmDelete = () => {
