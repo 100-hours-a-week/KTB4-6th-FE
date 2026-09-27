@@ -136,8 +136,11 @@ export const CurrentMeetingPage = ({
         meetingId={String(meetingId)}
         isPreview={isPreview}
         canDelete={!isPreview && team?.role === 'LEADER'}
-        // TODO: 회의 수정은 팀장 또는 회의 생성자만 가능해서, 생성자 정보가 조회되면 권한을 좁힌다.
-        canEditInfo={isWaiting}
+        canEditInfo={
+          isWaiting &&
+          !isPreview &&
+          (team?.role === 'LEADER' || team?.teamMemberId === meeting.createdByTeamMemberId)
+        }
         onEditInfo={handleEditInfo}
         isWaiting={isWaiting}
         isRecorder={isRecorder}
