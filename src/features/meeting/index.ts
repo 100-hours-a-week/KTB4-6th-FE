@@ -25,6 +25,12 @@ export { useDeleteAudioFile } from './model/useDeleteAudioFile';
 export { useMeetingDetail } from './model/useMeetingDetail';
 export { useMeetingSummary } from './model/useMeetingSummary';
 export { useMeetingTranscript } from './model/useMeetingTranscript';
+export { useMeetingTranscriptSearch } from './model/useMeetingTranscriptSearch';
+export {
+  normalizeTranscriptSearchKeyword,
+  TRANSCRIPT_SEARCH_KEYWORD_MAX_LENGTH,
+  TRANSCRIPT_SEARCH_KEYWORD_MIN_LENGTH,
+} from './model/transcript-search-keyword';
 export { useSpeakerMapping } from './model/useSpeakerMapping';
 export { updateMeeting } from './api/update-meeting';
 export { useUpdateMeeting } from './model/useUpdateMeeting';
