@@ -10,19 +10,23 @@ interface TranscriptItemProps {
   isPreview: boolean;
   /** 현재 재생 위치에 해당하는 발화 */
   isActive: boolean;
+  /** 현재 보고 있는 검색 결과 발화 */
+  isSearchMatch?: boolean;
 }
 
 // 재생 중에는 재생 위치가 자주 바뀌므로, 강조 여부가 바뀐 항목만 다시 그리도록 memo로 감싼다.
 export const TranscriptItem = memo(
-  ({ meetingId, entry, isPreview, isActive }: TranscriptItemProps) => (
+  ({ meetingId, entry, isPreview, isActive, isSearchMatch = false }: TranscriptItemProps) => (
     <li
       data-entry-id={entry.id}
-      aria-current={isActive ? 'true' : undefined}
+      aria-current={isActive || isSearchMatch ? 'true' : undefined}
       className={cn(
         'flex items-start gap-3.5 rounded-2xl px-3 py-3.5 transition-colors',
-        isActive
-          ? 'bg-brand-100 ring-1 ring-brand-300 ring-inset'
-          : 'odd:bg-white even:bg-brand-50',
+        isSearchMatch
+          ? 'bg-warning-bg ring-1 ring-warning ring-inset'
+          : isActive
+            ? 'bg-brand-100 ring-1 ring-brand-300 ring-inset'
+            : 'odd:bg-white even:bg-brand-50',
       )}
     >
       <div className="w-[68px] shrink-0">

@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { Search, X } from 'lucide-react';
+import { ChevronRight, Search, X } from 'lucide-react';
 import {
   TRANSCRIPT_SEARCH_KEYWORD_MAX_LENGTH,
   TRANSCRIPT_SEARCH_KEYWORD_MIN_LENGTH,
 } from '@/features/meeting';
+import { useTranscriptSearch } from '../model/useTranscriptSearch';
 import type { TranscriptEntry } from '../model/preview-meeting-transcript';
 import { TranscriptEmptyState } from './TranscriptEmptyState';
 import { TranscriptItem } from './TranscriptItem';
@@ -22,7 +22,15 @@ export const TranscriptTab = ({
   isPreview,
   activeEntryId,
 }: TranscriptTabProps) => {
-  const [searchInput, setSearchInput] = useState('');
+  const {
+    searchInput,
+    setSearchInput,
+    keyword,
+    currentMatchId,
+    matchCount,
+    matchPosition,
+    goToNextMatch,
+  } = useTranscriptSearch({ meetingId, entries });
   const showClearButton = searchInput.trim().length >= TRANSCRIPT_SEARCH_KEYWORD_MIN_LENGTH;
 
   return (
@@ -50,6 +58,28 @@ export const TranscriptTab = ({
         <Search aria-hidden="true" className="size-4 shrink-0 text-cool-500" strokeWidth={2} />
       </label>
 
+      {keyword && (
+        <div className="flex items-center justify-between text-xs text-cool-600">
+          {matchCount > 0 ? (
+            <>
+              <span className="font-mono tabular-nums">
+                {matchPosition}/{matchCount}
+              </span>
+              <button
+                type="button"
+                onClick={goToNextMatch}
+                className="flex items-center gap-0.5 rounded-lg px-2 py-1 font-medium text-cool-700 hover:bg-cool-100"
+              >
+                다음
+                <ChevronRight aria-hidden="true" className="size-3.5" strokeWidth={2.4} />
+              </button>
+            </>
+          ) : (
+            <span>검색 결과가 없습니다</span>
+          )}
+        </div>
+      )}
+
       {entries.length === 0 ? (
         <TranscriptEmptyState />
       ) : (
@@ -61,6 +91,7 @@ export const TranscriptTab = ({
               entry={entry}
               isPreview={isPreview}
               isActive={entry.id === activeEntryId}
+              isSearchMatch={entry.id === currentMatchId}
             />
           ))}
         </ul>
