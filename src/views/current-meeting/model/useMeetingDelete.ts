@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { useMeetingDeletedRedirect } from '@/features/home';
 import { useMeetingExit } from '@/features/meeting-sse';
 import { useAppToast } from '@/shared/ui';
-import { useMeetingDeletedRedirect } from './useMeetingDeletedRedirect';
 
 interface UseMeetingDeleteParams {
   teamId: string;

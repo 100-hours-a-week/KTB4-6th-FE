@@ -7,12 +7,14 @@ import { FileText, Headphones, MoreVertical, Pencil, Trash2 } from 'lucide-react
 import { MeetingApiError, meetingKeys, useDeleteAudioFile } from '@/features/meeting';
 import { cn, useAppFrameElement } from '@/shared/lib';
 import { DeleteConfirmDialog, useAppToast } from '@/shared/ui';
+import { useMeetingDelete } from '../model/useMeetingDelete';
 import { useMeetingRename } from '../model/useMeetingRename';
 import type { CompletedMeetingViewerRole } from '../model/preview-completed-meeting';
 import type { AudioViewState } from '../model/useAudioViewState';
 import { MeetingRenameDialog } from './MeetingRenameDialog';
 
 interface CompletedMeetingMoreMenuProps {
+  teamId: string;
   meetingId: number;
   meetingTitle: string;
   viewerRole: CompletedMeetingViewerRole;
@@ -49,6 +51,7 @@ const MoreMenuItem = ({ icon, label, isDanger, trailingText, onClick }: MoreMenu
 
 // TODO: 다운로드는 API 연동 때 구현한다.
 export const CompletedMeetingMoreMenu = ({
+  teamId,
   meetingId,
   meetingTitle,
   viewerRole,
@@ -59,6 +62,7 @@ export const CompletedMeetingMoreMenu = ({
   const { showToast } = useAppToast();
   const { rename } = useMeetingRename({ meetingId });
   const { mutate: deleteAudio } = useDeleteAudioFile();
+  const { requestDelete } = useMeetingDelete({ teamId, meetingId });
   const [openDialog, setOpenDialog] = useState<MoreMenuDialog | null>(null);
   const isLeader = viewerRole === 'leader';
   const isAudioExpired = audio.kind === 'expired';
@@ -88,10 +92,9 @@ export const CompletedMeetingMoreMenu = ({
     });
   };
 
-  // TODO: 회의 삭제 API(DELETE /api/v1/meetings/{meetingId}) 연동 시 삭제 요청과 홈 이동으로 교체한다.
   const handleConfirmMeetingDelete = () => {
     closeDialog();
-    showToast('회의가 삭제되었습니다', 'success');
+    void requestDelete();
   };
 
   const handleDownloadAudio = () => {

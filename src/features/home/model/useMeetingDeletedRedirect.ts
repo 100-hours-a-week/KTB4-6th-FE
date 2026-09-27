@@ -3,7 +3,8 @@
 import { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { getTeamHomePath, HOME_NOTICE_MEETING_DELETED, homeKeys } from '@/features/home';
+import { getTeamHomePath, HOME_NOTICE_MEETING_DELETED } from './home-notice';
+import { homeKeys } from './query-keys';
 
 /**
  * 회의가 삭제되면 홈 목록을 갱신하고 삭제 안내와 함께 팀 홈으로 이동한다.

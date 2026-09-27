@@ -9,6 +9,7 @@ import type { AudioViewState } from '../model/useAudioViewState';
 import { CompletedMeetingMoreMenu } from './CompletedMeetingMoreMenu';
 
 interface CompletedMeetingHeaderProps {
+  teamId: string;
   meetingId: number;
   meeting: CompletedMeetingViewModel;
   audio: AudioViewState;
@@ -18,6 +19,7 @@ interface CompletedMeetingHeaderProps {
 }
 
 export const CompletedMeetingHeader = ({
+  teamId,
   meetingId,
   meeting,
   audio,
@@ -61,6 +63,7 @@ export const CompletedMeetingHeader = ({
           </div>
         )}
         <CompletedMeetingMoreMenu
+          teamId={teamId}
           meetingId={meetingId}
           meetingTitle={meeting.title}
           viewerRole={viewerRole}

@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+import { useMeetingDeletedRedirect } from '@/features/home';
 import { MeetingSseConnection } from '@/features/meeting-sse';
 import { useTeamDetail } from '@/features/team-management';
 import { NavigationSidebar } from '@/widgets/navigation-sidebar';
 import { useCurrentMeetingRecording } from '../model/useCurrentMeetingRecording';
-import { useMeetingDeletedRedirect } from '../model/useMeetingDeletedRedirect';
 import { useMeetingEndedNotice } from '../model/useMeetingEndedNotice';
 import { useMeetingInfoEdit } from '../model/useMeetingInfoEdit';
 import { useRecordingStartedNotice } from '../model/useRecordingStartedNotice';
