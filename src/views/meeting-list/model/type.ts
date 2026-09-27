@@ -1,3 +1,5 @@
+export type TeamMemberRole = 'leader' | 'member';
+
 export interface Meeting {
   id: number;
   title: string;

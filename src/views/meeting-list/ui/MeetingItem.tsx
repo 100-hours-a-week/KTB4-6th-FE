@@ -1,11 +1,14 @@
 import { FileText } from 'lucide-react';
 import type { Meeting } from '../model/type';
+import { MeetingItemMenu } from './MeetingItemMenu';
 
 interface MeetingItemProps {
   meeting: Meeting;
+  onRename?: () => void;
+  onDelete?: () => void;
 }
 
-export const MeetingItem = ({ meeting }: MeetingItemProps) => (
+export const MeetingItem = ({ meeting, onRename, onDelete }: MeetingItemProps) => (
   <div className="flex w-full items-center gap-3 rounded-2xl border border-cool-100 bg-white px-4 py-3.5">
     <span
       aria-hidden="true"
@@ -22,5 +25,9 @@ export const MeetingItem = ({ meeting }: MeetingItemProps) => (
     {meeting.durationLabel ? (
       <span className="shrink-0 text-sm font-medium text-cool-600">{meeting.durationLabel}</span>
     ) : null}
+
+    {onRename && onDelete && (
+      <MeetingItemMenu meetingTitle={meeting.title} onRename={onRename} onDelete={onDelete} />
+    )}
   </div>
 );
