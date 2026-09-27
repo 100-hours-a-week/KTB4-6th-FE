@@ -7,3 +7,4 @@ export type {
 } from './model/types';
 
 export { meetingListKeys } from './model/query-keys';
+export { useMeetingList } from './model/useMeetingList';
