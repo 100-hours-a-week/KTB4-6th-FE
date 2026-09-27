@@ -197,3 +197,15 @@ export interface AudioDownloadUrlResponse {
   data: AudioDownloadUrlData | null;
   error: ApiErrorPayload | null;
 }
+
+export interface AudioFileDeleteData {
+  audioFileId: number;
+  /** 삭제는 비동기로 처리되어 요청 직후에는 항상 이 상태다. */
+  status: AudioFileStatus;
+}
+
+export interface AudioFileDeleteResponse {
+  success: boolean;
+  data: AudioFileDeleteData | null;
+  error: ApiErrorPayload | null;
+}

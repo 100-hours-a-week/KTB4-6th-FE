@@ -17,9 +17,11 @@ export { isAudioFileExpiredError, isAudioFileNotAvailableError } from './model/a
 export { MeetingApiError } from './model/errors';
 export { getMeetingSummaryPhase } from './model/meeting-summary-phase';
 export { meetingKeys } from './model/query-keys';
+export { deleteAudioFile } from './api/delete-audio-file';
 export { useAudioDownloadUrl } from './model/useAudioDownloadUrl';
 export { useAudioFile } from './model/useAudioFile';
 export { useCreateMeeting } from './model/useCreateMeeting';
+export { useDeleteAudioFile } from './model/useDeleteAudioFile';
 export { useMeetingSummary } from './model/useMeetingSummary';
 export { useMeetingTranscript } from './model/useMeetingTranscript';
 export { useSpeakerMapping } from './model/useSpeakerMapping';
@@ -36,6 +38,7 @@ export type { MeetingSummaryPhase } from './model/meeting-summary-phase';
 export type {
   AudioDownloadUrlData,
   AudioFileData,
+  AudioFileDeleteData,
   AudioFileStatus,
   CreateMeetingData,
   CreateMeetingRequest,
