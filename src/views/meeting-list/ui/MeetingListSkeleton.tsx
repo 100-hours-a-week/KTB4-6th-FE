@@ -5,10 +5,7 @@ export const MeetingListSkeleton = () => (
     aria-label="회의 목록을 불러오는 중"
     className="mt-6 flex flex-1 flex-col px-5 pb-8 motion-safe:animate-pulse"
   >
-    <div className="flex items-center justify-between">
-      <div className="h-5 w-20 rounded-md bg-cool-100" />
-      <div className="h-4 w-12 rounded-md bg-cool-100" />
-    </div>
+    <div className="h-5 w-20 rounded-md bg-cool-100" />
 
     <div className="mt-3 flex flex-col gap-2.5">
       {Array.from({ length: 6 }).map((_, index) => (
