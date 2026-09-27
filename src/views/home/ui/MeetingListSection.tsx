@@ -19,20 +19,11 @@ export const MeetingListSection = ({ meetings, teamId }: MeetingListSectionProps
         <p className="mt-1 text-sm text-cool-500">새 회의를 만들어 시작해보세요.</p>
       </div>
     ) : (
-      <>
-        <div className="mt-3 flex flex-col gap-2.5">
-          {meetings.map((meeting) => (
-            <MeetingListItem key={meeting.id} meeting={meeting} teamId={teamId} />
-          ))}
-        </div>
-
-        <button
-          type="button"
-          className="mt-4 flex h-11 items-center justify-center rounded-xl border border-cool-200 text-sm font-medium text-cool-600 transition-colors hover:bg-cool-50"
-        >
-          더보기
-        </button>
-      </>
+      <div className="mt-3 flex flex-col gap-2.5">
+        {meetings.map((meeting) => (
+          <MeetingListItem key={meeting.id} meeting={meeting} teamId={teamId} />
+        ))}
+      </div>
     )}
   </section>
 );
