@@ -32,6 +32,7 @@ export const NavigationSidebar = ({
   const pathname = usePathname();
   const homePath = `/teams/${teamId}`;
   const managePath = `${homePath}/manage`;
+  const meetingListPath = `${homePath}/meetings`;
   const currentMeetingPath = activeMeeting
     ? `${homePath}/meetings/${activeMeeting.meetingId}`
     : null;
@@ -104,6 +105,8 @@ export const NavigationSidebar = ({
               <SidebarNavItem
                 icon={<ListChecks className="size-5" strokeWidth={2} />}
                 label="회의 목록"
+                isActive={pathname === meetingListPath}
+                onClick={() => navigateTo(meetingListPath)}
               />
             </nav>
 
