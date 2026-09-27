@@ -30,6 +30,8 @@ interface CurrentMeetingDialogsProps {
 
   isEditFormOpen: boolean;
   editFormInitialValues: CreateMeetingFormValues | null;
+  isEditFormSubmitting: boolean;
+  editFormSubmitError: string | null;
   onSubmitEditForm: (values: CreateMeetingFormValues) => void;
   onCloseEditForm: () => void;
 }
@@ -54,6 +56,8 @@ export const CurrentMeetingDialogs = ({
   onEditNoticeOpenChange,
   isEditFormOpen,
   editFormInitialValues,
+  isEditFormSubmitting,
+  editFormSubmitError,
   onSubmitEditForm,
   onCloseEditForm,
 }: CurrentMeetingDialogsProps) => (
@@ -87,8 +91,8 @@ export const CurrentMeetingDialogs = ({
     {isEditFormOpen && editFormInitialValues && (
       <MeetingInfoDialog
         initialValues={editFormInitialValues}
-        isSubmitting={false}
-        submitError={null}
+        isSubmitting={isEditFormSubmitting}
+        submitError={editFormSubmitError}
         onSubmit={onSubmitEditForm}
         onClose={onCloseEditForm}
       />

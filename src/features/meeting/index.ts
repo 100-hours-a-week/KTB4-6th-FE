@@ -11,6 +11,7 @@ export {
   getCreateMeetingTitleError,
   INITIAL_CREATE_MEETING_FORM_VALUES,
   isCreateMeetingFormValid,
+  toCreateMeetingRequest,
 } from './model/create-meeting-form';
 export { isAudioFileExpiredError, isAudioFileNotAvailableError } from './model/audio-file-errors';
 export { MeetingApiError } from './model/errors';
