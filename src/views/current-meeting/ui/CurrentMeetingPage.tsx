@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { Headphones, LoaderCircle } from 'lucide-react';
 import { MeetingSseConnection } from '@/features/meeting-sse';
-import { getTeamDetail } from '@/features/team-management';
+import { useTeamDetail } from '@/features/team-management';
 import { MeetingInfoDialog } from '@/widgets/meeting-info-form';
 import { NavigationSidebar } from '@/widgets/navigation-sidebar';
 import { useCurrentMeetingRecording } from '../model/useCurrentMeetingRecording';
@@ -41,10 +40,8 @@ export const CurrentMeetingPage = ({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const numericTeamId = Number(teamId);
   const isPreview = previewState !== undefined;
-  const { data: team } = useQuery({
-    queryKey: ['teams', numericTeamId, 'detail'],
-    queryFn: () => getTeamDetail(numericTeamId),
-    enabled: !isPreview && Number.isSafeInteger(numericTeamId) && numericTeamId > 0,
+  const { data: team } = useTeamDetail(numericTeamId, {
+    isEnabled: !isPreview && Number.isSafeInteger(numericTeamId) && numericTeamId > 0,
   });
   const {
     meeting,
