@@ -65,12 +65,7 @@ export const MeetingTranscript = ({ segments, isRecording, isPaused }: MeetingTr
               )}
             >
               <div className="min-w-0">
-                <p className="text-xs font-semibold text-brand-600">
-                  {segment.speakerNumber === null
-                    ? '발화자 확인 중'
-                    : '발화자 ' + segment.speakerNumber}
-                </p>
-                <time className="mt-1 block font-mono text-xs text-cool-500">
+                <time className="block font-mono text-xs text-cool-500">
                   {formatTimestamp(segment.startedAtSeconds)}
                 </time>
               </div>
