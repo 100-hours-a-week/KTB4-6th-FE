@@ -4,11 +4,15 @@ import type { Meeting, TeamMemberRole } from '../model/type';
 import { InProgressMeetingItem } from './InProgressMeetingItem';
 import { MeetingItem } from './MeetingItem';
 import { MeetingRenameDialog } from './MeetingRenameDialog';
+import { MeetingListLoadMore } from './MeetingListLoadMore';
 
 interface MeetingListSectionProps {
   meetings: Meeting[];
   teamId: number;
   viewerRole: TeamMemberRole;
+  hasMore: boolean;
+  loadMoreStatus: 'idle' | 'loading' | 'error';
+  onLoadMore: () => void;
 }
 
 // 열려 있는 다이얼로그. 어떤 회의에 대해 어떤 종류가 열렸는지를 함께 담고, null이면 열린 것이 없다.
@@ -17,7 +21,14 @@ type MeetingDialog = {
   type: 'rename' | 'delete';
 } | null;
 
-export const MeetingListSection = ({ meetings, teamId, viewerRole }: MeetingListSectionProps) => {
+export const MeetingListSection = ({
+  meetings,
+  teamId,
+  viewerRole,
+  hasMore,
+  loadMoreStatus,
+  onLoadMore,
+}: MeetingListSectionProps) => {
   const { showToast } = useAppToast();
   const [dialog, setDialog] = useState<MeetingDialog>(null);
   const isLeader = viewerRole === 'leader';
@@ -68,13 +79,13 @@ export const MeetingListSection = ({ meetings, teamId, viewerRole }: MeetingList
                 );
               })}
             </div>
-
-            <button
-              type="button"
-              className="mt-4 flex h-11 items-center justify-center rounded-xl border border-cool-200 text-sm font-medium text-cool-600 transition-colors hover:bg-cool-50"
-            >
-              더보기
-            </button>
+            {meetings.length > 0 && (
+              <MeetingListLoadMore
+                hasMore={hasMore}
+                status={loadMoreStatus}
+                onLoadMore={onLoadMore}
+              />
+            )}
           </>
         )}
       </section>

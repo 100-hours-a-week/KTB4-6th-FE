@@ -29,7 +29,14 @@ export const MeetingListPage = ({ teamId }: MeetingListPageProps) => {
       ) : status === 'error' ? (
         <MeetingListErrorState />
       ) : (
-        <MeetingListSection meetings={mockMeetings} teamId={teamId} viewerRole={viewerRole} />
+        <MeetingListSection
+          meetings={mockMeetings}
+          teamId={teamId}
+          viewerRole={viewerRole}
+          hasMore={false}
+          loadMoreStatus="idle"
+          onLoadMore={() => {}}
+        />
       )}
 
       <NavigationSidebar
