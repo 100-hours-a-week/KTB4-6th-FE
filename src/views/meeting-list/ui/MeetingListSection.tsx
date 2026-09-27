@@ -70,9 +70,19 @@ export const MeetingListSection = ({
                   : {};
 
                 return meeting.status === 'in_progress' ? (
-                  <InProgressMeetingItem key={meeting.id} meeting={meeting} {...menuActions} />
+                  <InProgressMeetingItem
+                    key={meeting.id}
+                    meeting={meeting}
+                    teamId={teamId}
+                    {...menuActions}
+                  />
                 ) : (
-                  <MeetingItem key={meeting.id} meeting={meeting} {...menuActions} />
+                  <MeetingItem
+                    key={meeting.id}
+                    meeting={meeting}
+                    teamId={teamId}
+                    {...menuActions}
+                  />
                 );
               })}
             </div>
