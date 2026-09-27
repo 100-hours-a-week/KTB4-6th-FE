@@ -50,10 +50,7 @@ export const MeetingListSection = ({
   return (
     <>
       <section className="mt-6 flex flex-1 flex-col px-5 pb-8">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-cool-900">전체 회의</h2>
-          <span className="text-sm text-cool-500">총 {meetings.length}건</span>
-        </div>
+        <h2 className="text-base font-bold text-cool-900">전체 회의</h2>
 
         {meetings.length === 0 ? (
           <div className="motion-safe:animate-in motion-safe:fade-in motion-safe:animation-duration-300 mt-3 flex min-h-40 flex-col items-center justify-center rounded-2xl border border-dashed border-cool-200 bg-white px-4 text-center">
