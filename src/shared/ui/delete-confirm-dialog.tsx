@@ -11,7 +11,7 @@ interface DeleteConfirmDialogProps {
   onClose: () => void;
 }
 
-/** 복구할 수 없는 삭제를 확인받는 모달. 회의 삭제와 음성 삭제에서 함께 쓴다. */
+/** 복구할 수 없는 삭제를 확인받는 모달. 제목과 안내 문구는 호출하는 쪽에서 정한다. */
 export const DeleteConfirmDialog = ({
   title,
   description,
