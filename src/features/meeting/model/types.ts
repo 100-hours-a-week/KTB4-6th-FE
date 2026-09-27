@@ -54,6 +54,30 @@ export interface MeetingUpdateResponse {
   error: ApiErrorPayload | null;
 }
 
+export interface MeetingDetailData {
+  meetingId: number;
+  teamId: number;
+  createdByTeamMemberId: number;
+  title: string;
+  purpose: string;
+  note: string;
+  scheduledAt: string;
+  targetDurationMinutes: number;
+  status: 'WAITING' | 'IN_PROGRESS' | 'COMPLETED';
+  /** 실제 시작 시각. 시작 전이면 null */
+  startedAt: string | null;
+  /** 종료 시각. 끝나지 않았으면 null */
+  endedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MeetingDetailResponse {
+  success: boolean;
+  data: MeetingDetailData | null;
+  error: ApiErrorPayload | null;
+}
+
 export interface MeetingSummaryData {
   summaryId: number;
   /** 요약 본문(Markdown). 생성 중이거나 실패했으면 null */

@@ -22,6 +22,7 @@ export { useAudioDownloadUrl } from './model/useAudioDownloadUrl';
 export { useAudioFile } from './model/useAudioFile';
 export { useCreateMeeting } from './model/useCreateMeeting';
 export { useDeleteAudioFile } from './model/useDeleteAudioFile';
+export { useMeetingDetail } from './model/useMeetingDetail';
 export { useMeetingSummary } from './model/useMeetingSummary';
 export { useMeetingTranscript } from './model/useMeetingTranscript';
 export { useSpeakerMapping } from './model/useSpeakerMapping';
@@ -42,6 +43,7 @@ export type {
   AudioFileStatus,
   CreateMeetingData,
   CreateMeetingRequest,
+  MeetingDetailData,
   MeetingSummaryData,
   MeetingSummaryRequestData,
   MeetingTranscriptSegmentData,
