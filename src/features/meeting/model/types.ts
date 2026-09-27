@@ -54,6 +54,30 @@ export interface MeetingUpdateResponse {
   error: ApiErrorPayload | null;
 }
 
+export interface MeetingDetailData {
+  meetingId: number;
+  teamId: number;
+  createdByTeamMemberId: number;
+  title: string;
+  purpose: string;
+  note: string;
+  scheduledAt: string;
+  targetDurationMinutes: number;
+  status: 'WAITING' | 'IN_PROGRESS' | 'COMPLETED';
+  /** 실제 시작 시각. 시작 전이면 null */
+  startedAt: string | null;
+  /** 종료 시각. 끝나지 않았으면 null */
+  endedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MeetingDetailResponse {
+  success: boolean;
+  data: MeetingDetailData | null;
+  error: ApiErrorPayload | null;
+}
+
 export interface MeetingSummaryData {
   summaryId: number;
   /** 요약 본문(Markdown). 생성 중이거나 실패했으면 null */
@@ -195,5 +219,17 @@ export interface AudioDownloadUrlData {
 export interface AudioDownloadUrlResponse {
   success: boolean;
   data: AudioDownloadUrlData | null;
+  error: ApiErrorPayload | null;
+}
+
+export interface AudioFileDeleteData {
+  audioFileId: number;
+  /** 삭제는 비동기로 처리되어 요청 직후에는 항상 이 상태다. */
+  status: AudioFileStatus;
+}
+
+export interface AudioFileDeleteResponse {
+  success: boolean;
+  data: AudioFileDeleteData | null;
   error: ApiErrorPayload | null;
 }

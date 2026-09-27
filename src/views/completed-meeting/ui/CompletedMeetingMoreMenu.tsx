@@ -1,16 +1,20 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Menu } from '@base-ui/react/menu';
 import { FileText, Headphones, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { MeetingApiError, meetingKeys, useDeleteAudioFile } from '@/features/meeting';
 import { cn, useAppFrameElement } from '@/shared/lib';
 import { DeleteConfirmDialog, useAppToast } from '@/shared/ui';
+import { useMeetingDelete } from '../model/useMeetingDelete';
 import { useMeetingRename } from '../model/useMeetingRename';
 import type { CompletedMeetingViewerRole } from '../model/preview-completed-meeting';
 import type { AudioViewState } from '../model/useAudioViewState';
 import { MeetingRenameDialog } from './MeetingRenameDialog';
 
 interface CompletedMeetingMoreMenuProps {
+  teamId: string;
   meetingId: number;
   meetingTitle: string;
   viewerRole: CompletedMeetingViewerRole;
@@ -47,14 +51,18 @@ const MoreMenuItem = ({ icon, label, isDanger, trailingText, onClick }: MoreMenu
 
 // TODO: 다운로드는 API 연동 때 구현한다.
 export const CompletedMeetingMoreMenu = ({
+  teamId,
   meetingId,
   meetingTitle,
   viewerRole,
   audio,
 }: CompletedMeetingMoreMenuProps) => {
   const frame = useAppFrameElement();
+  const queryClient = useQueryClient();
   const { showToast } = useAppToast();
   const { rename } = useMeetingRename({ meetingId });
+  const { mutate: deleteAudio } = useDeleteAudioFile();
+  const { requestDelete } = useMeetingDelete({ teamId, meetingId });
   const [openDialog, setOpenDialog] = useState<MoreMenuDialog | null>(null);
   const isLeader = viewerRole === 'leader';
   const isAudioExpired = audio.kind === 'expired';
@@ -66,16 +74,27 @@ export const CompletedMeetingMoreMenu = ({
     rename(title);
   };
 
-  // TODO: 음성 파일 삭제 API가 생기면 삭제 요청으로 교체한다.
   const handleConfirmAudioDelete = () => {
     closeDialog();
-    showToast('음성 파일이 삭제되었습니다', 'success');
+    if (audio.kind !== 'available' || audio.audioFileId === null) return;
+
+    deleteAudio(audio.audioFileId, {
+      onSuccess: () => {
+        // 삭제는 비동기로 처리되므로, 다시 조회해 상태(삭제 중/만료)를 반영한다.
+        void queryClient.invalidateQueries({ queryKey: meetingKeys.audioFile(meetingId) });
+        showToast('음성 파일 삭제를 요청했습니다', 'success');
+      },
+      onError: (error) =>
+        showToast(
+          error instanceof MeetingApiError ? error.message : '음성 파일 삭제에 실패했습니다.',
+          'danger',
+        ),
+    });
   };
 
-  // TODO: 회의 삭제 API(DELETE /api/v1/meetings/{meetingId}) 연동 시 삭제 요청과 홈 이동으로 교체한다.
   const handleConfirmMeetingDelete = () => {
     closeDialog();
-    showToast('회의가 삭제되었습니다', 'success');
+    void requestDelete();
   };
 
   const handleDownloadAudio = () => {

@@ -1,16 +1,14 @@
 import { Menu } from 'lucide-react';
 import { cn } from '@/shared/lib';
 import { formatMeetingPeriod } from '../model/format-meeting-period';
-import type {
-  CompletedMeetingViewerRole,
-  CompletedMeetingViewModel,
-} from '../model/preview-completed-meeting';
+import type { CompletedMeetingViewerRole } from '../model/preview-completed-meeting';
 import type { AudioViewState } from '../model/useAudioViewState';
 import { CompletedMeetingMoreMenu } from './CompletedMeetingMoreMenu';
 
 interface CompletedMeetingHeaderProps {
+  teamId: string;
   meetingId: number;
-  meeting: CompletedMeetingViewModel;
+  meeting: { title: string; startedAt: string; endedAt: string };
   audio: AudioViewState;
   viewerRole: CompletedMeetingViewerRole;
   isMenuDisabled: boolean;
@@ -18,6 +16,7 @@ interface CompletedMeetingHeaderProps {
 }
 
 export const CompletedMeetingHeader = ({
+  teamId,
   meetingId,
   meeting,
   audio,
@@ -61,6 +60,7 @@ export const CompletedMeetingHeader = ({
           </div>
         )}
         <CompletedMeetingMoreMenu
+          teamId={teamId}
           meetingId={meetingId}
           meetingTitle={meeting.title}
           viewerRole={viewerRole}
