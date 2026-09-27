@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useTeamDetail } from '@/features/team-management';
 import { MeetingListHeader } from './MeetingListHeader';
 import { NavigationSidebar } from '@/widgets/navigation-sidebar';
 import { MeetingListErrorState } from './MeetingListErrorState';
@@ -14,14 +15,18 @@ interface MeetingListPageProps {
 
 export const MeetingListPage = ({ teamId }: MeetingListPageProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const teamName = `팀 ${teamId}`;
-  // TODO: 팀 멤버 역할 조회 API 연동 시 실제 역할로 교체한다.
-  const viewerRole: TeamMemberRole = 'leader';
+  const { data: team } = useTeamDetail(teamId);
+  // 팀 정보가 오기 전에는 팀원으로 취급해 팀장 전용 메뉴가 잠깐 보이지 않게 한다.
+  const viewerRole: TeamMemberRole = team?.role === 'LEADER' ? 'leader' : 'member';
   const { status, meetings, hasMore, loadMoreStatus, loadMore } = useMeetingListPageData(teamId);
 
   return (
     <div className="flex min-h-[844px] flex-1 flex-col bg-cool-50">
-      <MeetingListHeader teamName={teamName} onMenuClick={() => setIsSidebarOpen(true)} />
+      <MeetingListHeader
+        teamName={team?.name ?? ''}
+        isMenuDisabled={!team}
+        onMenuClick={() => setIsSidebarOpen(true)}
+      />
 
       {status === 'loading' ? (
         <MeetingListSkeleton />
@@ -38,12 +43,14 @@ export const MeetingListPage = ({ teamId }: MeetingListPageProps) => {
         />
       )}
 
-      <NavigationSidebar
-        isOpen={isSidebarOpen}
-        onOpenChange={setIsSidebarOpen}
-        teamId={teamId}
-        teamName={teamName}
-      />
+      {team && (
+        <NavigationSidebar
+          isOpen={isSidebarOpen}
+          onOpenChange={setIsSidebarOpen}
+          teamId={teamId}
+          teamName={team.name}
+        />
+      )}
     </div>
   );
 };

@@ -1,11 +1,8 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Headphones, LoaderCircle } from 'lucide-react';
 import { MeetingSseConnection } from '@/features/meeting-sse';
-import { getTeamDetail } from '@/features/team-management';
-import { MeetingInfoDialog } from '@/widgets/meeting-info-form';
+import { useTeamDetail } from '@/features/team-management';
 import { NavigationSidebar } from '@/widgets/navigation-sidebar';
 import { useCurrentMeetingRecording } from '../model/useCurrentMeetingRecording';
 import { useMeetingDeletedRedirect } from '../model/useMeetingDeletedRedirect';
@@ -13,14 +10,13 @@ import { useMeetingEndedNotice } from '../model/useMeetingEndedNotice';
 import { useMeetingInfoEdit } from '../model/useMeetingInfoEdit';
 import { useRecordingStartedNotice } from '../model/useRecordingStartedNotice';
 import { useRecordingStatusSync } from '../model/useRecordingStatusSync';
+import { CurrentMeetingDialogs } from './CurrentMeetingDialogs';
 import { CurrentMeetingHeader } from './CurrentMeetingHeader';
-import { InsufficientCreditDialog } from './InsufficientCreditDialog';
+import { CurrentMeetingLoadingState } from './CurrentMeetingLoadingState';
 import { MeetingControls } from './MeetingControls';
-import { MeetingEditNoticeDialog } from './MeetingEditNoticeDialog';
-import { MeetingEndedDialog } from './MeetingEndedDialog';
+import { MeetingEndingOverlay } from './MeetingEndingOverlay';
 import { MeetingTranscript } from './MeetingTranscript';
-import { RecordingStartDialog } from './RecordingStartDialog';
-import { RecordingStartedDialog } from './RecordingStartedDialog';
+import { WaitingForRecordingNotice } from './WaitingForRecordingNotice';
 
 interface CurrentMeetingPageProps {
   teamId: string;
@@ -41,10 +37,8 @@ export const CurrentMeetingPage = ({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const numericTeamId = Number(teamId);
   const isPreview = previewState !== undefined;
-  const { data: team } = useQuery({
-    queryKey: ['teams', numericTeamId, 'detail'],
-    queryFn: () => getTeamDetail(numericTeamId),
-    enabled: !isPreview && Number.isSafeInteger(numericTeamId) && numericTeamId > 0,
+  const { data: team } = useTeamDetail(numericTeamId, {
+    isEnabled: !isPreview && Number.isSafeInteger(numericTeamId) && numericTeamId > 0,
   });
   const {
     meeting,
@@ -102,22 +96,7 @@ export const CurrentMeetingPage = ({
   if (isServerCompleted && completedView && !isMeetingEndedNoticeOpen) return completedView;
 
   if (!meeting) {
-    return (
-      <div className="flex h-dvh min-h-[844px] flex-1 items-center justify-center bg-cool-50 px-6 text-center">
-        <div>
-          {isMeetingPending && (
-            <LoaderCircle
-              aria-hidden="true"
-              className="mx-auto size-7 text-brand-600 motion-safe:animate-spin"
-              strokeWidth={2}
-            />
-          )}
-          <p className="mt-4 text-sm text-cool-600">
-            {isMeetingPending ? '회의 정보를 불러오는 중입니다' : '회의 정보를 불러오지 못했습니다'}
-          </p>
-        </div>
-      </div>
-    );
+    return <CurrentMeetingLoadingState isPending={isMeetingPending} />;
   }
 
   return (
@@ -141,19 +120,7 @@ export const CurrentMeetingPage = ({
       />
 
       {isWaiting ? (
-        <main className="flex flex-1 flex-col items-center justify-center px-6 py-10 text-center">
-          <div className="flex size-16 items-center justify-center rounded-2xl bg-brand-100 text-brand-600">
-            <Headphones aria-hidden="true" className="size-7" strokeWidth={2.2} />
-          </div>
-          <p className="mt-5 text-base font-bold text-cool-900">
-            녹음 시작을 눌러 회의를 기록해주세요
-          </p>
-          <p className="mt-4 text-sm leading-6 text-cool-600">
-            참여자 누구나 녹음을 시작할 수 있어요.
-            <br />
-            시작한 사람이 일시정지와 종료를 관리합니다.
-          </p>
-        </main>
+        <WaitingForRecordingNotice />
       ) : (
         <MeetingTranscript
           segments={meeting.transcripts}
@@ -190,41 +157,28 @@ export const CurrentMeetingPage = ({
         recorderName={meeting.recorderName}
       />
 
-      <RecordingStartDialog
-        isAcknowledged={isRecordingAcknowledged}
-        isOpen={isStartDialogOpen}
-        isStarting={isStartingRecording}
+      <CurrentMeetingDialogs
+        isRecordingAcknowledged={isRecordingAcknowledged}
+        isStartDialogOpen={isStartDialogOpen}
+        isStartingRecording={isStartingRecording}
         onAcknowledgedChange={setIsRecordingAcknowledged}
-        onConfirm={handleConfirmRecording}
-        onOpenChange={handleStartDialogOpenChange}
-      />
-      <InsufficientCreditDialog
-        isOpen={isInsufficientCreditDialogOpen}
-        onOpenChange={setIsInsufficientCreditDialogOpen}
-      />
-      <RecordingStartedDialog
-        isOpen={isRecordingStartedNoticeOpen}
-        onOpenChange={setIsRecordingStartedNoticeOpen}
-      />
-      <MeetingEndedDialog
-        isOpen={isMeetingEndedNoticeOpen}
-        onConfirm={goToResult}
+        onConfirmRecording={handleConfirmRecording}
+        onStartDialogOpenChange={handleStartDialogOpenChange}
+        isInsufficientCreditDialogOpen={isInsufficientCreditDialogOpen}
+        onInsufficientCreditDialogOpenChange={setIsInsufficientCreditDialogOpen}
+        isRecordingStartedNoticeOpen={isRecordingStartedNoticeOpen}
+        onRecordingStartedNoticeOpenChange={setIsRecordingStartedNoticeOpen}
+        isMeetingEndedNoticeOpen={isMeetingEndedNoticeOpen}
+        onGoToResult={goToResult}
         onGoHome={goHome}
+        isEditNoticeOpen={isEditNoticeOpen}
+        onConfirmEditNotice={handleConfirmEditNotice}
+        onEditNoticeOpenChange={setIsEditNoticeOpen}
+        isEditFormOpen={isEditFormOpen}
+        editFormInitialValues={editFormInitialValues}
+        onSubmitEditForm={handleSubmitEditForm}
+        onCloseEditForm={handleCloseEditForm}
       />
-      <MeetingEditNoticeDialog
-        isOpen={isEditNoticeOpen}
-        onConfirm={handleConfirmEditNotice}
-        onOpenChange={setIsEditNoticeOpen}
-      />
-      {isEditFormOpen && editFormInitialValues && (
-        <MeetingInfoDialog
-          initialValues={editFormInitialValues}
-          isSubmitting={false}
-          submitError={null}
-          onSubmit={handleSubmitEditForm}
-          onClose={handleCloseEditForm}
-        />
-      )}
 
       {team && (
         <NavigationSidebar
@@ -235,21 +189,7 @@ export const CurrentMeetingPage = ({
         />
       )}
 
-      {isEnding && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/85 px-6 text-center"
-        >
-          <LoaderCircle
-            aria-hidden="true"
-            className="size-7 text-brand-600 motion-safe:animate-spin"
-            strokeWidth={2}
-          />
-          <p className="mt-4 text-base font-bold text-cool-900">회의를 종료하고 있습니다</p>
-          <p className="mt-3 text-sm text-cool-600">녹음과 녹취 내용을 저장하는 중이에요</p>
-        </div>
-      )}
+      {isEnding && <MeetingEndingOverlay />}
     </div>
   );
 };

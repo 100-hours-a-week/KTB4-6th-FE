@@ -11,6 +11,7 @@ export { useRegenerateInvitationCode } from './model/useRegenerateInvitationCode
 export { useReleaseTeamBlock } from './model/useReleaseTeamBlock';
 export { teamKeys } from './model/query-keys';
 export { useTeamCredits } from './model/useTeamCredits';
+export { useTeamDetail } from './model/useTeamDetail';
 export type {
   TeamManagementData,
   TeamManagementRequestStatus,
