@@ -4,10 +4,9 @@ import { useState, type ReactNode } from 'react';
 import { Menu } from '@base-ui/react/menu';
 import { FileText, Headphones, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { cn, useAppFrameElement } from '@/shared/lib';
-import { useAppToast } from '@/shared/ui';
+import { DeleteConfirmDialog, useAppToast } from '@/shared/ui';
 import type { CompletedMeetingViewerRole } from '../model/preview-completed-meeting';
 import type { AudioViewState } from '../model/useAudioViewState';
-import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 import { MeetingRenameDialog } from './MeetingRenameDialog';
 
 interface CompletedMeetingMoreMenuProps {
