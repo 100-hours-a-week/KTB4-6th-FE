@@ -85,12 +85,14 @@ export const CurrentMeetingPage = ({
     isEditNoticeOpen,
     isEditFormOpen,
     editFormInitialValues,
+    isSubmitting: isEditFormSubmitting,
+    submitError: editFormSubmitError,
     setIsEditNoticeOpen,
     handleEditInfo,
     handleConfirmEditNotice,
     handleSubmitEditForm,
     handleCloseEditForm,
-  } = useMeetingInfoEdit(meeting);
+  } = useMeetingInfoEdit({ meetingId, meeting });
 
   // 종료 안내 모달에서 이동을 고르기 전에는 현재 회의 화면을 유지한다.
   if (isServerCompleted && completedView && !isMeetingEndedNoticeOpen) return completedView;
@@ -176,6 +178,8 @@ export const CurrentMeetingPage = ({
         onEditNoticeOpenChange={setIsEditNoticeOpen}
         isEditFormOpen={isEditFormOpen}
         editFormInitialValues={editFormInitialValues}
+        isEditFormSubmitting={isEditFormSubmitting}
+        editFormSubmitError={editFormSubmitError}
         onSubmitEditForm={handleSubmitEditForm}
         onCloseEditForm={handleCloseEditForm}
       />
