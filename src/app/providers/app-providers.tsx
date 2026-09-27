@@ -2,9 +2,12 @@
 
 import { useState, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MeetingSseProvider } from '@/features/meeting-sse';
+import { RecordingWebSocketProvider } from '@/features/recording-websocket';
 import { AppToastProvider } from '@/shared/ui';
 
 import { ThemeProvider } from './theme-provider';
+import { RecordingSessionManager } from './recording-session-manager';
 import { useAuthRetryInterceptor } from './use-auth-retry-interceptor';
 
 interface AppProvidersProps {
@@ -25,7 +28,14 @@ export function AppProviders({ children }: AppProvidersProps) {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-        <AppToastProvider>{children}</AppToastProvider>
+        <MeetingSseProvider>
+          <AppToastProvider>
+            <RecordingWebSocketProvider>
+              <RecordingSessionManager />
+              {children}
+            </RecordingWebSocketProvider>
+          </AppToastProvider>
+        </MeetingSseProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

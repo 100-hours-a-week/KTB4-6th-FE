@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Space_Grotesk } from 'next/font/google';
 import { AppProviders } from '@/app/providers';
+import { AppFrame } from '@/app/ui';
 import { cn } from '@/shared/lib';
 import './globals.css';
 
@@ -35,12 +36,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
         <AppProviders>
           {/* 기준 화면: 390 x 844(min-height), iPhone 12/13/14 계열. 콘텐츠가 넘치면 스크롤. */}
           {/* id="app-frame": 토스트 포털을 이 프레임 안에 가두기 위한 앵커(src/shared/ui/toast.tsx 참고) */}
-          <div
-            id="app-frame"
-            className="relative isolate mx-auto flex min-h-[844px] w-full max-w-[390px] flex-col bg-white"
-          >
-            {children}
-          </div>
+          <AppFrame>{children}</AppFrame>
         </AppProviders>
       </body>
     </html>

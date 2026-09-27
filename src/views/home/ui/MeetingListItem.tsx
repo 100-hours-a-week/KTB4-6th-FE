@@ -1,28 +1,23 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { FileText } from 'lucide-react';
 import { cn } from '@/shared/lib';
-import { Badge, useAppToast } from '@/shared/ui';
+import { Badge } from '@/shared/ui';
 import type { Meeting } from '../model/types';
 
 interface MeetingListItemProps {
   meeting: Meeting;
+  teamId: number;
 }
 
-export const MeetingListItem = ({ meeting }: MeetingListItemProps) => {
-  const { showToast } = useAppToast();
+export const MeetingListItem = ({ meeting, teamId }: MeetingListItemProps) => {
+  const router = useRouter();
   const isInProgress = meeting.status === 'in_progress';
   const isWaiting = meeting.status === 'waiting';
 
-  const handleClick = () => {
-    if (isWaiting) return;
-
-    if (isInProgress) {
-      showToast('회의 참여를 시작합니다', 'success');
-    } else {
-      showToast('종료된 회의입니다', 'danger');
-    }
-  };
+  // 진행 중·대기 중이면 현재 회의로, 종료됐으면 종료 회의(요약 탭)로 이동한다. 같은 주소에서 라우트가 상태로 분기한다.
+  const handleClick = () => router.push(`/teams/${teamId}/meetings/${meeting.id}`);
 
   return (
     <button
