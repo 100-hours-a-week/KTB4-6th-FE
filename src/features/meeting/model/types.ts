@@ -29,6 +29,31 @@ export interface CreateMeetingResponse {
   error: ApiErrorPayload | null;
 }
 
+/** 회의 정보 부분 수정 요청. 보낸 필드만 반영되고 나머지는 그대로 유지된다. */
+export interface MeetingUpdateRequest {
+  title?: string;
+  purpose?: string;
+  note?: string;
+  scheduledAt?: string;
+  targetDurationMinutes?: number;
+}
+
+export interface MeetingUpdateData {
+  meetingId: number;
+  title: string;
+  purpose: string;
+  note: string;
+  scheduledAt: string;
+  targetDurationMinutes: number;
+  updatedAt: string;
+}
+
+export interface MeetingUpdateResponse {
+  success: boolean;
+  data: MeetingUpdateData | null;
+  error: ApiErrorPayload | null;
+}
+
 export interface MeetingSummaryData {
   summaryId: number;
   /** 요약 본문(Markdown). 생성 중이거나 실패했으면 null */
