@@ -9,8 +9,13 @@ interface ApiResponse<T> {
 
 interface MeetingDetailData {
   title: string;
+  purpose: string;
+  note: string;
+  /** 예정 시작 시각. 시간대 표기 없이 오는 서버 시각이다. 수정 화면에는 아직 반영하지 않는다(V2) */
+  scheduledAt: string;
   targetDurationMinutes: number;
   status: 'WAITING' | 'IN_PROGRESS' | 'COMPLETED';
+  createdByTeamMemberId: number;
 }
 
 interface MeetingParticipantListData {
@@ -25,11 +30,14 @@ interface ActiveRecordingData {
 
 export interface CurrentMeetingState {
   title: string;
+  purpose: string;
+  note: string;
   targetMinutes: number;
   participantCount: number;
   recorderName: string;
   meetingStatus: MeetingDetailData['status'];
   recordingStatus: ActiveRecordingData['status'] | null;
+  createdByTeamMemberId: number;
 }
 
 const unwrap = <T>(response: ApiResponse<T>, message: string): T => {
@@ -85,10 +93,13 @@ export const getCurrentMeetingState = async (meetingId: number): Promise<Current
 
   return {
     title: meeting.title,
+    purpose: meeting.purpose,
+    note: meeting.note,
     targetMinutes: meeting.targetDurationMinutes,
     participantCount: participantList.participantsCount,
     recorderName,
     meetingStatus: meeting.status,
     recordingStatus: activeRecording?.status ?? null,
+    createdByTeamMemberId: meeting.createdByTeamMemberId,
   };
 };

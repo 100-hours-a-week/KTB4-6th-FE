@@ -9,7 +9,6 @@ import {
 import { getCurrentMeetingQueryKey } from './current-meeting-query-key';
 import {
   getMeetingPreview,
-  mockMeetingInfo,
   type CurrentMeetingViewModel,
   type TranscriptSegment,
 } from './preview-meeting';
@@ -44,7 +43,9 @@ export const useCurrentMeetingData = ({ meetingId, previewState }: UseCurrentMee
           participantCount: currentMeetingQuery.data.participantCount,
           participantLimit: 5,
           targetMinutes: currentMeetingQuery.data.targetMinutes,
-          ...mockMeetingInfo,
+          purpose: currentMeetingQuery.data.purpose,
+          note: currentMeetingQuery.data.note,
+          createdByTeamMemberId: currentMeetingQuery.data.createdByTeamMemberId,
           elapsedSeconds: 0,
           recordingStatus:
             currentMeetingQuery.data.meetingStatus === 'WAITING'
