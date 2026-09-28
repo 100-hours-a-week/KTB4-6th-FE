@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect } from 'react';
 import { isAudioFileExpiredError, useAudioDownloadUrl } from '@/features/meeting';
-import { parseServerDate } from './parse-server-date';
+import { parseServerDate } from '@/shared/lib';
 import type { AudioViewState } from './useAudioViewState';
 
 /** 재생 주소가 만료되기 이 시간 전에 미리 새 주소를 받는다. */

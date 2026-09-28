@@ -7,6 +7,7 @@ import {
   useMeetingSse,
 } from '@/features/meeting-sse';
 import { getCurrentMeetingQueryKey } from './current-meeting-query-key';
+import { useElapsedSeconds } from './useElapsedSeconds';
 import {
   getMeetingPreview,
   type CurrentMeetingViewModel,
@@ -34,6 +35,12 @@ export const useCurrentMeetingData = ({ meetingId, previewState }: UseCurrentMee
     queryFn: () => getCurrentMeetingState(meetingId),
     enabled: !isPreview,
   });
+  const elapsedSeconds = useElapsedSeconds({
+    recordingStatus: currentMeetingQuery.data?.recordingStatus ?? null,
+    startedAt: currentMeetingQuery.data?.recordingStartedAt ?? null,
+    pausedAt: currentMeetingQuery.data?.recordingPausedAt ?? null,
+    totalPausedDurationMs: currentMeetingQuery.data?.recordingTotalPausedDurationMs ?? null,
+  });
   const meeting: CurrentMeetingViewModel | null = isPreview
     ? getMeetingPreview(previewState)
     : currentMeetingQuery.data
@@ -46,7 +53,7 @@ export const useCurrentMeetingData = ({ meetingId, previewState }: UseCurrentMee
           purpose: currentMeetingQuery.data.purpose,
           note: currentMeetingQuery.data.note,
           createdByTeamMemberId: currentMeetingQuery.data.createdByTeamMemberId,
-          elapsedSeconds: 0,
+          elapsedSeconds,
           recordingStatus:
             currentMeetingQuery.data.meetingStatus === 'WAITING'
               ? 'waiting'
