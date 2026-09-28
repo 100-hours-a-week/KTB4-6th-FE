@@ -10,6 +10,8 @@ interface RecordingAvailabilityInput {
   isOperationIdle: boolean;
   isBrowserRecorderActive: boolean;
   hasActiveRecording: boolean;
+  /** 이 브라우저가 아니어도, 같은 팀의 다른 회의가 이미 진행 중인지 */
+  hasTeamActiveMeetingElsewhere: boolean;
   hasRecordingSession: boolean;
   connectionStatus: CurrentMeetingConnectionStatus;
 }
@@ -27,6 +29,7 @@ export const getRecordingAvailability = ({
   isOperationIdle,
   isBrowserRecorderActive,
   hasActiveRecording,
+  hasTeamActiveMeetingElsewhere,
   hasRecordingSession,
   connectionStatus,
 }: RecordingAvailabilityInput) => {
@@ -39,7 +42,12 @@ export const getRecordingAvailability = ({
   const startBlockedReason: RecordingBlockedReason | null =
     !isWaiting || isPreview || isStartingRecording
       ? null
-      : (connectionBlockedReason ?? (hasActiveRecording ? 'other-recording' : null));
+      : (connectionBlockedReason ??
+        (hasActiveRecording
+          ? 'other-recording'
+          : hasTeamActiveMeetingElsewhere
+            ? 'team-recording'
+            : null));
   const pauseResumeBlockedReason: RecordingBlockedReason | null =
     !isPreview && hasRecordingSession && !isCompleted && !isUploadCompleted && isOperationIdle
       ? connectionBlockedReason

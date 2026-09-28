@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useActiveMeeting } from '@/features/home';
 import { useMediaRecorder, useRecordingSessionStore } from '@/features/recording';
 import { getRecordingAvailability } from './recording-availability';
 import { useCompleteRecordingFlow } from './useCompleteRecordingFlow';
@@ -38,6 +39,12 @@ export const useCurrentMeetingRecordingSession = ({
   const activeRecording = useRecordingSessionStore((state) => state.activeRecording);
   const pendingUpload = useRecordingSessionStore((state) => state.pendingUpload);
   const operation = useRecordingSessionStore((state) => state.operation);
+  // 이 브라우저가 아니어도, 같은 팀의 다른 회의가 이미 진행 중이면 새로 시작할 수 없다.
+  const { activeMeeting: teamActiveMeeting } = useActiveMeeting(Number(teamId), {
+    isEnabled: !isPreview,
+  });
+  const hasTeamActiveMeetingElsewhere =
+    !isPreview && teamActiveMeeting !== null && teamActiveMeeting.meetingId !== meetingId;
 
   const recordingSessionId =
     !isPreview && activeRecording?.meetingId === meetingId
@@ -62,6 +69,7 @@ export const useCurrentMeetingRecordingSession = ({
     isOperationIdle: operation === 'idle',
     isBrowserRecorderActive: recorderStatus === 'recording' || recorderStatus === 'paused',
     hasActiveRecording: activeRecording !== null,
+    hasTeamActiveMeetingElsewhere,
     hasRecordingSession: recordingSessionId !== null,
     connectionStatus,
   });

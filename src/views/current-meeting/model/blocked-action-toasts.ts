@@ -1,6 +1,7 @@
 import type { AppToastVariant } from '@/shared/ui';
 
-export type RecordingBlockedReason = 'connecting' | 'disconnected' | 'other-recording';
+export type RecordingBlockedReason =
+  'connecting' | 'disconnected' | 'other-recording' | 'team-recording';
 
 interface BlockedToast {
   message: string;
@@ -14,4 +15,5 @@ export const RECORDING_BLOCKED_TOASTS: Record<RecordingBlockedReason, BlockedToa
   },
   disconnected: { message: '서버에 연결할 수 없습니다.', variant: 'danger' },
   'other-recording': { message: '녹음이 진행중입니다.', variant: 'info' },
+  'team-recording': { message: '다른 회의에서 녹음이 진행 중입니다.', variant: 'info' },
 };
