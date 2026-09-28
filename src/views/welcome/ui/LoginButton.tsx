@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { startKakaoLogin } from '@/features/auth';
 import { useHome } from '@/features/home';
 import { useStartTeamSpace } from '@/features/team-space';
+import { useAppToast } from '@/shared/ui';
 import { TeamSpaceStartSheet } from './TeamSpaceStartSheet';
 
 interface LoginButtonProps {
@@ -12,15 +13,28 @@ interface LoginButtonProps {
   authState?: 'unauthenticated' | 'authenticated';
   isTeamSpaceSheetInitiallyOpen?: boolean;
   loginError?: string;
+  isAuthRequiredNotice?: boolean;
 }
 
 export const LoginButton = ({
   authState = 'unauthenticated',
   isTeamSpaceSheetInitiallyOpen = false,
   loginError,
+  isAuthRequiredNotice = false,
 }: LoginButtonProps) => {
   const router = useRouter();
+  const { showToast } = useAppToast();
   const [isTeamSpaceSheetOpen, setIsTeamSpaceSheetOpen] = useState(isTeamSpaceSheetInitiallyOpen);
+  const hasShownAuthRequiredToast = useRef(false);
+
+  useEffect(() => {
+    // Strict Mode에서 effect가 두 번 실행돼도 토스트가 중복으로 뜨지 않도록 막는다.
+    if (!isAuthRequiredNotice || hasShownAuthRequiredToast.current) return;
+    hasShownAuthRequiredToast.current = true;
+    showToast('로그인이 필요합니다', 'warning');
+    router.replace('/');
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- authRequired 쿼리로 진입했을 때 1회만 실행
+  }, [isAuthRequiredNotice]);
   const { isCheckingActiveTeam, hasActiveTeam, hasActiveTeamError, startTeamSpace } =
     useStartTeamSpace({
       isEnabled: authState === 'authenticated',

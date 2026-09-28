@@ -5,6 +5,8 @@ interface WelcomePageProps {
   authState?: 'unauthenticated' | 'authenticated';
   isTeamSpaceSheetInitiallyOpen?: boolean;
   loginError?: string;
+  /** 로그인 없이 보호된 라우트에 접근해 리다이렉트된 경우 안내 토스트를 띄운다. */
+  isAuthRequiredNotice?: boolean;
 }
 
 const FEATURES = ['실시간 녹취와 자동 요약', '태스크 생성과 담당자 배정', 'AI 회의 코칭과 리포트'];
@@ -13,6 +15,7 @@ export const WelcomePage = ({
   authState = 'unauthenticated',
   isTeamSpaceSheetInitiallyOpen = false,
   loginError,
+  isAuthRequiredNotice = false,
 }: WelcomePageProps) => {
   return (
     <div className="flex flex-1 flex-col bg-white px-6 pt-20 pb-10">
@@ -46,6 +49,7 @@ export const WelcomePage = ({
         authState={authState}
         isTeamSpaceSheetInitiallyOpen={isTeamSpaceSheetInitiallyOpen}
         loginError={loginError}
+        isAuthRequiredNotice={isAuthRequiredNotice}
       />
     </div>
   );
