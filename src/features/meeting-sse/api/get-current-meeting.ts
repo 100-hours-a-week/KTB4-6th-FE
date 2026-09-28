@@ -26,6 +26,10 @@ interface MeetingParticipantListData {
 interface ActiveRecordingData {
   startedByTeamMemberId: number;
   status: 'RECORDING' | 'PAUSED';
+  startedAt: string;
+  pausedAt: string | null;
+  totalPausedDurationMs: number;
+  endedAt: string | null;
 }
 
 export interface CurrentMeetingState {
@@ -37,6 +41,10 @@ export interface CurrentMeetingState {
   recorderName: string;
   meetingStatus: MeetingDetailData['status'];
   recordingStatus: ActiveRecordingData['status'] | null;
+  recordingStartedAt: string | null;
+  recordingPausedAt: string | null;
+  recordingTotalPausedDurationMs: number | null;
+  recordingEndedAt: string | null;
   createdByTeamMemberId: number;
 }
 
@@ -100,6 +108,10 @@ export const getCurrentMeetingState = async (meetingId: number): Promise<Current
     recorderName,
     meetingStatus: meeting.status,
     recordingStatus: activeRecording?.status ?? null,
+    recordingStartedAt: activeRecording?.startedAt ?? null,
+    recordingPausedAt: activeRecording?.pausedAt ?? null,
+    recordingTotalPausedDurationMs: activeRecording?.totalPausedDurationMs ?? null,
+    recordingEndedAt: activeRecording?.endedAt ?? null,
     createdByTeamMemberId: meeting.createdByTeamMemberId,
   };
 };
