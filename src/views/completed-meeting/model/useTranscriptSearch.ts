@@ -15,10 +15,19 @@ interface UseTranscriptSearchParams {
  */
 export const useTranscriptSearch = ({ meetingId, entries }: UseTranscriptSearchParams) => {
   const [searchInput, setSearchInput] = useState('');
+  const [submittedInput, setSubmittedInput] = useState('');
   const [matchIndex, setMatchIndex] = useState(0);
   const [previousKeyword, setPreviousKeyword] = useState<string | null>(null);
 
-  const { keyword, matches } = useMeetingTranscriptSearch(meetingId, searchInput);
+  const { keyword, matches } = useMeetingTranscriptSearch(meetingId, submittedInput);
+
+  /** 입력을 마치고 제출했을 때(Enter, 검색 버튼) 그 시점의 입력값으로 검색한다. */
+  const submitSearch = () => setSubmittedInput(searchInput);
+
+  const clearSearch = () => {
+    setSearchInput('');
+    setSubmittedInput('');
+  };
 
   const matchIds = useMemo(() => {
     if (!keyword) return [];
@@ -52,6 +61,8 @@ export const useTranscriptSearch = ({ meetingId, entries }: UseTranscriptSearchP
   return {
     searchInput,
     setSearchInput,
+    submitSearch,
+    clearSearch,
     keyword,
     currentMatchId,
     matchCount: matchIds.length,
