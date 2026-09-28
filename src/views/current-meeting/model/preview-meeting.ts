@@ -20,6 +20,8 @@ export interface CurrentMeetingViewModel {
   createdByTeamMemberId: number;
   /** 녹음을 시작한 팀원 ID. 새로고침 등으로 로컬 녹음 세션이 사라져도 녹음자 권한을 복원하는 데 쓴다 */
   recordingStartedByTeamMemberId: number | null;
+  /** 서버가 알고 있는 녹음 세션 ID. 로컬 녹음 세션이 없을 때도 종료 요청에 쓴다 */
+  recordingSessionId: number | null;
   elapsedSeconds: number;
   recordingStatus: 'waiting' | 'recording' | 'paused' | 'ending';
   connectionStatus: 'connected' | 'disconnected';
@@ -91,6 +93,7 @@ const baseMeeting = {
   ...mockMeetingInfo,
   createdByTeamMemberId: 1,
   recordingStartedByTeamMemberId: null,
+  recordingSessionId: null,
   connectionStatus: 'connected' as const,
 };
 

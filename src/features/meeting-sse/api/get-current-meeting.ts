@@ -24,6 +24,7 @@ interface MeetingParticipantListData {
 }
 
 interface ActiveRecordingData {
+  recordingSessionId: number;
   startedByTeamMemberId: number;
   status: 'RECORDING' | 'PAUSED';
   startedAt: string;
@@ -46,6 +47,7 @@ export interface CurrentMeetingState {
   recordingTotalPausedDurationMs: number | null;
   recordingEndedAt: string | null;
   recordingStartedByTeamMemberId: number | null;
+  recordingSessionId: number | null;
   createdByTeamMemberId: number;
 }
 
@@ -114,6 +116,7 @@ export const getCurrentMeetingState = async (meetingId: number): Promise<Current
     recordingTotalPausedDurationMs: activeRecording?.totalPausedDurationMs ?? null,
     recordingEndedAt: activeRecording?.endedAt ?? null,
     recordingStartedByTeamMemberId: activeRecording?.startedByTeamMemberId ?? null,
+    recordingSessionId: activeRecording?.recordingSessionId ?? null,
     createdByTeamMemberId: meeting.createdByTeamMemberId,
   };
 };

@@ -54,6 +54,7 @@ export const useCurrentMeetingData = ({ meetingId, previewState }: UseCurrentMee
           note: currentMeetingQuery.data.note,
           createdByTeamMemberId: currentMeetingQuery.data.createdByTeamMemberId,
           recordingStartedByTeamMemberId: currentMeetingQuery.data.recordingStartedByTeamMemberId,
+          recordingSessionId: currentMeetingQuery.data.recordingSessionId,
           elapsedSeconds,
           recordingStatus:
             currentMeetingQuery.data.meetingStatus === 'WAITING'
