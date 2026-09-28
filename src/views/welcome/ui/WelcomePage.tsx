@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { LoginButton } from './LoginButton';
 
 interface WelcomePageProps {
@@ -9,7 +10,7 @@ interface WelcomePageProps {
   isAuthRequiredNotice?: boolean;
 }
 
-const FEATURES = ['실시간 녹취와 자동 요약', '태스크 생성과 담당자 배정', 'AI 회의 코칭과 리포트'];
+const FEATURES = ['실시간 녹취와 자동 요약', 'AI 회의 코칭과 리포트'];
 
 export const WelcomePage = ({
   authState = 'unauthenticated',
@@ -19,13 +20,18 @@ export const WelcomePage = ({
 }: WelcomePageProps) => {
   return (
     <div className="flex flex-1 flex-col bg-white px-6 pt-20 pb-10">
-      <div className="flex flex-col items-start gap-5">
-        <div className="flex size-14 items-center justify-center rounded-2xl bg-brand-600">
-          <span className="size-3 rounded-full border-2 border-white" />
-        </div>
+      <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
+        <Image
+          src="/brand/mascot/meety-01-excited-transparent.png"
+          alt=""
+          width={160}
+          height={160}
+          priority
+          className="h-40 w-40"
+        />
 
-        <div className="flex flex-col gap-2">
-          <h1 className="font-display text-3xl font-bold tracking-tight text-brand-900">Meety</h1>
+        <div className="flex flex-col items-center gap-2">
+          <h1 className="font-display text-4xl font-bold tracking-tight text-brand-900">Meety</h1>
           <p className="text-base leading-relaxed text-cool-600">
             회의가 끝나면 요약과 태스크는
             <br />
@@ -33,7 +39,7 @@ export const WelcomePage = ({
           </p>
         </div>
 
-        <ul className="flex flex-col gap-2 text-sm text-cool-500">
+        <ul className="flex flex-col items-start gap-2 rounded-2xl bg-cool-50 px-6 py-5 text-sm text-cool-500">
           {FEATURES.map((feature) => (
             <li key={feature} className="flex items-center gap-2">
               <span className="size-1 shrink-0 rounded-full bg-cool-400" />
@@ -42,8 +48,6 @@ export const WelcomePage = ({
           ))}
         </ul>
       </div>
-
-      <div className="flex-1" />
 
       <LoginButton
         authState={authState}

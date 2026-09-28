@@ -1,13 +1,14 @@
 import type { Metadata } from 'next';
-import { Space_Grotesk } from 'next/font/google';
+import { Baloo_2 } from 'next/font/google';
 import { GoogleAnalytics } from '@next/third-parties/google';
 import { AppProviders } from '@/app/providers';
 import { AppFrame } from '@/app/ui';
 import { cn } from '@/shared/lib';
 import './globals.css';
 
-// 워드마크("Meety") 전용 디스플레이 서체. 본문/UI 한글 텍스트는 Pretendard(아래 head의 link)를 사용.
-const spaceGrotesk = Space_Grotesk({
+// 워드마크("Meety") 전용 디스플레이 서체. 마스코트와 어울리는 둥글둥글한 인상의 서체로 선택.
+// 본문/UI 한글 텍스트는 Pretendard(아래 head의 link)를 사용.
+const displayFont = Baloo_2({
   subsets: ['latin'],
   weight: ['700'],
   variable: '--font-display',
@@ -25,7 +26,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
     <html
       lang="ko"
       suppressHydrationWarning
-      className={cn('h-full', 'antialiased', spaceGrotesk.variable, 'font-sans')}
+      className={cn('h-full', 'antialiased', displayFont.variable, 'font-sans')}
     >
       <head>
         {/* Pretendard: 한글 UI 서체. Google Fonts 카탈로그에 없어 next/font 대신 동적 서브셋 CDN으로 로드. */}

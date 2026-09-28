@@ -121,13 +121,6 @@ export const LoginButton = ({
           {loginError}
         </p>
       ) : null}
-      <p className="text-xs text-cool-500">
-        계속하면 서비스 이용약관 및{' '}
-        <a href="#" className="underline underline-offset-2">
-          개인정보 처리방침
-        </a>
-        에 동의하게 됩니다
-      </p>
     </div>
   );
 };
