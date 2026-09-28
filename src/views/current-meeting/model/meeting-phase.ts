@@ -12,6 +12,10 @@ interface MeetingPhaseInput {
   isBrowserPaused: boolean;
   isFinishing: boolean;
   connectionStatus: CurrentMeetingConnectionStatus;
+  /** 서버가 알고 있는, 녹음을 시작한 팀원 ID */
+  recordingStartedByTeamMemberId: number | null | undefined;
+  /** 지금 이 화면을 보는 사용자의 팀원 ID */
+  myTeamMemberId: number | null;
 }
 
 /**
@@ -29,9 +33,17 @@ export const getMeetingPhase = ({
   isBrowserPaused,
   isFinishing,
   connectionStatus,
+  recordingStartedByTeamMemberId,
+  myTeamMemberId,
 }: MeetingPhaseInput) => {
   const usesServerStatus = isPreview || !hasRecordingSession;
   const isDisconnected = connectionStatus === 'error';
+  // 새로고침 등으로 이 브라우저의 녹음 세션이 사라졌어도, 서버가 이 사용자를 녹음 시작자로
+  // 알고 있으면 녹음자 권한을 복원한다.
+  const isRecorderByServer =
+    myTeamMemberId !== null &&
+    recordingStartedByTeamMemberId !== null &&
+    recordingStartedByTeamMemberId === myTeamMemberId;
 
   return {
     isWaiting: serverRecordingStatus === 'waiting' && !hasRecordingSession && !hasCompleted,
@@ -42,6 +54,8 @@ export const getMeetingPhase = ({
       (usesServerStatus ? serverRecordingStatus === 'recording' : isBrowserRecording) &&
       !isDisconnected &&
       !hasCompleted,
-    isRecorder: !hasCompleted && (isPreview ? previewRole === 'recorder' : hasRecordingSession),
+    isRecorder:
+      !hasCompleted &&
+      (isPreview ? previewRole === 'recorder' : hasRecordingSession || isRecorderByServer),
   };
 };

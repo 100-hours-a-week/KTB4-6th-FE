@@ -45,6 +45,7 @@ export interface CurrentMeetingState {
   recordingPausedAt: string | null;
   recordingTotalPausedDurationMs: number | null;
   recordingEndedAt: string | null;
+  recordingStartedByTeamMemberId: number | null;
   createdByTeamMemberId: number;
 }
 
@@ -112,6 +113,7 @@ export const getCurrentMeetingState = async (meetingId: number): Promise<Current
     recordingPausedAt: activeRecording?.pausedAt ?? null,
     recordingTotalPausedDurationMs: activeRecording?.totalPausedDurationMs ?? null,
     recordingEndedAt: activeRecording?.endedAt ?? null,
+    recordingStartedByTeamMemberId: activeRecording?.startedByTeamMemberId ?? null,
     createdByTeamMemberId: meeting.createdByTeamMemberId,
   };
 };

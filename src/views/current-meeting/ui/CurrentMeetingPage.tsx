@@ -69,7 +69,13 @@ export const CurrentMeetingPage = ({
     handleConfirmRecording,
     handlePauseResumeRecording,
     handleCompleteRecording,
-  } = useCurrentMeetingRecording({ teamId, meetingId, previewState, previewRole });
+  } = useCurrentMeetingRecording({
+    teamId,
+    meetingId,
+    previewState,
+    previewRole,
+    myTeamMemberId: team?.teamMemberId ?? null,
+  });
   useRecordingStatusSync({ meetingId, isPreview });
   const { isMeetingEndedNoticeOpen, goToResult, goHome } = useMeetingEndedNotice({
     teamId,
