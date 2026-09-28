@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Space_Grotesk } from 'next/font/google';
+import { GoogleAnalytics } from '@next/third-parties/google';
 import { AppProviders } from '@/app/providers';
 import { AppFrame } from '@/app/ui';
 import { cn } from '@/shared/lib';
@@ -11,6 +12,8 @@ const spaceGrotesk = Space_Grotesk({
   weight: ['700'],
   variable: '--font-display',
 });
+
+const gaId = process.env.NEXT_PUBLIC_GA_ID;
 
 export const metadata: Metadata = {
   title: 'Meety',
@@ -39,6 +42,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
           <AppFrame>{children}</AppFrame>
         </AppProviders>
       </body>
+      {gaId && <GoogleAnalytics gaId={gaId} />}
     </html>
   );
 }
