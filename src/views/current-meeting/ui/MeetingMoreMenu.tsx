@@ -1,7 +1,7 @@
 'use client';
 
 import { Menu } from '@base-ui/react/menu';
-import { LogOut, MoreVertical } from 'lucide-react';
+import { MoreVertical } from 'lucide-react';
 import { cn, useAppFrameElement } from '@/shared/lib';
 
 interface MeetingMoreMenuProps {
@@ -10,10 +10,7 @@ interface MeetingMoreMenuProps {
   isMeetingInProgress: boolean;
   isDeleting: boolean;
   isRecorder: boolean;
-  isPreview: boolean;
-  isLeaving: boolean;
   onDelete: () => void;
-  onLeave: () => void;
   onEditInfo: () => void;
 }
 
@@ -23,10 +20,7 @@ export const MeetingMoreMenu = ({
   isMeetingInProgress,
   isDeleting,
   isRecorder,
-  isPreview,
-  isLeaving,
   onDelete,
-  onLeave,
   onEditInfo,
 }: MeetingMoreMenuProps) => {
   const frame = useAppFrameElement();
@@ -57,19 +51,6 @@ export const MeetingMoreMenu = ({
                 )}
               >
                 회의 정보 수정
-              </Menu.Item>
-            )}
-            {!isRecorder && (
-              <Menu.Item
-                disabled={isPreview || isLeaving}
-                onClick={onLeave}
-                className={cn(
-                  'flex items-center gap-2 px-3 py-2.5 text-sm font-medium outline-none select-none',
-                  isPreview || isLeaving ? 'text-cool-400' : 'text-cool-700',
-                )}
-              >
-                <LogOut className="size-4" strokeWidth={2} />
-                {isLeaving ? '나가는 중...' : '회의 나가기'}
               </Menu.Item>
             )}
             {canDelete && (

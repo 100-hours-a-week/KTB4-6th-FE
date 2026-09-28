@@ -115,10 +115,7 @@ export const MeetingControls = ({
           isMeetingInProgress={isMeetingInProgress}
           isDeleting={isDeleting}
           isRecorder={isRecorder}
-          isPreview={isPreview}
-          isLeaving={isLeaving}
           onDelete={() => setIsDeleteDialogOpen(true)}
-          onLeave={handleLeave}
           onEditInfo={onEditInfo}
         />
       )}
