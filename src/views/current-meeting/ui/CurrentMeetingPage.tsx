@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import { useMeetingDeletedRedirect } from '@/features/home';
 import { MeetingSseConnection } from '@/features/meeting-sse';
-import { useTeamDetail } from '@/features/team-management';
+import { useTeamDetail, useTeamMembers } from '@/features/team-management';
 import { NavigationSidebar } from '@/widgets/navigation-sidebar';
 import { useCurrentMeetingRecording } from '../model/useCurrentMeetingRecording';
 import { useMeetingEndedNotice } from '../model/useMeetingEndedNotice';
@@ -40,6 +40,9 @@ export const CurrentMeetingPage = ({
   const numericTeamId = Number(teamId);
   const isPreview = previewState !== undefined;
   const { data: team } = useTeamDetail(numericTeamId, {
+    isEnabled: !isPreview && Number.isSafeInteger(numericTeamId) && numericTeamId > 0,
+  });
+  const { data: teamMembers } = useTeamMembers(numericTeamId, {
     isEnabled: !isPreview && Number.isSafeInteger(numericTeamId) && numericTeamId > 0,
   });
   const {
@@ -127,6 +130,7 @@ export const CurrentMeetingPage = ({
       )}
       <CurrentMeetingHeader
         meeting={meeting}
+        teamMemberCount={teamMembers?.length ?? null}
         isMenuDisabled={!team}
         isWaiting={isWaiting}
         isPaused={isPaused}

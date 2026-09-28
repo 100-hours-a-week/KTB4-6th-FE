@@ -48,7 +48,6 @@ export const useCurrentMeetingData = ({ meetingId, previewState }: UseCurrentMee
           title: currentMeetingQuery.data.title,
           recorderName: currentMeetingQuery.data.recorderName,
           participantCount: currentMeetingQuery.data.participantCount,
-          participantLimit: 5,
           targetMinutes: currentMeetingQuery.data.targetMinutes,
           purpose: currentMeetingQuery.data.purpose,
           note: currentMeetingQuery.data.note,

@@ -8,6 +8,8 @@ import type { CurrentMeetingConnectionStatus } from '../model/useCurrentMeetingC
 
 interface CurrentMeetingHeaderProps {
   meeting: CurrentMeetingViewModel;
+  /** 팀 전체 인원 수. 조회 전이면 null. */
+  teamMemberCount: number | null;
   isMenuDisabled: boolean;
   isWaiting: boolean;
   isPaused: boolean;
@@ -27,6 +29,7 @@ const formatElapsed = (seconds: number) =>
 
 export const CurrentMeetingHeader = ({
   meeting,
+  teamMemberCount,
   isMenuDisabled,
   isWaiting,
   isPaused,
@@ -93,7 +96,7 @@ export const CurrentMeetingHeader = ({
         <div className="min-w-0">
           <h2 className="truncate text-xl font-bold text-cool-900">{meeting.title}</h2>
           <p className="mt-1 text-sm text-cool-500">
-            참여자 {meeting.participantCount} / {meeting.participantLimit}
+            참여자 {meeting.participantCount} / {teamMemberCount ?? '-'}
           </p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1.5">
