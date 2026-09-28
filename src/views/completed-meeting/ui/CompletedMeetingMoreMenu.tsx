@@ -4,8 +4,13 @@ import { useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Menu } from '@base-ui/react/menu';
 import { FileText, Headphones, MoreVertical, Pencil, Trash2 } from 'lucide-react';
-import { MeetingApiError, meetingKeys, useDeleteAudioFile } from '@/features/meeting';
-import { cn, useAppFrameElement } from '@/shared/lib';
+import {
+  MeetingApiError,
+  meetingKeys,
+  useAudioDownloadUrl,
+  useDeleteAudioFile,
+} from '@/features/meeting';
+import { cn, downloadFile, useAppFrameElement } from '@/shared/lib';
 import { DeleteConfirmDialog, useAppToast } from '@/shared/ui';
 import { useMeetingDelete } from '../model/useMeetingDelete';
 import { useMeetingRename } from '../model/useMeetingRename';
@@ -49,7 +54,7 @@ const MoreMenuItem = ({ icon, label, isDanger, trailingText, onClick }: MoreMenu
   </Menu.Item>
 );
 
-// TODO: 다운로드는 API 연동 때 구현한다.
+// TODO: 전사·요약 다운로드는 API 연동 때 구현한다.
 export const CompletedMeetingMoreMenu = ({
   teamId,
   meetingId,
@@ -66,6 +71,10 @@ export const CompletedMeetingMoreMenu = ({
   const [openDialog, setOpenDialog] = useState<MoreMenuDialog | null>(null);
   const isLeader = viewerRole === 'leader';
   const isAudioExpired = audio.kind === 'expired';
+  const audioFileId = audio.kind === 'available' ? audio.audioFileId : null;
+  const { data: audioDownload } = useAudioDownloadUrl(audioFileId ?? undefined, {
+    isEnabled: audioFileId !== null,
+  });
 
   const closeDialog = () => setOpenDialog(null);
 
@@ -98,7 +107,16 @@ export const CompletedMeetingMoreMenu = ({
   };
 
   const handleDownloadAudio = () => {
-    if (isAudioExpired) showToast('만료된 음성 파일은 다운로드할 수 없습니다.', 'danger');
+    if (isAudioExpired) {
+      showToast('만료된 음성 파일은 다운로드할 수 없습니다.', 'danger');
+      return;
+    }
+    if (!audioDownload) {
+      showToast('음성 파일 주소를 아직 받지 못했습니다. 잠시 후 다시 시도해주세요.', 'danger');
+      return;
+    }
+
+    downloadFile(audioDownload.downloadUrl, `${meetingTitle}-음성.mp4`);
   };
 
   return (
