@@ -8,6 +8,7 @@ import { NavigationSidebar } from '@/widgets/navigation-sidebar';
 import { useCurrentMeetingRecording } from '../model/useCurrentMeetingRecording';
 import { useMeetingEndedNotice } from '../model/useMeetingEndedNotice';
 import { useMeetingInfoEdit } from '../model/useMeetingInfoEdit';
+import { useRecordingObjectLostAutoEnd } from '../model/useRecordingObjectLostAutoEnd';
 import { useRecordingStartedNotice } from '../model/useRecordingStartedNotice';
 import { useRecordingStatusSync } from '../model/useRecordingStatusSync';
 import { CurrentMeetingDialogs } from './CurrentMeetingDialogs';
@@ -16,6 +17,7 @@ import { CurrentMeetingLoadingState } from './CurrentMeetingLoadingState';
 import { MeetingControls } from './MeetingControls';
 import { MeetingEndingOverlay } from './MeetingEndingOverlay';
 import { MeetingTranscript } from './MeetingTranscript';
+import { RecordingObjectLostOverlay } from './RecordingObjectLostOverlay';
 import { WaitingForRecordingNotice } from './WaitingForRecordingNotice';
 
 interface CurrentMeetingPageProps {
@@ -69,7 +71,13 @@ export const CurrentMeetingPage = ({
     handleConfirmRecording,
     handlePauseResumeRecording,
     handleCompleteRecording,
-  } = useCurrentMeetingRecording({ teamId, meetingId, previewState, previewRole });
+  } = useCurrentMeetingRecording({
+    teamId,
+    meetingId,
+    previewState,
+    previewRole,
+    myTeamMemberId: team?.teamMemberId ?? null,
+  });
   useRecordingStatusSync({ meetingId, isPreview });
   const { isMeetingEndedNoticeOpen, goToResult, goHome } = useMeetingEndedNotice({
     teamId,
@@ -93,6 +101,14 @@ export const CurrentMeetingPage = ({
     handleSubmitEditForm,
     handleCloseEditForm,
   } = useMeetingInfoEdit({ meetingId, meeting });
+  const { isOpen: isRecordingObjectLostNoticeOpen, secondsLeft: recordingLostSecondsLeft } =
+    useRecordingObjectLostAutoEnd({
+      isPreview,
+      isRecorder,
+      isActivelyRecording: isRecording || isPaused,
+      isCompleted,
+      recordingSessionId: meeting?.recordingSessionId ?? null,
+    });
 
   // 종료 안내 모달에서 이동을 고르기 전에는 현재 회의 화면을 유지한다.
   if (isServerCompleted && completedView && !isMeetingEndedNoticeOpen) return completedView;
@@ -197,6 +213,9 @@ export const CurrentMeetingPage = ({
       )}
 
       {isEnding && <MeetingEndingOverlay />}
+      {isRecordingObjectLostNoticeOpen && (
+        <RecordingObjectLostOverlay secondsLeft={recordingLostSecondsLeft} />
+      )}
     </div>
   );
 };

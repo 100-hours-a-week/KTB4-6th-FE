@@ -11,6 +11,8 @@ interface UseCurrentMeetingRecordingParams {
   meetingId: number;
   previewState?: string;
   previewRole: 'recorder' | 'participant';
+  /** 지금 이 화면을 보는 사용자의 팀원 ID. 새로고침 후 녹음자 권한 복원에 쓴다 */
+  myTeamMemberId: number | null;
 }
 
 /** 현재 회의 화면이 쓰는 회의 정보, 녹음 시작 모달, 녹음 세션, 진행 단계를 한 번에 조립한다. */
@@ -19,6 +21,7 @@ export const useCurrentMeetingRecording = ({
   meetingId,
   previewState,
   previewRole,
+  myTeamMemberId,
 }: UseCurrentMeetingRecordingParams) => {
   const isPreview = previewState !== undefined;
   const { meeting, isMeetingPending, isServerCompleted } = useCurrentMeetingData({
@@ -75,6 +78,8 @@ export const useCurrentMeetingRecording = ({
       isBrowserPaused: recorderStatus === 'paused',
       isFinishing: operation === 'finishing',
       connectionStatus,
+      recordingStartedByTeamMemberId: meeting?.recordingStartedByTeamMemberId,
+      myTeamMemberId,
     });
 
   const handleStartRecording = () => {
