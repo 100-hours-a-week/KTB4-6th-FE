@@ -8,14 +8,14 @@ import { AppToastProvider } from '@/shared/ui';
 
 import { ThemeProvider } from './theme-provider';
 import { RecordingSessionManager } from './recording-session-manager';
-import { useAuthRetryInterceptor } from './use-auth-retry-interceptor';
+// 모듈이 로드되는 즉시 apiClient에 401 재발급 인터셉터를 등록한다 (부작용을 위한 import).
+import './use-auth-retry-interceptor';
 
 interface AppProvidersProps {
   children: ReactNode;
 }
 
 export function AppProviders({ children }: AppProvidersProps) {
-  useAuthRetryInterceptor();
   const [queryClient] = useState(
     () =>
       new QueryClient({
