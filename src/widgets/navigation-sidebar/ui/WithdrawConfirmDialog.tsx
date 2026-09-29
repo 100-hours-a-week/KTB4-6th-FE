@@ -47,7 +47,9 @@ export const WithdrawConfirmDialog = ({ isOpen, onOpenChange }: WithdrawConfirmD
             정말 탈퇴하시겠어요?
           </AlertDialog.Title>
           <AlertDialog.Description className="mt-1.5 text-sm leading-5 text-cool-500">
-            탈퇴하면 계정 정보와 모든 팀 데이터 접근 권한이 삭제되며, 복구할 수 없습니다.
+            탈퇴하면 계정 정보와 모든 팀 데이터
+            <br />
+            접근 권한이 삭제되며, 복구할 수 없습니다.
           </AlertDialog.Description>
 
           <div className="mt-5 flex gap-2">

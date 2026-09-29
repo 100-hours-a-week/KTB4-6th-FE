@@ -32,9 +32,13 @@ export const MemberKickDialog = ({
             이 팀에서 강퇴할까요?
           </AlertDialog.Title>
           <AlertDialog.Description className="mt-1.5 text-sm leading-5 text-cool-500">
-            강퇴되면 {participantName}님은 이 팀에서 즉시 퇴장되며 기존 회의 기록에 더 이상 접근할
-            수 없습니다. 기존 활동 기록은 삭제되지 않으며, 팀 관리자가 차단을 해제하기 전까지 이
-            팀에 다시 참여할 수 없습니다.
+            강퇴되면 {participantName}님은 이 팀에서 즉시 퇴장되며
+            <br />
+            기존 회의 기록에 더 이상 접근할 수 없습니다.
+            <br />
+            기존 활동 기록은 삭제되지 않으며, 팀 관리자가
+            <br />
+            차단을 해제하기 전까지 이 팀에 다시 참여할 수 없습니다.
           </AlertDialog.Description>
 
           <div className="mt-5 flex gap-2">

@@ -26,8 +26,11 @@ export const TeamDeleteDialog = ({ isOpen, onConfirm, onOpenChange }: TeamDelete
             팀이 삭제됩니다.
           </AlertDialog.Title>
           <AlertDialog.Description className="mt-1.5 text-sm leading-5 text-cool-500">
-            팀명과 저장된 모든 회의 기록이 팀원 전체에게서 삭제되며 복구할 수 없고, 남아있는 팀
-            크레딧도 함께 소멸됩니다.
+            팀명과 저장된 모든 회의 기록이
+            <br />
+            팀원 전체에게서 삭제되며 복구할 수 없고,
+            <br />
+            남아있는 팀 크레딧도 함께 소멸됩니다.
           </AlertDialog.Description>
 
           <div className="mt-5 flex gap-2">
