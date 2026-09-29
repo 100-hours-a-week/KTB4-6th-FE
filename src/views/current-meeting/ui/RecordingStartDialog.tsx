@@ -1,7 +1,16 @@
 'use client';
 
 import { Dialog } from '@base-ui/react/dialog';
-import { CircleDollarSign, Clock3, FileText, Mic, Pause, UsersRound, X } from 'lucide-react';
+import {
+  CircleDollarSign,
+  Clock3,
+  FileText,
+  Mic,
+  Pause,
+  RefreshCwOff,
+  UsersRound,
+  X,
+} from 'lucide-react';
 import { useAppFrameElement } from '@/shared/lib';
 
 interface RecordingStartDialogProps {
@@ -79,6 +88,10 @@ export const RecordingStartDialog = ({
                   className="mt-1 size-4 shrink-0 text-brand-600"
                 />
                 <span>녹음 시작 시 20 크레딧이 차감됩니다.</span>
+              </li>
+              <li className="flex gap-3">
+                <RefreshCwOff aria-hidden="true" className="mt-1 size-4 shrink-0 text-danger" />
+                <span>새로고침하거나 화면을 벗어나면 회의가 종료됩니다.</span>
               </li>
             </ul>
 

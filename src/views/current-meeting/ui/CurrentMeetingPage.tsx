@@ -4,7 +4,7 @@ import { useState, type ReactNode } from 'react';
 import { useMeetingDeletedRedirect } from '@/features/home';
 import { MeetingSseConnection } from '@/features/meeting-sse';
 import { useTeamDetail, useTeamMembers } from '@/features/team-management';
-import { useWakeLock } from '@/shared/lib';
+import { useBeforeUnloadWarning, useWakeLock } from '@/shared/lib';
 import { NavigationSidebar } from '@/widgets/navigation-sidebar';
 import { useCurrentMeetingRecording } from '../model/useCurrentMeetingRecording';
 import { useMeetingEndedNotice } from '../model/useMeetingEndedNotice';
@@ -115,6 +115,8 @@ export const CurrentMeetingPage = ({
     });
   // 녹음자의 화면이 꺼져서 녹음 객체가 소실되는 걸 막는다.
   useWakeLock(!isPreview && isRecorder && (isRecording || isPaused));
+  // 녹음자가 실수로 새로고침·탭을 닫아 녹음 객체를 잃는 걸 막는다.
+  useBeforeUnloadWarning(!isPreview && isRecorder && (isRecording || isPaused));
 
   // 종료 안내 모달에서 이동을 고르기 전에는 현재 회의 화면을 유지한다.
   if (isServerCompleted && completedView && !isMeetingEndedNoticeOpen) return completedView;
