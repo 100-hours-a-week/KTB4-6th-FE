@@ -1,12 +1,14 @@
 'use client';
 
+import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Drawer } from '@base-ui/react/drawer';
-import { Home, ListChecks, Radio, Users, X } from 'lucide-react';
+import { Bug, Home, ListChecks, Radio, Users, X } from 'lucide-react';
 import { useActiveMeeting } from '@/features/home';
 import { useTeamCredits } from '@/features/team-management';
 import { useAppFrameElement } from '@/shared/lib';
 import { useAppToast } from '@/shared/ui';
+import { BugReportDialog } from './BugReportDialog';
 import { SidebarMoreMenu } from './SidebarMoreMenu';
 import { SidebarNavItem } from './SidebarNavItem';
 
@@ -26,6 +28,7 @@ export const NavigationSidebar = ({
   teamName,
 }: NavigationSidebarProps) => {
   const frame = useAppFrameElement();
+  const [isBugReportDialogOpen, setIsBugReportDialogOpen] = useState(false);
   const { data: credits } = useTeamCredits(teamId);
   const { activeMeeting, isPending: isActiveMeetingPending } = useActiveMeeting(teamId);
   const { showToast } = useAppToast();
@@ -111,6 +114,14 @@ export const NavigationSidebar = ({
                 isActive={pathname === meetingListPath}
                 onClick={() => navigateTo(meetingListPath)}
               />
+              <SidebarNavItem
+                icon={<Bug className="size-5" strokeWidth={2} />}
+                label="버그 제보"
+                onClick={() => {
+                  onOpenChange(false);
+                  setIsBugReportDialogOpen(true);
+                }}
+              />
             </nav>
 
             <div className="mt-auto flex justify-end">
@@ -119,6 +130,8 @@ export const NavigationSidebar = ({
           </Drawer.Popup>
         </Drawer.Viewport>
       </Drawer.Portal>
+
+      <BugReportDialog isOpen={isBugReportDialogOpen} onOpenChange={setIsBugReportDialogOpen} />
     </Drawer.Root>
   );
 };
