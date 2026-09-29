@@ -2,7 +2,11 @@
 
 import { useEffect } from 'react';
 import { useRecordingWebSocket } from '@/features/recording-websocket';
-import { useMediaRecorder, useRecordingSessionStore } from '@/features/recording';
+import {
+  useMediaRecorder,
+  useRecordingChunkBuffer,
+  useRecordingSessionStore,
+} from '@/features/recording';
 import { useAppToast } from '@/shared/ui';
 
 export function RecordingSessionManager() {
@@ -14,13 +18,17 @@ export function RecordingSessionManager() {
   const { showToast } = useAppToast();
   const recordingSessionId = activeRecording?.recordingSessionId;
   const socketStatus = recordingSessionId === undefined ? undefined : statuses[recordingSessionId];
+  const { appendChunk } = useRecordingChunkBuffer(recordingSessionId ?? null);
 
   useEffect(() => {
     if (recordingSessionId === undefined) return;
 
     if (socketStatus === 'connected' && useMediaRecorder.getState().status === 'ready') {
       try {
-        startBrowserRecording((chunk) => sendAudioChunk(recordingSessionId, chunk));
+        startBrowserRecording((chunk) => {
+          sendAudioChunk(recordingSessionId, chunk);
+          appendChunk(chunk);
+        });
       } catch {
         disconnect(recordingSessionId);
         releaseMicrophone();
@@ -39,6 +47,7 @@ export function RecordingSessionManager() {
       showToast('녹음 연결이 끊어졌습니다. 회의 화면에서 상태를 확인해주세요.', 'danger');
     }
   }, [
+    appendChunk,
     disconnect,
     recorderStatus,
     recordingSessionId,
