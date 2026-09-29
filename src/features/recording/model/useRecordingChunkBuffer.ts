@@ -2,25 +2,38 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import { isOpfsSupported, openOpfsFileForWriting } from '@/shared/lib';
+import { useMediaRecorder } from './useMediaRecorder';
 
 /**
  * recordingSessionId가 있는 동안, 실시간 전송과 별개로 chunk를 OPFS에도 이어서 저장해둔다.
  * 녹음 객체가 소실돼도(새로고침 등) 그동안 쌓인 chunk를 잃지 않기 위한 로컬 백업이다.
+ *
+ * MediaRecorder 인스턴스가 바뀔 때마다(일시정지 중 연결 소실 후 재생성 등) 새 part 파일로 넘어간다.
+ * 같은 인스턴스의 일시정지·재개는 recorder 참조가 그대로라 새 part를 만들지 않는다.
+ *
  * OPFS 미지원 브라우저거나 파일을 못 열어도, 실시간 전송 경로에는 영향을 주지 않고 조용히 넘어간다.
  */
 export const useRecordingChunkBuffer = (recordingSessionId: number | null) => {
+  const recorder = useMediaRecorder((state) => state.recorder);
   const writableRef = useRef<FileSystemWritableFileStream | null>(null);
+  const sessionIdRef = useRef<number | null>(null);
+  const partIndexRef = useRef(0);
 
   useEffect(() => {
-    writableRef.current = null;
+    if (recordingSessionId === null || recorder === null || !isOpfsSupported()) return;
 
-    if (recordingSessionId === null || !isOpfsSupported()) return;
+    if (sessionIdRef.current !== recordingSessionId) {
+      sessionIdRef.current = recordingSessionId;
+      partIndexRef.current = 0;
+    }
+    partIndexRef.current += 1;
+    const partName = `recording-${recordingSessionId}-part-${partIndexRef.current}.part`;
 
     let cancelled = false;
 
     void (async () => {
       try {
-        const writable = await openOpfsFileForWriting(`recording-${recordingSessionId}.part`);
+        const writable = await openOpfsFileForWriting(partName);
 
         if (cancelled) {
           await writable.close();
@@ -39,7 +52,7 @@ export const useRecordingChunkBuffer = (recordingSessionId: number | null) => {
       writableRef.current = null;
       void writable?.close();
     };
-  }, [recordingSessionId]);
+  }, [recorder, recordingSessionId]);
 
   // effect 의존성 배열에 안전하게 넣을 수 있도록 참조를 고정한다.
   const appendChunk = useCallback((chunk: Blob) => {
