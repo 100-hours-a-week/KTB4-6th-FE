@@ -51,6 +51,7 @@ export const NicknameForm = ({
         backHref={isCreateFlow ? '/teams/create' : '/teams/join'}
         step={2}
         totalSteps={isCreateFlow ? 3 : 2}
+        centered
         title="이름을 설정해주세요"
         description={
           isCreateFlow
@@ -70,6 +71,7 @@ export const NicknameForm = ({
         <OnboardingTextField
           id="nickname"
           value={value}
+          label="이름"
           maxLength={NAME_MAX_LENGTH}
           placeholder="이름을 입력해주세요"
           helperText="2자 이상 10자 이하"

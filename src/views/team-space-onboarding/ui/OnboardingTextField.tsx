@@ -8,6 +8,8 @@ interface OnboardingTextFieldProps {
   errorMessage: string | null;
   helperText: string;
   id: string;
+  /** 입력 위에 보여줄 라벨. 없으면 스크린 리더 전용 라벨만 붙인다. */
+  label?: string;
   maxLength: number;
   onChange: (value: string) => void;
   placeholder: string;
@@ -21,6 +23,7 @@ export const OnboardingTextField = ({
   errorMessage,
   helperText,
   id,
+  label,
   maxLength,
   onChange,
   placeholder,
@@ -32,8 +35,11 @@ export const OnboardingTextField = ({
 
   return (
     <div>
-      <label htmlFor={id} className="sr-only">
-        {placeholder}
+      <label
+        htmlFor={id}
+        className={label ? 'mb-2 block text-sm font-semibold text-cool-900' : 'sr-only'}
+      >
+        {label ?? placeholder}
       </label>
       <input
         id={id}

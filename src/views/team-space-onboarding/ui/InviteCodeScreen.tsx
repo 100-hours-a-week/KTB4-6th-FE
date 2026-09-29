@@ -44,8 +44,14 @@ export const InviteCodeForm = ({
         backHref="/?teamSpace=start"
         step={1}
         totalSteps={2}
+        centered
         title="초대 코드를 입력해주세요"
-        description="전달받은 8자리 코드로 팀 스페이스에 참여할 수 있어요."
+        description={
+          <>
+            팀장에게 전달받은 8자리 코드로
+            <br />팀 스페이스에 참여할 수 있어요.
+          </>
+        }
         action={
           <OnboardingActionButton
             type="submit"
@@ -59,6 +65,7 @@ export const InviteCodeForm = ({
         <OnboardingTextField
           id="invite-code"
           value={value}
+          label="초대 코드"
           maxLength={INVITE_CODE_LENGTH}
           autoCapitalize="characters"
           placeholder="8자리 초대 코드"
