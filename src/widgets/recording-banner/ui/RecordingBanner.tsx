@@ -15,6 +15,7 @@ export function RecordingBanner() {
   const activeRecording = useRecordingSessionStore((state) => state.activeRecording);
   const recorderStatus = useMediaRecorder((state) => state.status);
   const operation = useRecordingSessionStore((state) => state.operation);
+  const isPausedByUser = useRecordingSessionStore((state) => state.isPausedByUser);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -33,7 +34,7 @@ export function RecordingBanner() {
   const statusLabel =
     operation === 'finishing'
       ? '회의 종료 중'
-      : recorderStatus === 'paused'
+      : isPausedByUser
         ? '녹음 일시정지'
         : recorderStatus === 'idle'
           ? '녹음 연결 끊김'
