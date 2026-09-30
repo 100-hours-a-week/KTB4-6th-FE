@@ -4,21 +4,27 @@ import { useEffect, useRef } from 'react';
 import { useRecordingWebSocket } from '@/features/recording-websocket';
 import {
   appendRecordingChunk,
+  useCompleteRecording,
   useMediaRecorder,
   useRecordingChunkBuffer,
   useRecordingSessionStore,
+  useUploadPendingRecordingParts,
 } from '@/features/recording';
 import { useAppToast } from '@/shared/ui';
 
-const RECOVERY_MAX_ATTEMPTS = 3;
+const RECOVERY_MAX_ATTEMPTS = 2;
 const RECOVERY_RETRY_DELAY_MS = 2000;
 
 export function RecordingSessionManager() {
   const activeRecording = useRecordingSessionStore((state) => state.activeRecording);
+  const setOperation = useRecordingSessionStore((state) => state.setOperation);
+  const clearActiveRecording = useRecordingSessionStore((state) => state.clearActiveRecording);
   const recorderStatus = useMediaRecorder((state) => state.status);
   const prepareMicrophone = useMediaRecorder((state) => state.prepare);
   const startBrowserRecording = useMediaRecorder((state) => state.start);
   const releaseMicrophone = useMediaRecorder((state) => state.release);
+  const uploadPendingRecordingParts = useUploadPendingRecordingParts();
+  const completeRecording = useCompleteRecording();
   const { statuses, connect, sendAudioChunk, disconnect } = useRecordingWebSocket();
   const { showToast } = useAppToast();
   const recordingSessionId = activeRecording?.recordingSessionId;
@@ -62,8 +68,23 @@ export function RecordingSessionManager() {
     if (connectionLost) releaseMicrophone();
 
     if (recoveryAttempts.current >= RECOVERY_MAX_ATTEMPTS) {
-      // TODO(#112): 재시도가 전부 실패했을 때, OPFS에 쌓인 part를 병합·업로드하고
-      // 회의를 종료 처리한다. 지금은 더 이상 재시도하지 않고 멈춘다.
+      // 재시도를 다 실패했다 — 더 이어갈 방법이 없으니, 그동안 OPFS에 쌓인 part를
+      // 병합·업로드해보고(실패해도 종료 자체는 진행) 정상 종료와 같은 방식으로 회의를 끝낸다.
+      if (useRecordingSessionStore.getState().operation === 'idle') {
+        setOperation('finishing');
+        void (async () => {
+          try {
+            await uploadPendingRecordingParts(recordingSessionId).catch(() => {});
+            await completeRecording.mutateAsync(recordingSessionId);
+            disconnect(recordingSessionId);
+            clearActiveRecording(recordingSessionId);
+          } catch {
+            showToast('연결이 끊겨 회의를 자동으로 종료하려 했지만 실패했습니다.', 'danger');
+          } finally {
+            setOperation('idle');
+          }
+        })();
+      }
       return;
     }
 
@@ -92,6 +113,8 @@ export function RecordingSessionManager() {
       window.clearTimeout(timeoutId);
     };
   }, [
+    clearActiveRecording,
+    completeRecording,
     connect,
     disconnect,
     prepareMicrophone,
@@ -99,9 +122,11 @@ export function RecordingSessionManager() {
     recordingSessionId,
     releaseMicrophone,
     sendAudioChunk,
+    setOperation,
     showToast,
     socketStatus,
     startBrowserRecording,
+    uploadPendingRecordingParts,
   ]);
 
   return null;
