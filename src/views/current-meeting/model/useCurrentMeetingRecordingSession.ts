@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useActiveMeeting } from '@/features/home';
 import { useMediaRecorder, useRecordingSessionStore } from '@/features/recording';
 import { getRecordingAvailability } from './recording-availability';
@@ -16,6 +16,12 @@ interface UseCurrentMeetingRecordingSessionParams {
   isPreview: boolean;
   previewConnectionStatus: 'connected' | 'disconnected';
   isRecordingAcknowledged: boolean;
+  /** 서버가 이 사용자를 녹음 시작자로 기억하고 있는지 */
+  isRecorderByServer: boolean;
+  /** 서버가 알고 있는 녹음 세션 ID. 로컬 녹음 세션이 없을 때 복원하는 데 쓴다 */
+  serverRecordingSessionId: number | null;
+  /** 서버가 알고 있는 녹음 시작 시각. 로컬 녹음 세션이 없을 때 복원하는 데 쓴다 */
+  serverRecordingStartedAt: string | null;
   onRecordingStarted: () => void;
   onInsufficientCredit: () => void;
 }
@@ -31,12 +37,16 @@ export const useCurrentMeetingRecordingSession = ({
   isPreview,
   previewConnectionStatus,
   isRecordingAcknowledged,
+  isRecorderByServer,
+  serverRecordingSessionId,
+  serverRecordingStartedAt,
   onRecordingStarted,
   onInsufficientCredit,
 }: UseCurrentMeetingRecordingSessionParams) => {
   const [isCompleted, setIsCompleted] = useState(false);
   const recorderStatus = useMediaRecorder((state) => state.status);
   const activeRecording = useRecordingSessionStore((state) => state.activeRecording);
+  const setActiveRecording = useRecordingSessionStore((state) => state.setActiveRecording);
   const pendingUpload = useRecordingSessionStore((state) => state.pendingUpload);
   const operation = useRecordingSessionStore((state) => state.operation);
   // 이 브라우저가 아니어도, 같은 팀의 다른 회의가 이미 진행 중이면 새로 시작할 수 없다.
@@ -46,10 +56,40 @@ export const useCurrentMeetingRecordingSession = ({
   const hasTeamActiveMeetingElsewhere =
     !isPreview && teamActiveMeeting !== null && teamActiveMeeting.meetingId !== meetingId;
 
-  const recordingSessionId =
+  const localRecordingSessionId =
     !isPreview && activeRecording?.meetingId === meetingId
       ? activeRecording.recordingSessionId
       : null;
+  // 새로고침 등으로 로컬 녹음 세션이 없어도, 서버가 이 사용자를 녹음 시작자로 기억하고
+  // 있으면 서버 값으로 대체한다.
+  const recordingSessionId =
+    localRecordingSessionId ?? (!isPreview && isRecorderByServer ? serverRecordingSessionId : null);
+
+  // RecordingSessionManager는 이 화면과 별개로 동작해서 서버 조회 결과를 직접 못 보기
+  // 때문에, 복원한 recordingSessionId를 store에도 채워 넣어야 재생성·재연결을 시도할 수 있다.
+  useEffect(() => {
+    if (isPreview || localRecordingSessionId !== null || !isRecorderByServer) return;
+    if (serverRecordingSessionId === null) return;
+
+    setActiveRecording({
+      teamId,
+      meetingId,
+      recordingSessionId: serverRecordingSessionId,
+      startedAt: serverRecordingStartedAt
+        ? new Date(serverRecordingStartedAt).getTime()
+        : Date.now(),
+    });
+  }, [
+    isPreview,
+    localRecordingSessionId,
+    isRecorderByServer,
+    serverRecordingSessionId,
+    serverRecordingStartedAt,
+    teamId,
+    meetingId,
+    setActiveRecording,
+  ]);
+
   const connectionStatus = useCurrentMeetingConnection({
     meetingId,
     recordingSessionId,
