@@ -108,6 +108,7 @@ export const useCurrentMeetingRecording = ({
     isTranscriptHistoryError,
     isWaiting,
     isPaused,
+    isPausedByUser,
     isEnding,
     connectionStatus,
     isDisconnected,
