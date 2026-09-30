@@ -17,6 +17,7 @@ const RECOVERY_RETRY_DELAY_MS = 2000;
 
 export function RecordingSessionManager() {
   const activeRecording = useRecordingSessionStore((state) => state.activeRecording);
+  const isPausedByUser = useRecordingSessionStore((state) => state.isPausedByUser);
   const setOperation = useRecordingSessionStore((state) => state.setOperation);
   const clearActiveRecording = useRecordingSessionStore((state) => state.clearActiveRecording);
   const recorderStatus = useMediaRecorder((state) => state.status);
@@ -55,14 +56,17 @@ export function RecordingSessionManager() {
       return;
     }
 
+    // 일시정지는 이제 recorder를 없애는 방식이라 recorderStatus가 'paused'가 될 일은 없다.
     const connectionLost =
       socketStatus === 'error' ||
       socketStatus === 'unconfigured' ||
-      (socketStatus === 'idle' && (recorderStatus === 'recording' || recorderStatus === 'paused'));
+      (socketStatus === 'idle' && recorderStatus === 'recording');
 
     // 소켓만 끊긴 경우든, 새로고침 등으로 recorder 자체가 없어진 경우든 전부 같은 방식으로
     // 복구한다 — 마이크·recorder를 다시 만들고 같은 recordingSessionId로 재연결한다.
-    const needsRecovery = connectionLost || recorderStatus === 'idle';
+    // 사용자가 직접 일시정지한 거라면(recorder도 이때 없앤다) 자동으로 끼어들지 않고
+    // 재개를 눌러 isPausedByUser가 false가 될 때까지 기다린다.
+    const needsRecovery = (connectionLost || recorderStatus === 'idle') && !isPausedByUser;
     if (!needsRecovery) return;
 
     if (connectionLost) releaseMicrophone();
@@ -117,6 +121,7 @@ export function RecordingSessionManager() {
     completeRecording,
     connect,
     disconnect,
+    isPausedByUser,
     prepareMicrophone,
     recorderStatus,
     recordingSessionId,

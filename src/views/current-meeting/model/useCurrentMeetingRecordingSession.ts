@@ -49,6 +49,7 @@ export const useCurrentMeetingRecordingSession = ({
   const setActiveRecording = useRecordingSessionStore((state) => state.setActiveRecording);
   const pendingUpload = useRecordingSessionStore((state) => state.pendingUpload);
   const operation = useRecordingSessionStore((state) => state.operation);
+  const isPausedByUser = useRecordingSessionStore((state) => state.isPausedByUser);
   // 이 브라우저가 아니어도, 같은 팀의 다른 회의가 이미 진행 중이면 새로 시작할 수 없다.
   const { activeMeeting: teamActiveMeeting } = useActiveMeeting(Number(teamId), {
     isEnabled: !isPreview,
@@ -107,7 +108,9 @@ export const useCurrentMeetingRecordingSession = ({
     isStartingRecording,
     isUploadCompleted,
     isOperationIdle: operation === 'idle',
-    isBrowserRecorderActive: recorderStatus === 'recording' || recorderStatus === 'paused',
+    // 일시정지 중엔 recorder 자체가 없어서 recorderStatus가 'idle'이 된다 — isPausedByUser로
+    // "일시정지라서 없는 것"과 "연결이 끊겨서 없는 것"을 구분해 버튼이 계속 눌리게 한다.
+    isBrowserRecorderActive: recorderStatus === 'recording' || isPausedByUser,
     hasActiveRecording: activeRecording !== null,
     hasTeamActiveMeetingElsewhere,
     hasRecordingSession: recordingSessionId !== null,
@@ -137,6 +140,7 @@ export const useCurrentMeetingRecordingSession = ({
   return {
     recordingSessionId,
     recorderStatus,
+    isPausedByUser,
     operation,
     connectionStatus,
     isCompleted,

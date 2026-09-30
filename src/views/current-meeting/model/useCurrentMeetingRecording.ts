@@ -49,6 +49,7 @@ export const useCurrentMeetingRecording = ({
   const {
     recordingSessionId,
     recorderStatus,
+    isPausedByUser,
     operation,
     connectionStatus,
     isCompleted,
@@ -88,7 +89,8 @@ export const useCurrentMeetingRecording = ({
       isPreviewEnding: isPreview && previewState === 'ending',
       previewRole,
       isBrowserRecording: recorderStatus === 'recording',
-      isBrowserPaused: recorderStatus === 'paused',
+      // 일시정지 중엔 recorder 자체가 없어서 recorderStatus로는 구분이 안 된다.
+      isBrowserPaused: isPausedByUser,
       isFinishing: operation === 'finishing',
       connectionStatus,
       isRecorderByServer,
