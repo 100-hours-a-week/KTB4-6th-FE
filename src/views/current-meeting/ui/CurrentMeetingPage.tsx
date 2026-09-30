@@ -53,6 +53,7 @@ export const CurrentMeetingPage = ({
     isTranscriptHistoryError,
     isWaiting,
     isPaused,
+    isPausedByUser,
     isEnding,
     connectionStatus,
     isDisconnected,
@@ -112,6 +113,7 @@ export const CurrentMeetingPage = ({
     isRecorder,
     isActivelyRecording: isRecording || isPaused,
     isCompleted,
+    isPausedByUser,
   });
   // 녹음자의 화면이 꺼져서 녹음 객체가 소실되는 걸 막는다.
   useWakeLock(!isPreview && isRecorder && (isRecording || isPaused));
