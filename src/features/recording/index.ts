@@ -10,4 +10,5 @@ export { readOpfsPartFilesInOrder, removeOpfsPartFiles } from './model/opfs-reco
 export { useRecordingSessionStore } from './model/useRecordingSessionStore';
 export { useStartRecording } from './model/useStartRecording';
 export { useUpdateRecordingStatus } from './model/useUpdateRecordingStatus';
+export { useUploadPendingRecordingParts } from './model/useUploadPendingRecordingParts';
 export { useUploadRecordingFile } from './model/useUploadRecordingFile';

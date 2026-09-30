@@ -21,6 +21,8 @@ export interface CurrentMeetingViewModel {
   recordingStartedByTeamMemberId: number | null;
   /** 서버가 알고 있는 녹음 세션 ID. 로컬 녹음 세션이 없을 때도 종료 요청에 쓴다 */
   recordingSessionId: number | null;
+  /** 서버가 알고 있는 녹음 시작 시각. 로컬 녹음 세션이 없을 때 복원하는 데 쓴다 */
+  recordingStartedAt: string | null;
   elapsedSeconds: number;
   recordingStatus: 'waiting' | 'recording' | 'paused' | 'ending';
   connectionStatus: 'connected' | 'disconnected';
@@ -92,6 +94,7 @@ const baseMeeting = {
   createdByTeamMemberId: 1,
   recordingStartedByTeamMemberId: null,
   recordingSessionId: null,
+  recordingStartedAt: null,
   connectionStatus: 'connected' as const,
 };
 
