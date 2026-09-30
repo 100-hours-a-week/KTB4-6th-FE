@@ -26,16 +26,26 @@ export const appendRecordingChunk = (chunk: Blob) => {
 };
 
 /**
- * 지금까지 예약된 OPFS 쓰기가 전부 끝날 때까지 기다린다.
- * 회의 종료 직전 마지막 chunk까지 파일에 반영됐는지 확인하고 나서 읽어가려는 용도.
+ * 지금 열려있는 OPFS part 파일에 예약된 쓰기를 전부 끝내고 닫는다.
+ *
+ * OPFS는 close()해야 실제 파일로 커밋된다 — 그 전까지는 브라우저 내부 스왑 파일
+ * 상태라 디렉터리 목록에도 안 잡히고 읽을 수도 없다. 그래서 회의를 끝내는 흐름에서
+ * part 파일들을 읽어가기 전에 반드시 이걸 먼저 불러야 지금 쓰던 part까지 포함된다.
+ *
+ * 부르고 나면 이 part는 더 이상 이어쓸 수 없다 — recorder가 바뀌어야 새 part가
+ * 열리므로, 녹음을 계속 이어갈 생각이면 부르면 안 되고 회의를 끝낼 때만 쓴다.
  */
-export const flushRecordingChunks = () => pendingWrite;
-
-const closeCurrentPart = () => {
+export const flushRecordingChunks = () => {
   const writable = currentWritable;
   currentWritable = null;
-  if (!writable) return;
-  pendingWrite = pendingWrite.then(() => writable.close()).catch(() => {});
+  if (!writable) return pendingWrite;
+
+  pendingWrite = pendingWrite
+    .then(() => writable.close())
+    .catch(() => {
+      // close에 실패해도 이후 읽기 시도에서 실패로 드러난다.
+    });
+  return pendingWrite;
 };
 
 /**
@@ -90,7 +100,7 @@ export const useRecordingChunkBuffer = (recordingSessionId: number | null) => {
 
     return () => {
       cancelled = true;
-      closeCurrentPart();
+      flushRecordingChunks();
     };
   }, [recorder, recordingSessionId]);
 };
