@@ -1,9 +1,42 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { isOpfsSupported, openOpfsFileForWriting } from '@/shared/lib';
 import { findLatestOpfsPartIndex, partFileName } from './opfs-recording-parts';
 import { useMediaRecorder } from './useMediaRecorder';
+
+// recordedChunks(useMediaRecorder.ts)와 같은 이유로 모듈 레벨 상태로 둔다 — 이 훅은
+// RecordingSessionManager 하나에서만 호출되지만, 회의 종료 흐름(useCompleteRecordingFlow)처럼
+// 완전히 다른 위치에서도 "지금 쓰던 걸 다 끝내고 나서" 접근할 수 있어야 해서다.
+let currentWritable: FileSystemWritableFileStream | null = null;
+let pendingWrite: Promise<void> = Promise.resolve();
+let currentSessionId: number | null = null;
+let currentPartIndex = 0;
+
+/** 지금 열려있는 OPFS part 파일에 chunk를 순서대로 이어쓴다. 파일이 없으면 조용히 무시한다. */
+export const appendRecordingChunk = (chunk: Blob) => {
+  const writable = currentWritable;
+  if (!writable) return;
+
+  pendingWrite = pendingWrite
+    .then(() => writable.write(chunk))
+    .catch(() => {
+      // 개별 chunk 쓰기 실패는 무시한다 — 실시간 전송 경로에는 영향 없다.
+    });
+};
+
+/**
+ * 지금까지 예약된 OPFS 쓰기가 전부 끝날 때까지 기다린다.
+ * 회의 종료 직전 마지막 chunk까지 파일에 반영됐는지 확인하고 나서 읽어가려는 용도.
+ */
+export const flushRecordingChunks = () => pendingWrite;
+
+const closeCurrentPart = () => {
+  const writable = currentWritable;
+  currentWritable = null;
+  if (!writable) return;
+  pendingWrite = pendingWrite.then(() => writable.close()).catch(() => {});
+};
 
 /**
  * recordingSessionId가 있는 동안, 실시간 전송과 별개로 chunk를 OPFS에도 이어서 저장해둔다.
@@ -20,9 +53,6 @@ import { useMediaRecorder } from './useMediaRecorder';
  */
 export const useRecordingChunkBuffer = (recordingSessionId: number | null) => {
   const recorder = useMediaRecorder((state) => state.recorder);
-  const writableRef = useRef<FileSystemWritableFileStream | null>(null);
-  const sessionIdRef = useRef<number | null>(null);
-  const partIndexRef = useRef(0);
 
   useEffect(() => {
     if (recordingSessionId === null || recorder === null || !isOpfsSupported()) return;
@@ -30,19 +60,19 @@ export const useRecordingChunkBuffer = (recordingSessionId: number | null) => {
     let cancelled = false;
 
     void (async () => {
-      if (sessionIdRef.current !== recordingSessionId) {
+      if (currentSessionId !== recordingSessionId) {
         try {
-          partIndexRef.current = await findLatestOpfsPartIndex(recordingSessionId);
+          currentPartIndex = await findLatestOpfsPartIndex(recordingSessionId);
         } catch {
-          partIndexRef.current = 0;
+          currentPartIndex = 0;
         }
-        sessionIdRef.current = recordingSessionId;
+        currentSessionId = recordingSessionId;
       }
 
       if (cancelled) return;
 
-      partIndexRef.current += 1;
-      const partName = partFileName(recordingSessionId, partIndexRef.current);
+      currentPartIndex += 1;
+      const partName = partFileName(recordingSessionId, currentPartIndex);
 
       try {
         const writable = await openOpfsFileForWriting(partName);
@@ -52,7 +82,7 @@ export const useRecordingChunkBuffer = (recordingSessionId: number | null) => {
           return;
         }
 
-        writableRef.current = writable;
+        currentWritable = writable;
       } catch {
         // OPFS를 못 열어도 실시간 전송은 그대로 진행되니 조용히 넘어간다.
       }
@@ -60,18 +90,7 @@ export const useRecordingChunkBuffer = (recordingSessionId: number | null) => {
 
     return () => {
       cancelled = true;
-      const writable = writableRef.current;
-      writableRef.current = null;
-      void writable?.close();
+      closeCurrentPart();
     };
   }, [recorder, recordingSessionId]);
-
-  // effect 의존성 배열에 안전하게 넣을 수 있도록 참조를 고정한다.
-  const appendChunk = useCallback((chunk: Blob) => {
-    void writableRef.current?.write(chunk).catch(() => {
-      // 개별 chunk 쓰기 실패는 무시한다 — 실시간 전송 경로에는 영향 없다.
-    });
-  }, []);
-
-  return { appendChunk };
 };
