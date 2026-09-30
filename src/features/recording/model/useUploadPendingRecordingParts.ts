@@ -29,7 +29,11 @@ export const useUploadPendingRecordingParts = () => {
 
     // 지금까지 예약된 OPFS 쓰기가 전부 끝날 때까지 기다린 다음 세션 전체의 part 파일을 읽는다.
     await flushRecordingChunks();
-    const parts = await readOpfsPartFilesInOrder(recordingSessionId);
+    // recorder만 만들어지고 chunk가 하나도 안 쓰인 part는 0바이트로 남는다(재연결 실패 등).
+    // 빈 파일이 하나라도 섞이면 ffmpeg 병합이 통째로 실패하므로 여기서 걸러낸다.
+    const parts = (await readOpfsPartFilesInOrder(recordingSessionId)).filter(
+      (part) => part.size > 0,
+    );
     if (parts.length === 0) throw new Error('저장된 녹음 파일이 없습니다.');
 
     const convertedRecording = await convertToMp4(parts, `recording-${recordingSessionId}.mp4`);
