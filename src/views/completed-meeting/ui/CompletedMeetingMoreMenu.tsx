@@ -1,0 +1,202 @@
+'use client';
+
+import { useState, type ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { Menu } from '@base-ui/react/menu';
+import { FileText, Headphones, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import {
+  MeetingApiError,
+  meetingKeys,
+  useAudioDownloadUrl,
+  useDeleteAudioFile,
+} from '@/features/meeting';
+import { cn, downloadFile, useAppFrameElement } from '@/shared/lib';
+import { DeleteConfirmDialog, useAppToast } from '@/shared/ui';
+import { useMeetingDelete } from '../model/useMeetingDelete';
+import { useMeetingRename } from '../model/useMeetingRename';
+import type { CompletedMeetingViewerRole } from '../model/preview-completed-meeting';
+import type { AudioViewState } from '../model/useAudioViewState';
+import { MeetingRenameDialog } from './MeetingRenameDialog';
+
+interface CompletedMeetingMoreMenuProps {
+  teamId: string;
+  meetingId: number;
+  meetingTitle: string;
+  viewerRole: CompletedMeetingViewerRole;
+  audio: AudioViewState;
+}
+
+type MoreMenuDialog = 'rename' | 'audio-delete' | 'meeting-delete';
+
+interface MoreMenuItemProps {
+  icon: ReactNode;
+  label: string;
+  isDanger?: boolean;
+  trailingText?: string;
+  onClick?: () => void;
+}
+
+const MoreMenuItem = ({ icon, label, isDanger, trailingText, onClick }: MoreMenuItemProps) => (
+  <Menu.Item
+    onClick={onClick}
+    className={cn(
+      'flex min-h-12 items-center gap-3 border-t border-cool-100 px-4 py-3 text-sm font-medium outline-none select-none first:border-t-0',
+      isDanger ? 'text-danger' : 'text-cool-900',
+    )}
+  >
+    <span aria-hidden="true" className={cn('shrink-0', isDanger ? 'text-danger' : 'text-cool-500')}>
+      {icon}
+    </span>
+    {label}
+    {trailingText && (
+      <span className="ml-auto text-xs font-normal text-cool-500">{trailingText}</span>
+    )}
+  </Menu.Item>
+);
+
+// TODO: 전사·요약 다운로드는 API 연동 때 구현한다.
+export const CompletedMeetingMoreMenu = ({
+  teamId,
+  meetingId,
+  meetingTitle,
+  viewerRole,
+  audio,
+}: CompletedMeetingMoreMenuProps) => {
+  const frame = useAppFrameElement();
+  const queryClient = useQueryClient();
+  const { showToast } = useAppToast();
+  const { rename } = useMeetingRename({ meetingId });
+  const { mutate: deleteAudio } = useDeleteAudioFile();
+  const { requestDelete } = useMeetingDelete({ teamId, meetingId });
+  const [openDialog, setOpenDialog] = useState<MoreMenuDialog | null>(null);
+  const isLeader = viewerRole === 'leader';
+  const isAudioExpired = audio.kind === 'expired';
+  const audioFileId = audio.kind === 'available' ? audio.audioFileId : null;
+  const { data: audioDownload } = useAudioDownloadUrl(audioFileId ?? undefined, {
+    isEnabled: audioFileId !== null,
+  });
+
+  const closeDialog = () => setOpenDialog(null);
+
+  const handleConfirmRename = (title: string) => {
+    closeDialog();
+    rename(title);
+  };
+
+  const handleConfirmAudioDelete = () => {
+    closeDialog();
+    if (audio.kind !== 'available' || audio.audioFileId === null) return;
+
+    deleteAudio(audio.audioFileId, {
+      onSuccess: () => {
+        // 삭제는 비동기로 처리되므로, 다시 조회해 상태(삭제 중/만료)를 반영한다.
+        void queryClient.invalidateQueries({ queryKey: meetingKeys.audioFile(meetingId) });
+        showToast('음성 파일 삭제를 요청했습니다', 'success');
+      },
+      onError: (error) =>
+        showToast(
+          error instanceof MeetingApiError ? error.message : '음성 파일 삭제에 실패했습니다.',
+          'danger',
+        ),
+    });
+  };
+
+  const handleConfirmMeetingDelete = () => {
+    closeDialog();
+    void requestDelete();
+  };
+
+  const handleDownloadAudio = () => {
+    if (isAudioExpired) {
+      showToast('만료된 음성 파일은 다운로드할 수 없습니다.', 'danger');
+      return;
+    }
+    if (!audioDownload) {
+      showToast('음성 파일 주소를 아직 받지 못했습니다. 잠시 후 다시 시도해주세요.', 'danger');
+      return;
+    }
+
+    downloadFile(audioDownload.downloadUrl, `${meetingTitle}-음성.mp4`);
+  };
+
+  return (
+    <>
+      <Menu.Root>
+        <Menu.Trigger
+          aria-label="더 보기"
+          className="flex size-9 items-center justify-center rounded-full text-cool-600 transition-colors hover:bg-cool-100"
+        >
+          <MoreVertical className="size-5" strokeWidth={2} />
+        </Menu.Trigger>
+        <Menu.Portal container={frame}>
+          <Menu.Positioner className="z-[75] outline-none" side="bottom" align="end" sideOffset={6}>
+            <Menu.Popup className="min-w-[220px] rounded-xl border border-cool-100 bg-white shadow-[0_8px_24px_rgba(20,34,56,0.12)] outline-none">
+              {isLeader && (
+                <MoreMenuItem
+                  icon={<Pencil className="size-4" strokeWidth={2} />}
+                  label="회의 이름 변경"
+                  onClick={() => setOpenDialog('rename')}
+                />
+              )}
+              <MoreMenuItem
+                icon={<Headphones className="size-4" strokeWidth={2} />}
+                label="음성 다운로드"
+                onClick={handleDownloadAudio}
+              />
+              <MoreMenuItem
+                icon={<FileText className="size-4" strokeWidth={2} />}
+                label="전사 다운로드"
+              />
+              <MoreMenuItem
+                icon={<FileText className="size-4" strokeWidth={2} />}
+                label="요약 다운로드"
+              />
+              {isLeader && (
+                <>
+                  {audio.kind === 'available' && (
+                    <MoreMenuItem
+                      icon={<Trash2 className="size-4" strokeWidth={2} />}
+                      label="음성 삭제"
+                      isDanger
+                      onClick={() => setOpenDialog('audio-delete')}
+                      trailingText={`${audio.remainingDays}일 남음`}
+                    />
+                  )}
+                  <MoreMenuItem
+                    icon={<Trash2 className="size-4" strokeWidth={2} />}
+                    label="회의 삭제"
+                    isDanger
+                    onClick={() => setOpenDialog('meeting-delete')}
+                  />
+                </>
+              )}
+            </Menu.Popup>
+          </Menu.Positioner>
+        </Menu.Portal>
+      </Menu.Root>
+      {openDialog === 'rename' && (
+        <MeetingRenameDialog
+          currentTitle={meetingTitle}
+          onConfirm={handleConfirmRename}
+          onClose={closeDialog}
+        />
+      )}
+      {openDialog === 'audio-delete' && (
+        <DeleteConfirmDialog
+          title="음성 파일을 삭제하시겠어요?"
+          description="삭제한 음성 파일은 복구할 수 없어요. 전사·요약 내용은 그대로 유지돼요."
+          onConfirm={handleConfirmAudioDelete}
+          onClose={closeDialog}
+        />
+      )}
+      {openDialog === 'meeting-delete' && (
+        <DeleteConfirmDialog
+          title="회의 내용을 삭제하시겠어요?"
+          description="삭제한 회의 내용은 복구할 수 없습니다. 녹음, 전사, 요약이 모두 함께 삭제됩니다."
+          onConfirm={handleConfirmMeetingDelete}
+          onClose={closeDialog}
+        />
+      )}
+    </>
+  );
+};

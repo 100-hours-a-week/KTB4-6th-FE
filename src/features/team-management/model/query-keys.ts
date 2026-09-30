@@ -1,0 +1,7 @@
+export const teamKeys = {
+  all: (teamId: number) => ['teams', teamId] as const,
+  detail: (teamId: number) => ['teams', teamId, 'detail'] as const,
+  members: (teamId: number) => ['teams', teamId, 'members'] as const,
+  credits: (teamId: number) => ['teams', teamId, 'credits'] as const,
+  blocks: (teamId: number) => ['teams', teamId, 'blocks'] as const,
+};

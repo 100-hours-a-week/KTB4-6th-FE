@@ -1,0 +1,62 @@
+'use client';
+
+import { useState } from 'react';
+import { NavigationSidebar } from '@/widgets/navigation-sidebar';
+import { useTeamManagementPageData } from '../model/useTeamManagementPageData';
+import { BlockedListSection } from './BlockedListSection';
+import { ParticipantListSection } from './ParticipantListSection';
+import { TeamDeleteAction } from './TeamDeleteAction';
+import { TeamInfoSection } from './TeamInfoSection';
+import { TeamLeaveAction } from './TeamLeaveAction';
+import { TeamManagementContentSkeleton } from './TeamManagementContentSkeleton';
+import { TeamManagementErrorState } from './TeamManagementErrorState';
+import { TeamManagementHeader } from './TeamManagementHeader';
+
+interface TeamManagementPageProps {
+  teamId: number;
+}
+
+export const TeamManagementPage = ({ teamId }: TeamManagementPageProps) => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { status, role, team, participants } = useTeamManagementPageData(teamId);
+  const isLeader = role === 'leader';
+
+  return (
+    <div className="flex min-h-[844px] flex-1 flex-col bg-cool-50">
+      <TeamManagementHeader isMenuDisabled={!team} onMenuClick={() => setIsSidebarOpen(true)} />
+
+      <div className="flex-1 overflow-y-auto">
+        {status === 'loading' ? (
+          <TeamManagementContentSkeleton />
+        ) : status === 'error' || !role || !team ? (
+          <TeamManagementErrorState />
+        ) : (
+          <>
+            <TeamInfoSection role={role} team={team} teamId={teamId} />
+            <ParticipantListSection role={role} participants={participants} teamId={teamId} />
+            {isLeader && <BlockedListSection teamId={teamId} />}
+          </>
+        )}
+      </div>
+
+      {status === 'success' && role && team && (
+        <footer className="shrink-0">
+          {isLeader ? (
+            <TeamDeleteAction hasActiveMeeting={team.hasActiveMeeting} teamId={teamId} />
+          ) : (
+            <TeamLeaveAction hasActiveMeeting={team.hasActiveMeeting} teamId={teamId} />
+          )}
+        </footer>
+      )}
+
+      {team && (
+        <NavigationSidebar
+          isOpen={isSidebarOpen}
+          onOpenChange={setIsSidebarOpen}
+          teamId={teamId}
+          teamName={team.name}
+        />
+      )}
+    </div>
+  );
+};
