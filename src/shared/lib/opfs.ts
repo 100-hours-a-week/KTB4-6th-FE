@@ -16,3 +16,16 @@ export const openOpfsFileForWriting = async (
   const fileHandle = await root.getFileHandle(fileName, { create: true });
   return fileHandle.createWritable();
 };
+
+/** OPFS 루트에 있는 파일 이름을 전부 나열한다(하위 디렉터리는 다루지 않는다). */
+export const listOpfsFileNames = async (): Promise<string[]> => {
+  const root = await navigator.storage.getDirectory();
+  const iterable = root as unknown as AsyncIterable<[string, FileSystemHandle]>;
+  const names: string[] = [];
+
+  for await (const [name, handle] of iterable) {
+    if (handle.kind === 'file') names.push(name);
+  }
+
+  return names;
+};
