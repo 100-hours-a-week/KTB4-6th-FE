@@ -96,6 +96,7 @@ export const useCurrentMeetingRecordingSession = ({
     recordingSessionId,
     isPreview,
     previewConnectionStatus,
+    isPausedByUser,
   });
   const isWaiting = isMeetingWaiting && recordingSessionId === null && !isCompleted;
   const isStartingRecording = operation === 'starting';
@@ -115,6 +116,7 @@ export const useCurrentMeetingRecordingSession = ({
     hasTeamActiveMeetingElsewhere,
     hasRecordingSession: recordingSessionId !== null,
     connectionStatus,
+    isPausedByUser,
   });
 
   const handleConfirmRecording = useStartRecordingFlow({
