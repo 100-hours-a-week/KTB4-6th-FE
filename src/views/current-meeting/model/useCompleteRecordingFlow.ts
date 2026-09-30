@@ -1,6 +1,9 @@
 'use client';
 
 import {
+  flushRecordingChunks,
+  readOpfsPartFilesInOrder,
+  removeOpfsPartFiles,
   useCompleteRecording,
   useMediaRecorder,
   useRecordingSessionStore,
@@ -62,11 +65,14 @@ export const useCompleteRecordingFlow = ({
         currentUpload?.recordingSessionId === recordingSessionId ? currentUpload : null;
 
       if (!reusableUpload?.isCompleted) {
-        const recordingBlob = await flushForCompletion();
-        const convertedRecording = await convertToMp4(
-          recordingBlob,
-          `recording-${recordingSessionId}.mp4`,
-        );
+        // 마지막 chunk까지 recorder에서 흘려보내고(반환 Blob은 안 씀), OPFS에 그 chunk까지
+        // 쓰기가 끝날 때까지 기다린 다음, 세션 전체의 part 파일을 순서대로 읽어 합친다.
+        await flushForCompletion();
+        await flushRecordingChunks();
+        const parts = await readOpfsPartFilesInOrder(recordingSessionId);
+        if (parts.length === 0) throw new Error('저장된 녹음 파일이 없습니다.');
+
+        const convertedRecording = await convertToMp4(parts, `recording-${recordingSessionId}.mp4`);
 
         await uploadRecordingFile.mutateAsync({
           recordingSessionId,
@@ -80,6 +86,9 @@ export const useCompleteRecordingFlow = ({
             }),
         });
         markPendingUploadCompleted(recordingSessionId);
+        await removeOpfsPartFiles(recordingSessionId).catch(() => {
+          // OPFS 정리 실패는 회의 종료 자체를 막을 이유가 아니다.
+        });
       }
 
       await completeRecording.mutateAsync(recordingSessionId);
