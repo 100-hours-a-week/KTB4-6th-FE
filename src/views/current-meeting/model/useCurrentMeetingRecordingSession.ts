@@ -22,6 +22,8 @@ interface UseCurrentMeetingRecordingSessionParams {
   serverRecordingSessionId: number | null;
   /** 서버가 알고 있는 녹음 시작 시각. 로컬 녹음 세션이 없을 때 복원하는 데 쓴다 */
   serverRecordingStartedAt: string | null;
+  /** 서버 기준으로 지금 녹음이 일시정지 상태인지 */
+  isServerPaused: boolean;
   onRecordingStarted: () => void;
   onInsufficientCredit: () => void;
 }
@@ -40,6 +42,7 @@ export const useCurrentMeetingRecordingSession = ({
   isRecorderByServer,
   serverRecordingSessionId,
   serverRecordingStartedAt,
+  isServerPaused,
   onRecordingStarted,
   onInsufficientCredit,
 }: UseCurrentMeetingRecordingSessionParams) => {
@@ -47,6 +50,7 @@ export const useCurrentMeetingRecordingSession = ({
   const recorderStatus = useMediaRecorder((state) => state.status);
   const activeRecording = useRecordingSessionStore((state) => state.activeRecording);
   const setActiveRecording = useRecordingSessionStore((state) => state.setActiveRecording);
+  const setIsPausedByUser = useRecordingSessionStore((state) => state.setIsPausedByUser);
   const pendingUpload = useRecordingSessionStore((state) => state.pendingUpload);
   const operation = useRecordingSessionStore((state) => state.operation);
   const isPausedByUser = useRecordingSessionStore((state) => state.isPausedByUser);
@@ -80,15 +84,21 @@ export const useCurrentMeetingRecordingSession = ({
         ? new Date(serverRecordingStartedAt).getTime()
         : Date.now(),
     });
+    // 일시정지 여부는 메모리에만 있어서 새로고침하면 사라진다. 서버가 일시정지라고 하면
+    // 같이 복원해야 한다 — 안 그러면 recorder가 없는 걸 "복구해야 할 문제"로 보고
+    // 마이크·웹소켓을 자동으로 다시 만들어 일시정지가 저절로 풀려버린다.
+    if (isServerPaused) setIsPausedByUser(true);
   }, [
     isPreview,
     localRecordingSessionId,
     isRecorderByServer,
     serverRecordingSessionId,
     serverRecordingStartedAt,
+    isServerPaused,
     teamId,
     meetingId,
     setActiveRecording,
+    setIsPausedByUser,
   ]);
 
   const connectionStatus = useCurrentMeetingConnection({

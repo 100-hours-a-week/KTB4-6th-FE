@@ -72,6 +72,7 @@ export const useCurrentMeetingRecording = ({
     isRecorderByServer,
     serverRecordingSessionId: meeting?.recordingSessionId ?? null,
     serverRecordingStartedAt: meeting?.recordingStartedAt ?? null,
+    isServerPaused: meeting?.recordingStatus === 'paused',
     onRecordingStarted: () => handleStartDialogOpenChange(false),
     onInsufficientCredit: () => {
       handleStartDialogOpenChange(false);
