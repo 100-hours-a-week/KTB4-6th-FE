@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRecordingWebSocket } from '@/features/recording-websocket';
 import {
+  appendRecordingChunk,
   useMediaRecorder,
   useRecordingChunkBuffer,
   useRecordingSessionStore,
@@ -18,7 +19,7 @@ export function RecordingSessionManager() {
   const { showToast } = useAppToast();
   const recordingSessionId = activeRecording?.recordingSessionId;
   const socketStatus = recordingSessionId === undefined ? undefined : statuses[recordingSessionId];
-  const { appendChunk } = useRecordingChunkBuffer(recordingSessionId ?? null);
+  useRecordingChunkBuffer(recordingSessionId ?? null);
 
   useEffect(() => {
     if (recordingSessionId === undefined) return;
@@ -27,7 +28,7 @@ export function RecordingSessionManager() {
       try {
         startBrowserRecording((chunk) => {
           sendAudioChunk(recordingSessionId, chunk);
-          appendChunk(chunk);
+          appendRecordingChunk(chunk);
         });
       } catch {
         disconnect(recordingSessionId);
@@ -47,7 +48,6 @@ export function RecordingSessionManager() {
       showToast('녹음 연결이 끊어졌습니다. 회의 화면에서 상태를 확인해주세요.', 'danger');
     }
   }, [
-    appendChunk,
     disconnect,
     recorderStatus,
     recordingSessionId,
