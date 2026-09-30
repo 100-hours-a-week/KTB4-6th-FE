@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { getMeetingPhase } from './meeting-phase';
+import { getMeetingPhase, isRecordingStartedByMe } from './meeting-phase';
 import { useCurrentMeetingData } from './useCurrentMeetingData';
 import { useCurrentMeetingRecordingSession } from './useCurrentMeetingRecordingSession';
 import { useRecordingStartDialog } from './useRecordingStartDialog';
@@ -35,6 +35,10 @@ export const useCurrentMeetingRecording = ({
     handleStartDialogOpenChange,
   } = useRecordingStartDialog();
   const [isInsufficientCreditDialogOpen, setIsInsufficientCreditDialogOpen] = useState(false);
+  const isRecorderByServer = isRecordingStartedByMe({
+    recordingStartedByTeamMemberId: meeting?.recordingStartedByTeamMemberId,
+    myTeamMemberId,
+  });
 
   const {
     recordingSessionId,
@@ -58,6 +62,9 @@ export const useCurrentMeetingRecording = ({
     isPreview,
     previewConnectionStatus: meeting?.connectionStatus ?? 'connected',
     isRecordingAcknowledged,
+    isRecorderByServer,
+    serverRecordingSessionId: meeting?.recordingSessionId ?? null,
+    serverRecordingStartedAt: meeting?.recordingStartedAt ?? null,
     onRecordingStarted: () => handleStartDialogOpenChange(false),
     onInsufficientCredit: () => {
       handleStartDialogOpenChange(false);
@@ -78,8 +85,7 @@ export const useCurrentMeetingRecording = ({
       isBrowserPaused: recorderStatus === 'paused',
       isFinishing: operation === 'finishing',
       connectionStatus,
-      recordingStartedByTeamMemberId: meeting?.recordingStartedByTeamMemberId,
-      myTeamMemberId,
+      isRecorderByServer,
     });
 
   const handleStartRecording = () => {
