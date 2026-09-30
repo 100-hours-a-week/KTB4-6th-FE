@@ -49,6 +49,8 @@ export const CurrentMeetingPage = ({
   const {
     meeting,
     isMeetingPending,
+    isTranscriptHistoryPending,
+    isTranscriptHistoryError,
     isWaiting,
     isPaused,
     isEnding,
@@ -151,6 +153,8 @@ export const CurrentMeetingPage = ({
           segments={meeting.transcripts}
           isRecording={isRecording}
           isPaused={isPaused}
+          isHistoryPending={isTranscriptHistoryPending}
+          isHistoryError={isTranscriptHistoryError}
         />
       )}
 

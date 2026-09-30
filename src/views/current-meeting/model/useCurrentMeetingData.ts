@@ -1,32 +1,19 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import {
-  getCurrentMeetingState,
-  type TranscriptCreatedEventData,
-  useMeetingSse,
-} from '@/features/meeting-sse';
+import { useMeetingTranscript } from '@/features/meeting';
+import { getCurrentMeetingState, useMeetingSse } from '@/features/meeting-sse';
 import { getCurrentMeetingQueryKey } from './current-meeting-query-key';
+import { mergeTranscriptSegments } from './merge-transcript-segments';
 import { useElapsedSeconds } from './useElapsedSeconds';
-import {
-  getMeetingPreview,
-  type CurrentMeetingViewModel,
-  type TranscriptSegment,
-} from './preview-meeting';
-
-const toTranscriptSegment = (transcript: TranscriptCreatedEventData): TranscriptSegment => ({
-  id: String(transcript.transcriptSegmentId),
-  speakerNumber: null,
-  startedAtSeconds: Math.floor(transcript.startedAtMs / 1000),
-  text: transcript.text,
-});
+import { getMeetingPreview, type CurrentMeetingViewModel } from './preview-meeting';
 
 interface UseCurrentMeetingDataParams {
   meetingId: number;
   previewState?: string;
 }
 
-/** 회의 정보 조회 결과(또는 개발용 미리보기)와 실시간 녹취를 화면용 회의 모델로 만든다. */
+/** 회의 정보 조회 결과(또는 개발용 미리보기)와 과거·실시간 녹취를 합쳐 화면용 회의 모델로 만든다. */
 export const useCurrentMeetingData = ({ meetingId, previewState }: UseCurrentMeetingDataParams) => {
   const { transcriptsByMeetingId } = useMeetingSse();
   const isPreview = previewState !== undefined;
@@ -35,6 +22,8 @@ export const useCurrentMeetingData = ({ meetingId, previewState }: UseCurrentMee
     queryFn: () => getCurrentMeetingState(meetingId),
     enabled: !isPreview,
   });
+  // 늦게 입장하거나 새로고침한 참여자도 그전까지의 발화를 볼 수 있도록 과거 전사를 조회한다.
+  const transcriptHistoryQuery = useMeetingTranscript(meetingId, { isEnabled: !isPreview });
   const elapsedSeconds = useElapsedSeconds({
     recordingStatus: currentMeetingQuery.data?.recordingStatus ?? null,
     startedAt: currentMeetingQuery.data?.recordingStartedAt ?? null,
@@ -63,7 +52,10 @@ export const useCurrentMeetingData = ({ meetingId, previewState }: UseCurrentMee
                 ? 'paused'
                 : 'recording',
           connectionStatus: 'connected',
-          transcripts: (transcriptsByMeetingId[String(meetingId)] ?? []).map(toTranscriptSegment),
+          transcripts: mergeTranscriptSegments(
+            transcriptHistoryQuery.data ?? [],
+            transcriptsByMeetingId[String(meetingId)] ?? [],
+          ),
         }
       : null;
 
@@ -71,5 +63,7 @@ export const useCurrentMeetingData = ({ meetingId, previewState }: UseCurrentMee
     meeting,
     isMeetingPending: !isPreview && currentMeetingQuery.isPending,
     isServerCompleted: currentMeetingQuery.data?.meetingStatus === 'COMPLETED',
+    isTranscriptHistoryPending: !isPreview && transcriptHistoryQuery.isPending,
+    isTranscriptHistoryError: !isPreview && transcriptHistoryQuery.isError,
   };
 };

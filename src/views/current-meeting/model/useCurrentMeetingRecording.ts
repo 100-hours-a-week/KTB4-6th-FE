@@ -24,7 +24,13 @@ export const useCurrentMeetingRecording = ({
   myTeamMemberId,
 }: UseCurrentMeetingRecordingParams) => {
   const isPreview = previewState !== undefined;
-  const { meeting, isMeetingPending, isServerCompleted } = useCurrentMeetingData({
+  const {
+    meeting,
+    isMeetingPending,
+    isServerCompleted,
+    isTranscriptHistoryPending,
+    isTranscriptHistoryError,
+  } = useCurrentMeetingData({
     meetingId,
     previewState,
   });
@@ -96,6 +102,8 @@ export const useCurrentMeetingRecording = ({
   return {
     meeting,
     isMeetingPending,
+    isTranscriptHistoryPending,
+    isTranscriptHistoryError,
     isWaiting,
     isPaused,
     isEnding,

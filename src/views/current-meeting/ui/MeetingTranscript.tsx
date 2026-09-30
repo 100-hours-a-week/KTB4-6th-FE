@@ -10,6 +10,10 @@ interface MeetingTranscriptProps {
   segments: TranscriptSegment[];
   isRecording: boolean;
   isPaused: boolean;
+  /** 늦게 입장·새로고침해서 이전 녹취를 불러오는 중인지 */
+  isHistoryPending: boolean;
+  /** 이전 녹취 조회에 실패했는지. 실시간으로 받은 녹취는 그대로 보여준다 */
+  isHistoryError: boolean;
 }
 
 const formatTimestamp = (seconds: number) =>
@@ -17,7 +21,13 @@ const formatTimestamp = (seconds: number) =>
 
 const HIGHLIGHT_DURATION_MS = 1200;
 
-export const MeetingTranscript = ({ segments, isRecording, isPaused }: MeetingTranscriptProps) => {
+export const MeetingTranscript = ({
+  segments,
+  isRecording,
+  isPaused,
+  isHistoryPending,
+  isHistoryError,
+}: MeetingTranscriptProps) => {
   const previousSegmentCount = useRef(segments.length);
   const [highlightedSegmentId, setHighlightedSegmentId] = useState<string | null>(null);
   const latestSegmentId = segments.at(-1)?.id;
@@ -55,6 +65,26 @@ export const MeetingTranscript = ({ segments, isRecording, isPaused }: MeetingTr
           {isRecording && <span aria-hidden="true" className="size-1.5 rounded-full bg-danger" />}
         </h3>
 
+        {isHistoryPending && (
+          <div
+            role="status"
+            aria-label="이전 녹취를 불러오는 중"
+            className="mt-2 flex items-center gap-2 text-xs text-cool-500"
+          >
+            <span
+              aria-hidden="true"
+              className="size-3.5 shrink-0 rounded-full border-2 border-cool-200 border-t-brand-600 motion-safe:animate-spin"
+            />
+            이전 녹취를 불러오는 중
+          </div>
+        )}
+
+        {isHistoryError && (
+          <p role="alert" className="mt-2 text-xs text-danger">
+            이전 녹취를 불러오지 못했습니다
+          </p>
+        )}
+
         <ol className="mt-2 flex flex-col gap-1.5">
           {segments.map((segment) => (
             <li
@@ -74,7 +104,7 @@ export const MeetingTranscript = ({ segments, isRecording, isPaused }: MeetingTr
           ))}
         </ol>
 
-        {segments.length === 0 && (
+        {segments.length === 0 && !isHistoryPending && (
           <p className="flex flex-1 items-center justify-center text-center text-sm text-cool-500">
             아직 녹취된 내용이 없습니다.
           </p>
