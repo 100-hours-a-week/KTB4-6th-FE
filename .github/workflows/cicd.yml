@@ -16,7 +16,7 @@ jobs:
     name: FE 이미지 빌드 및 게시
     runs-on: ubuntu-latest
 
-    # NEXT_PUBLIC_* 값은 이미지 빌드 때 필요하므로 빌드 job도 환경을 선택한다. 
+    # NEXT_PUBLIC_* 값은 이미지 빌드 때 필요하므로 빌드 job도 환경을 선택한다.
     # 이 job 자체는 배포가 아니므로 GitHub Deployment 기록은 만들지 않는다.
     environment:
       name: ${{ github.ref_name == 'dev' && 'staging' || 'production' }}
@@ -31,6 +31,12 @@ jobs:
       NEXT_PUBLIC_KAKAO_REDIRECT_URI: ${{ secrets.NEXT_PUBLIC_KAKAO_REDIRECT_URI }}
       NEXT_PUBLIC_API_BASE_URL: ${{ secrets.NEXT_PUBLIC_API_BASE_URL }}
       NEXT_PUBLIC_GA_ID: ${{ secrets.NEXT_PUBLIC_GA_ID }}
+      NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
+      NEXT_PUBLIC_SENTRY_ENVIRONMENT: ${{ github.ref_name == 'dev' && 'staging' || 'production' }}
+      NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE: ${{ vars.SENTRY_TRACES_SAMPLE_RATE || '0.1' }}
+      SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+      SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
+      SENTRY_RELEASE: ${{ github.sha }}
 
     steps:
       - name: 소스 코드 체크아웃
@@ -83,6 +89,15 @@ jobs:
             NEXT_PUBLIC_KAKAO_REDIRECT_URI=${{ env.NEXT_PUBLIC_KAKAO_REDIRECT_URI }}
             NEXT_PUBLIC_API_BASE_URL=${{ env.NEXT_PUBLIC_API_BASE_URL }}
             NEXT_PUBLIC_GA_ID=${{ env.NEXT_PUBLIC_GA_ID }}
+            NEXT_PUBLIC_SENTRY_DSN=${{ env.NEXT_PUBLIC_SENTRY_DSN }}
+            NEXT_PUBLIC_SENTRY_ENVIRONMENT=${{ env.NEXT_PUBLIC_SENTRY_ENVIRONMENT }}
+            NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE=${{ env.NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE }}
+            SENTRY_ORG=${{ env.SENTRY_ORG }}
+            SENTRY_PROJECT=${{ env.SENTRY_PROJECT }}
+            SENTRY_RELEASE=${{ env.SENTRY_RELEASE }}
+
+          secrets: |
+            "sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN }}"
 
           cache-from: type=gha
           cache-to: type=gha,mode=max
