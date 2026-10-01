@@ -16,7 +16,7 @@ jobs:
     name: FE 이미지 빌드 및 게시
     runs-on: ubuntu-latest
 
-    # NEXT_PUBLIC_* 값은 이미지 빌드 때 필요하므로 빌드 job도 환경을 선택한다.
+    # NEXT_PUBLIC_* 값은 이미지 빌드 때 필요하므로 빌드 job도 환경을 선택한다. 
     # 이 job 자체는 배포가 아니므로 GitHub Deployment 기록은 만들지 않는다.
     environment:
       name: ${{ github.ref_name == 'dev' && 'staging' || 'production' }}
