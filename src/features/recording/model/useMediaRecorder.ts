@@ -2,7 +2,7 @@
 
 import { create } from 'zustand';
 import type { AudioFormat } from '@/entities/recording';
-import { convertRecordingToMp4, type ConvertedRecordingFile } from './convert-recording-to-mp4';
+import { mergeRecordingPartsToMp4, type ConvertedRecordingFile } from './convert-recording-to-mp4';
 
 const supportedFormats: { mimeType: string; audioFormat: AudioFormat }[] = [
   { mimeType: 'audio/webm;codecs=opus', audioFormat: 'webm_opus' },
@@ -26,7 +26,7 @@ interface MediaRecorderState {
   pause: () => void;
   resume: () => void;
   flushForCompletion: () => Promise<Blob>;
-  convertToMp4: (source: Blob, fileName: string) => Promise<ConvertedRecordingFile>;
+  convertToMp4: (parts: Blob[], fileName: string) => Promise<ConvertedRecordingFile>;
   release: () => void;
 }
 
@@ -184,11 +184,11 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
     }
   },
 
-  convertToMp4: async (source, fileName) => {
+  convertToMp4: async (parts, fileName) => {
     set({ conversionStatus: 'loading', conversionProgress: 0, conversionError: null });
 
     try {
-      const convertedFile = await convertRecordingToMp4(source, {
+      const convertedFile = await mergeRecordingPartsToMp4(parts, {
         fileName,
         onReady: () => set({ conversionStatus: 'converting' }),
         onProgress: (conversionProgress) => set({ conversionProgress }),

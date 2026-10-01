@@ -25,11 +25,24 @@ ARG NEXT_PUBLIC_KAKAO_REST_API_KEY
 ARG NEXT_PUBLIC_KAKAO_REDIRECT_URI
 ARG NEXT_PUBLIC_API_BASE_URL
 ARG NEXT_PUBLIC_GA_ID
+ARG NEXT_PUBLIC_SENTRY_DSN
+ARG NEXT_PUBLIC_SENTRY_ENVIRONMENT
+ARG NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE
+
+# Sentry 조직/프로젝트/릴리스 식별자는 소스맵 업로드에만 사용되며 비밀값이 아님
+ARG SENTRY_ORG
+ARG SENTRY_PROJECT
+ARG SENTRY_RELEASE
 
 # next.config의 rewrites 등에서 빌드 때 API_BASE_URL을 쓰는 경우에만 주석 해제
 ARG API_BASE_URL
 
-RUN pnpm run build
+# Sentry 인증 토큰은 이미지 레이어에 남지 않도록 BuildKit secret으로만 전달한다.
+RUN --mount=type=secret,id=sentry_auth_token,required=false \
+  if [ -f /run/secrets/sentry_auth_token ]; then \
+    export SENTRY_AUTH_TOKEN="$(cat /run/secrets/sentry_auth_token)"; \
+  fi; \
+  pnpm run build
 
 # ---------- Runtime Stage ----------
 FROM node:24-alpine AS runner
@@ -49,4 +62,3 @@ ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
 CMD ["node", "server.js"]
-

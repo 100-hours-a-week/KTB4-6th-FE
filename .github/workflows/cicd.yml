@@ -1,4 +1,4 @@
-name: FE CI/CD
+name: FE 빌드 및 배포
 
 on:
   push:
@@ -13,6 +13,7 @@ env:
 
 jobs:
   build-and-push:
+    name: FE 이미지 빌드 및 게시
     runs-on: ubuntu-latest
 
     # NEXT_PUBLIC_* 값은 이미지 빌드 때 필요하므로 빌드 job도 환경을 선택한다. 
@@ -25,16 +26,26 @@ jobs:
       image_tag: ${{ steps.tag.outputs.value }}
 
     env:
+      DEPLOY_ENV: ${{ github.ref_name == 'dev' && 'staging' || 'production' }}
       NEXT_PUBLIC_KAKAO_REST_API_KEY: ${{ secrets.NEXT_PUBLIC_KAKAO_REST_API_KEY }}
       NEXT_PUBLIC_KAKAO_REDIRECT_URI: ${{ secrets.NEXT_PUBLIC_KAKAO_REDIRECT_URI }}
       NEXT_PUBLIC_API_BASE_URL: ${{ secrets.NEXT_PUBLIC_API_BASE_URL }}
       NEXT_PUBLIC_GA_ID: ${{ secrets.NEXT_PUBLIC_GA_ID }}
+      NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
+      NEXT_PUBLIC_SENTRY_ENVIRONMENT: ${{ github.ref_name == 'dev' && 'staging' || 'production' }}
+      NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE: ${{ vars.SENTRY_TRACES_SAMPLE_RATE || '0.1' }}
+      SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+      SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
+      SENTRY_RELEASE: ${{ github.sha }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: 소스 코드 체크아웃
+        uses: actions/checkout@v4
 
       - name: 빌드 환경 확인
         run: |
+          # 브랜치와 선택된 빌드 환경만 로그에 남긴다.
+          echo "::notice::FE 빌드 대상: branch=${GITHUB_REF_NAME}, environment=${DEPLOY_ENV}"
           # 값은 출력하지 않고 필수 빌드 설정의 존재만 확인한다.
           [ -n "$NEXT_PUBLIC_KAKAO_REST_API_KEY" ] || {
             echo "::error::NEXT_PUBLIC_KAKAO_REST_API_KEY 누락"
@@ -48,14 +59,18 @@ jobs:
             echo "::error::NEXT_PUBLIC_API_BASE_URL 누락"
             exit 1
           }
+          echo "::notice::FE 빌드 설정: NEXT_PUBLIC_KAKAO_REST_API_KEY, NEXT_PUBLIC_KAKAO_REDIRECT_URI, NEXT_PUBLIC_API_BASE_URL 설정됨"
 
       # 전체 커밋 SHA를 태그로 사용해 배포 이미지를 정확히 식별한다.
-      - id: tag
+      - name: 이미지 태그 생성
+        id: tag
         run: echo "value=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
 
-      - uses: docker/setup-buildx-action@v3
+      - name: Docker Buildx 설정
+        uses: docker/setup-buildx-action@v3
 
-      - uses: docker/login-action@v3
+      - name: Docker Hub 로그인
+        uses: docker/login-action@v3
         with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -74,11 +89,21 @@ jobs:
             NEXT_PUBLIC_KAKAO_REDIRECT_URI=${{ env.NEXT_PUBLIC_KAKAO_REDIRECT_URI }}
             NEXT_PUBLIC_API_BASE_URL=${{ env.NEXT_PUBLIC_API_BASE_URL }}
             NEXT_PUBLIC_GA_ID=${{ env.NEXT_PUBLIC_GA_ID }}
+            NEXT_PUBLIC_SENTRY_DSN=${{ env.NEXT_PUBLIC_SENTRY_DSN }}
+            NEXT_PUBLIC_SENTRY_ENVIRONMENT=${{ env.NEXT_PUBLIC_SENTRY_ENVIRONMENT }}
+            NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE=${{ env.NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE }}
+            SENTRY_ORG=${{ env.SENTRY_ORG }}
+            SENTRY_PROJECT=${{ env.SENTRY_PROJECT }}
+            SENTRY_RELEASE=${{ env.SENTRY_RELEASE }}
+
+          secrets: |
+            "sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN }}"
 
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   deploy:
+    name: FE EC2 배포
     needs: build-and-push
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -96,6 +121,7 @@ jobs:
       cancel-in-progress: false
 
     env:
+      DEPLOY_ENV: ${{ github.ref_name == 'dev' && 'staging' || 'production' }}
       IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
       AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
       INSTANCE_ID: ${{ secrets.APP_INSTANCE_ID }}
@@ -104,6 +130,8 @@ jobs:
     steps:
       - name: 배포 설정 확인
         run: |
+          # 시크릿 값은 출력하지 않고 선택된 환경과 설정 여부만 기록한다.
+          echo "::notice::FE EC2 배포 대상: branch=${GITHUB_REF_NAME}, environment=${DEPLOY_ENV}"
           # 선택된 Environment의 배포 대상 값이 모두 있는지 확인한다.
           [ -n "$AWS_ROLE_ARN" ] || {
             echo "::error::AWS_ROLE_ARN 누락"
@@ -117,6 +145,7 @@ jobs:
             echo "::error::APP_DEPLOY_DIR 누락"
             exit 1
           }
+          echo "::notice::FE EC2 배포 시크릿: AWS_ROLE_ARN, APP_INSTANCE_ID, APP_DEPLOY_DIR 설정됨"
 
       - name: AWS 인증
         uses: aws-actions/configure-aws-credentials@v4
@@ -201,6 +230,7 @@ jobs:
           }
 
   notify-failure:
+    name: FE 실패 알림
     needs: [build-and-push, deploy]
     if: ${{ always() && contains(needs.*.result, 'failure') }}
     runs-on: ubuntu-latest

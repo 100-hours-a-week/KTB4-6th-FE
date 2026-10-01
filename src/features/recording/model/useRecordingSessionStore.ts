@@ -21,22 +21,31 @@ interface RecordingSessionState {
   activeRecording: ActiveRecording | null;
   pendingUpload: PendingRecordingUpload | null;
   operation: RecordingOperation;
+  /**
+   * 사용자가 직접 일시정지를 눌러서 녹음 객체가 없는 상태인지.
+   * RecordingSessionManager가 recorder 소실을 "복구해야 할 문제"로 오인해 자동으로
+   * 재연결을 시도하지 않도록 구분하는 데 쓴다.
+   */
+  isPausedByUser: boolean;
   setActiveRecording: (recording: ActiveRecording) => void;
   clearActiveRecording: (recordingSessionId: number) => void;
   setPendingUpload: (upload: PendingRecordingUpload) => void;
   markPendingUploadCompleted: (recordingSessionId: number) => void;
   setOperation: (operation: RecordingOperation) => void;
+  setIsPausedByUser: (isPausedByUser: boolean) => void;
 }
 
 export const useRecordingSessionStore = create<RecordingSessionState>((set, get) => ({
   activeRecording: null,
   pendingUpload: null,
   operation: 'idle',
+  isPausedByUser: false,
 
-  setActiveRecording: (recording) => set({ activeRecording: recording, pendingUpload: null }),
+  setActiveRecording: (recording) =>
+    set({ activeRecording: recording, pendingUpload: null, isPausedByUser: false }),
   clearActiveRecording: (recordingSessionId) => {
     if (get().activeRecording?.recordingSessionId === recordingSessionId) {
-      set({ activeRecording: null, pendingUpload: null });
+      set({ activeRecording: null, pendingUpload: null, isPausedByUser: false });
     }
   },
   setPendingUpload: (pendingUpload) => set({ pendingUpload }),
@@ -47,4 +56,5 @@ export const useRecordingSessionStore = create<RecordingSessionState>((set, get)
     }
   },
   setOperation: (operation) => set({ operation }),
+  setIsPausedByUser: (isPausedByUser) => set({ isPausedByUser }),
 }));

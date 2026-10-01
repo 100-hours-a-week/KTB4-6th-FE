@@ -14,6 +14,8 @@ interface RecordingAvailabilityInput {
   hasTeamActiveMeetingElsewhere: boolean;
   hasRecordingSession: boolean;
   connectionStatus: CurrentMeetingConnectionStatus;
+  /** 사용자가 직접 일시정지해서 오디오 소켓을 일부러 끊어둔 상태인지 */
+  isPausedByUser: boolean;
 }
 
 /**
@@ -32,6 +34,7 @@ export const getRecordingAvailability = ({
   hasTeamActiveMeetingElsewhere,
   hasRecordingSession,
   connectionStatus,
+  isPausedByUser,
 }: RecordingAvailabilityInput) => {
   const connectionBlockedReason: RecordingBlockedReason | null =
     connectionStatus === 'error'
@@ -48,8 +51,15 @@ export const getRecordingAvailability = ({
           : hasTeamActiveMeetingElsewhere
             ? 'team-recording'
             : null));
+  // 일시정지 중엔 오디오 소켓을 일부러 끊어둬서 connectionStatus가 'connected'가 아니다 —
+  // 재개 버튼을 누르는 게 곧 재연결을 시작하는 행위라, 연결 여부로 막으면 안 된다.
   const pauseResumeBlockedReason: RecordingBlockedReason | null =
-    !isPreview && hasRecordingSession && !isCompleted && !isUploadCompleted && isOperationIdle
+    !isPreview &&
+    hasRecordingSession &&
+    !isCompleted &&
+    !isUploadCompleted &&
+    isOperationIdle &&
+    !isPausedByUser
       ? connectionBlockedReason
       : null;
 
@@ -60,7 +70,7 @@ export const getRecordingAvailability = ({
     canPauseResumeRecording:
       !isPreview &&
       hasRecordingSession &&
-      connectionStatus === 'connected' &&
+      (isPausedByUser || connectionStatus === 'connected') &&
       isBrowserRecorderActive &&
       !isCompleted &&
       !isUploadCompleted &&

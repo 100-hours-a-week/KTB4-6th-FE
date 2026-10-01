@@ -49,8 +49,11 @@ export const CurrentMeetingPage = ({
   const {
     meeting,
     isMeetingPending,
+    isTranscriptHistoryPending,
+    isTranscriptHistoryError,
     isWaiting,
     isPaused,
+    isPausedByUser,
     isEnding,
     connectionStatus,
     isDisconnected,
@@ -105,14 +108,13 @@ export const CurrentMeetingPage = ({
     handleSubmitEditForm,
     handleCloseEditForm,
   } = useMeetingInfoEdit({ meetingId, meeting });
-  const { isOpen: isRecordingObjectLostNoticeOpen, secondsLeft: recordingLostSecondsLeft } =
-    useRecordingObjectLostAutoEnd({
-      isPreview,
-      isRecorder,
-      isActivelyRecording: isRecording || isPaused,
-      isCompleted,
-      recordingSessionId: meeting?.recordingSessionId ?? null,
-    });
+  const { isOpen: isRecordingObjectLostNoticeOpen } = useRecordingObjectLostAutoEnd({
+    isPreview,
+    isRecorder,
+    isActivelyRecording: isRecording || isPaused,
+    isCompleted,
+    isPausedByUser,
+  });
   // 녹음자의 화면이 꺼져서 녹음 객체가 소실되는 걸 막는다.
   useWakeLock(!isPreview && isRecorder && (isRecording || isPaused));
   // 녹음자가 실수로 새로고침·탭을 닫아 녹음 객체를 잃는 걸 막는다.
@@ -153,6 +155,8 @@ export const CurrentMeetingPage = ({
           segments={meeting.transcripts}
           isRecording={isRecording}
           isPaused={isPaused}
+          isHistoryPending={isTranscriptHistoryPending}
+          isHistoryError={isTranscriptHistoryError}
         />
       )}
 
@@ -222,9 +226,7 @@ export const CurrentMeetingPage = ({
       )}
 
       {isEnding && <MeetingEndingOverlay />}
-      {isRecordingObjectLostNoticeOpen && (
-        <RecordingObjectLostOverlay secondsLeft={recordingLostSecondsLeft} />
-      )}
+      {isRecordingObjectLostNoticeOpen && <RecordingObjectLostOverlay />}
     </div>
   );
 };
