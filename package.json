@@ -28,6 +28,7 @@
     "@ffmpeg/ffmpeg": "0.12.15",
     "@ffmpeg/util": "0.12.2",
     "@next/third-parties": "^16.3.6",
+    "@sentry/nextjs": "^11.1.0",
     "@tanstack/react-query": "^5.102.8",
     "axios": "1.15.2",
     "class-variance-authority": "^0.7.1",
