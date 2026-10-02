@@ -10,6 +10,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import * as Sentry from '@sentry/nextjs';
 import type { AudioFormat } from '@/entities/recording';
 
 export type RecordingWebSocketStatus =
@@ -23,6 +24,34 @@ interface RecordingWebSocketContextValue {
 }
 
 const RecordingWebSocketContext = createContext<RecordingWebSocketContextValue | null>(null);
+
+/** 녹음 음성 전송 연결이 끊긴 사실을 보고한다. 이후 음성은 서버로 실시간 전송되지 않는다. */
+const reportSocketFailure = (
+  message: string,
+  recordingSessionId: number,
+  opened: boolean,
+  closeEvent?: CloseEvent,
+) => {
+  Sentry.captureMessage(message, {
+    level: 'error',
+    tags: {
+      feature: 'recording-websocket',
+      'recording.session_id': recordingSessionId,
+      'connection.phase': opened ? 'connected' : 'connecting',
+      'page.visibility': document.visibilityState,
+      ...(closeEvent && { 'websocket.close_code': closeEvent.code }),
+    },
+    ...(closeEvent && {
+      contexts: {
+        websocket: {
+          code: closeEvent.code,
+          reason: closeEvent.reason,
+          wasClean: closeEvent.wasClean,
+        },
+      },
+    }),
+  });
+};
 
 export function RecordingWebSocketProvider({ children }: { children: ReactNode }) {
   const sockets = useRef(new Map<number, WebSocket>());
@@ -62,7 +91,10 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
 
       // 브라우저가 전송 가능한 쿠키를 핸드셰이크에 자동으로 포함한다.
       socket = new WebSocket(url);
-    } catch {
+    } catch (error) {
+      Sentry.captureException(error, {
+        tags: { feature: 'recording-websocket', 'recording.session_id': recordingSessionId },
+      });
       setStatuses((current) => ({ ...current, [recordingSessionId]: 'error' }));
       return;
     }
@@ -70,8 +102,12 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
     sockets.current.set(recordingSessionId, socket);
     setStatuses((current) => ({ ...current, [recordingSessionId]: 'connecting' }));
 
+    // 연결 자체가 실패했는지, 녹음 중에 끊겼는지 구분하기 위해 기록한다.
+    let opened = false;
+
     socket.onopen = () => {
       if (sockets.current.get(recordingSessionId) !== socket) return;
+      opened = true;
       setStatuses((current) => ({ ...current, [recordingSessionId]: 'connected' }));
     };
 
@@ -80,12 +116,15 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
       sockets.current.delete(recordingSessionId);
       socket.close();
       setStatuses((current) => ({ ...current, [recordingSessionId]: 'error' }));
+      reportSocketFailure('녹음 WebSocket 오류', recordingSessionId, opened);
     };
 
-    socket.onclose = () => {
+    // 직접 끊을 때는 disconnect에서 핸들러를 먼저 해제하므로, 여기까지 오면 의도하지 않은 종료다.
+    socket.onclose = (event) => {
       if (sockets.current.get(recordingSessionId) !== socket) return;
       sockets.current.delete(recordingSessionId);
       setStatuses((current) => ({ ...current, [recordingSessionId]: 'error' }));
+      reportSocketFailure('녹음 WebSocket 연결 종료', recordingSessionId, opened, event);
     };
   }, []);
 
