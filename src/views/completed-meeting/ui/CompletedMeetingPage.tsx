@@ -38,7 +38,12 @@ export const CompletedMeetingPage = ({ teamId, meetingId, tab }: CompletedMeetin
   // 회의 상세를 아직 못 받았으면 화면 전체를 로딩·오류로 대체한다.
   const meetingDetail = meetingDetailQuery.data;
   if (meetingDetailQuery.isPending || meetingDetailQuery.isError || !meetingDetail) {
-    return <CompletedMeetingLoadingState isPending={meetingDetailQuery.isPending} />;
+    return (
+      <CompletedMeetingLoadingState
+        isPending={meetingDetailQuery.isPending}
+        teamHomeHref={`/teams/${encodeURIComponent(teamId)}`}
+      />
+    );
   }
 
   const headerMeeting = {

@@ -1,11 +1,16 @@
 import { LoaderCircle } from 'lucide-react';
+import Link from 'next/link';
 
 interface CurrentMeetingLoadingStateProps {
   isPending: boolean;
+  teamHomeHref: string;
 }
 
 /** 회의 정보를 아직 못 받았을 때(불러오는 중 또는 조회 실패) 화면 전체 자리에 보여준다. */
-export const CurrentMeetingLoadingState = ({ isPending }: CurrentMeetingLoadingStateProps) => (
+export const CurrentMeetingLoadingState = ({
+  isPending,
+  teamHomeHref,
+}: CurrentMeetingLoadingStateProps) => (
   <div className="flex h-dvh min-h-[844px] flex-1 items-center justify-center bg-cool-50 px-6 text-center">
     <div>
       {isPending && (
@@ -18,6 +23,14 @@ export const CurrentMeetingLoadingState = ({ isPending }: CurrentMeetingLoadingS
       <p className="mt-4 text-sm text-cool-600">
         {isPending ? '회의 정보를 불러오는 중입니다' : '회의 정보를 불러오지 못했습니다'}
       </p>
+      {!isPending && (
+        <Link
+          href={teamHomeHref}
+          className="mt-5 inline-flex h-12 w-full max-w-[220px] items-center justify-center rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-700"
+        >
+          팀 홈으로 이동
+        </Link>
+      )}
     </div>
   </div>
 );

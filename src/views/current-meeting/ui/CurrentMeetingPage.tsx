@@ -124,7 +124,12 @@ export const CurrentMeetingPage = ({
   if (isServerCompleted && completedView && !isMeetingEndedNoticeOpen) return completedView;
 
   if (!meeting) {
-    return <CurrentMeetingLoadingState isPending={isMeetingPending} />;
+    return (
+      <CurrentMeetingLoadingState
+        isPending={isMeetingPending}
+        teamHomeHref={`/teams/${encodeURIComponent(teamId)}`}
+      />
+    );
   }
 
   return (
