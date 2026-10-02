@@ -3,8 +3,11 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useMeetingTranscript } from '@/features/meeting';
-import { getCurrentMeetingState, useMeetingSse } from '@/features/meeting-sse';
-import { getCurrentMeetingQueryKey } from './current-meeting-query-key';
+import {
+  getCurrentMeetingQueryKey,
+  getCurrentMeetingState,
+  useMeetingSse,
+} from '@/features/meeting-sse';
 import { mergeTranscriptSegments } from './merge-transcript-segments';
 import { useElapsedSeconds } from './useElapsedSeconds';
 import { getMeetingPreview, type CurrentMeetingViewModel } from './preview-meeting';

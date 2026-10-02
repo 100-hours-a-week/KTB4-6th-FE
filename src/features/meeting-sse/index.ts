@@ -1,5 +1,6 @@
 export { MeetingSseProvider, useMeetingSse } from './model/meeting-sse-provider';
 export type { MeetingSseStatus } from './model/meeting-sse-provider';
+export { getCurrentMeetingQueryKey } from './model/current-meeting-query-key';
 export { deleteMeeting } from './api/delete-meeting';
 export { getCurrentMeetingState } from './api/get-current-meeting';
 export type { CurrentMeetingState } from './api/get-current-meeting';

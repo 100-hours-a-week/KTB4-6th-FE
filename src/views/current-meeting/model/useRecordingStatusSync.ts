@@ -2,8 +2,7 @@
 
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useMeetingSse } from '@/features/meeting-sse';
-import { getCurrentMeetingQueryKey } from './current-meeting-query-key';
+import { getCurrentMeetingQueryKey, useMeetingSse } from '@/features/meeting-sse';
 
 interface UseRecordingStatusSyncParams {
   meetingId: number;
