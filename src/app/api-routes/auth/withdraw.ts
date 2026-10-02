@@ -26,6 +26,10 @@ export const withdrawHandler = async (request: NextRequest) => {
       );
     }
 
+    if (error instanceof WithdrawAccountApiError && error.status >= 400 && error.status < 500) {
+      return NextResponse.json({ success: false, error: error.message }, { status: error.status });
+    }
+
     return NextResponse.json(
       { success: false, error: '회원 탈퇴에 실패했습니다. 다시 시도해 주세요.' },
       { status: 502 },
