@@ -8,8 +8,8 @@ import {
   useUpdateMeeting,
   type CreateMeetingFormValues,
 } from '@/features/meeting';
+import { getCurrentMeetingQueryKey } from '@/features/meeting-sse';
 import { useAppToast } from '@/shared/ui';
-import { getCurrentMeetingQueryKey } from './current-meeting-query-key';
 import type { CurrentMeetingViewModel } from './preview-meeting';
 
 interface UseMeetingInfoEditParams {
