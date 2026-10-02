@@ -42,12 +42,11 @@ export const TranscriptScreen = ({
     status: audioSourceStatus,
     refreshAudioSource,
     retry: retryAudioSource,
-  } = useAudioSource(audio, hasTranscript && audio.kind === 'available');
+  } = useAudioSource(audio, audio.kind === 'available');
   // 음성 파일이 만료됐거나(조회 결과, 재생 주소 발급 결과), 정보·재생 주소를 받지 못하면 플레이어 대신 안내를 보여준다.
   const isAudioExpired = audio.kind === 'expired' || audioSourceStatus === 'expired';
   const isAudioError = audio.kind === 'error' || audioSourceStatus === 'error';
-  const isAudioPlayerVisible =
-    hasTranscript && audio.kind === 'available' && !isAudioExpired && !isAudioError;
+  const isAudioPlayerVisible = audio.kind === 'available' && !isAudioExpired && !isAudioError;
   const {
     isPlaying,
     isMuted,
@@ -61,10 +60,11 @@ export const TranscriptScreen = ({
     toggleMute,
   } = useAudioPlayer(audioSource, { onError: refreshAudioSource });
   // 재생 위치(끄는 중이면 끄는 위치)에 해당하는 발화를 강조한다. 플레이어가 없으면 강조하지 않는다.
-  const activeEntryId = isAudioPlayerVisible ? getActiveTranscriptId(entries, displayMs) : null;
+  const isTranscriptSyncEnabled = hasTranscript && isAudioPlayerVisible;
+  const activeEntryId = isTranscriptSyncEnabled ? getActiveTranscriptId(entries, displayMs) : null;
   const { containerRef, isFollowing, resumeFollowing } = useTranscriptAutoFollow(
     activeEntryId,
-    isAudioPlayerVisible,
+    isTranscriptSyncEnabled,
   );
 
   // 재생 위치를 직접 옮기는 것은 그 위치를 보겠다는 뜻이라, 스크롤이 멈춰 있었어도 다시 따라간다.
@@ -108,8 +108,8 @@ export const TranscriptScreen = ({
         )}
       </div>
 
-      {hasTranscript && isAudioExpired && <AudioExpiredNotice />}
-      {hasTranscript && !isAudioExpired && isAudioError && (
+      {isAudioExpired && <AudioExpiredNotice />}
+      {!isAudioExpired && isAudioError && (
         <AudioErrorNotice onRetry={audio.kind === 'error' ? onAudioFileRetry : retryAudioSource} />
       )}
       {isAudioPlayerVisible && (
