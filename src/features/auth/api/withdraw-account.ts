@@ -1,8 +1,15 @@
 import 'server-only';
 
+interface WithdrawAccountErrorResponse {
+  error?: { message?: string };
+}
+
 export class WithdrawAccountApiError extends Error {
-  constructor(readonly status: number) {
-    super('회원 탈퇴 API 요청에 실패했습니다.');
+  constructor(
+    readonly status: number,
+    message = '회원 탈퇴 API 요청에 실패했습니다.',
+  ) {
+    super(message);
     this.name = 'WithdrawAccountApiError';
   }
 }
@@ -27,6 +34,8 @@ export const withdrawAccount = async (accessToken: string): Promise<void> => {
   }
 
   if (!response.ok) {
-    throw new WithdrawAccountApiError(response.status);
+    const result = (await response.json().catch(() => null)) as WithdrawAccountErrorResponse | null;
+
+    throw new WithdrawAccountApiError(response.status, result?.error?.message);
   }
 };
