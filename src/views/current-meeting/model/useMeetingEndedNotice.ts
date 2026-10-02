@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { getTeamHomePath, homeKeys } from '@/features/home';
-import { getCurrentMeetingQueryKey } from './current-meeting-query-key';
+import { getCurrentMeetingQueryKey } from '@/features/meeting-sse';
 
 // 종료 회의 화면의 기본 탭. views끼리는 import할 수 없어 값만 맞춘다.
 const COMPLETED_MEETING_TAB = 'summary';

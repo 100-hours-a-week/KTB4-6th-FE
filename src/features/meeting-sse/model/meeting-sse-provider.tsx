@@ -10,7 +10,9 @@ import {
   useState,
 } from 'react';
 import type { ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { joinMeeting } from '../api/join-meeting';
+import { getCurrentMeetingQueryKey } from './current-meeting-query-key';
 import { createListenerRegistry } from './listener-registry';
 import { RECORDING_SSE_EVENT_TYPES, type RecordingSseEventType } from './recording-event';
 import type { TranscriptCreatedEventData } from './transcript-event';
@@ -42,6 +44,7 @@ interface MeetingSseProviderProps {
 
 /** 회의별 SSE 연결 수명 주기와 연결 상태를 관리하고, 수신한 이벤트를 전사 훅과 구독자에게 넘긴다. */
 export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
+  const queryClient = useQueryClient();
   const sources = useRef(new Map<string, EventSource>());
   const joining = useRef(new Map<string, { cancelled: boolean }>());
   const [deletedListeners] = useState(() => createListenerRegistry());
@@ -102,6 +105,10 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
           await joinMeeting(meetingId);
           if (attempt.cancelled) return;
 
+          void queryClient.invalidateQueries({
+            queryKey: getCurrentMeetingQueryKey(Number(meetingId)),
+          });
+
           const source = new EventSource(url.toString(), { withCredentials: true });
           sources.current.set(meetingId, source);
 
@@ -149,7 +156,7 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
         }
       })();
     },
-    [deletedListeners, disconnect, receiveTranscript, recordingListeners],
+    [deletedListeners, disconnect, queryClient, receiveTranscript, recordingListeners],
   );
 
   useEffect(() => {
