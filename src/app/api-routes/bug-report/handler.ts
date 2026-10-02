@@ -80,15 +80,6 @@ const checkRateLimit = (clientIdentifier: string) => {
 };
 
 export const POST = async (request: NextRequest) => {
-  const webhookUrl = process.env.BUG_REPORT_DISCORD_WEBHOOK_URL;
-
-  if (!webhookUrl) {
-    return NextResponse.json(
-      { success: false, error: '디스코드 웹훅이 설정되지 않았습니다.' },
-      { status: 500 },
-    );
-  }
-
   const rateLimit = checkRateLimit(getClientIdentifier(request));
 
   if (!rateLimit.isAllowed) {
@@ -98,6 +89,22 @@ export const POST = async (request: NextRequest) => {
         status: 429,
         headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) },
       },
+    );
+  }
+
+  if (!request.cookies.get('accessToken')?.value) {
+    return NextResponse.json(
+      { success: false, error: '로그인 후 버그를 제보해주세요.' },
+      { status: 401 },
+    );
+  }
+
+  const webhookUrl = process.env.BUG_REPORT_DISCORD_WEBHOOK_URL;
+
+  if (!webhookUrl) {
+    return NextResponse.json(
+      { success: false, error: '디스코드 웹훅이 설정되지 않았습니다.' },
+      { status: 500 },
     );
   }
 
