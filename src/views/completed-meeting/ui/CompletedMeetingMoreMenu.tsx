@@ -5,13 +5,17 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Menu } from '@base-ui/react/menu';
 import { FileText, Headphones, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import {
+  getMeetingSummary,
+  getMeetingTranscript,
   MeetingApiError,
   meetingKeys,
   useAudioDownloadUrl,
   useDeleteAudioFile,
 } from '@/features/meeting';
-import { cn, downloadFile, useAppFrameElement } from '@/shared/lib';
+import { cn, downloadFile, downloadTextFile, useAppFrameElement } from '@/shared/lib';
 import { DeleteConfirmDialog, useAppToast } from '@/shared/ui';
+import { formatTimestamp } from '../model/format-timestamp';
+import { mapTranscriptSegments } from '../model/map-transcript-segments';
 import { useMeetingDelete } from '../model/useMeetingDelete';
 import { useMeetingRename } from '../model/useMeetingRename';
 import type { CompletedMeetingViewerRole } from '../model/preview-completed-meeting';
@@ -32,19 +36,34 @@ interface MoreMenuItemProps {
   icon: ReactNode;
   label: string;
   isDanger?: boolean;
+  isDisabled?: boolean;
   trailingText?: string;
   onClick?: () => void;
 }
 
-const MoreMenuItem = ({ icon, label, isDanger, trailingText, onClick }: MoreMenuItemProps) => (
+const MoreMenuItem = ({
+  icon,
+  label,
+  isDanger,
+  isDisabled,
+  trailingText,
+  onClick,
+}: MoreMenuItemProps) => (
   <Menu.Item
     onClick={onClick}
+    disabled={isDisabled}
     className={cn(
       'flex min-h-12 items-center gap-3 border-t border-cool-100 px-4 py-3 text-sm font-medium outline-none select-none first:border-t-0',
-      isDanger ? 'text-danger' : 'text-cool-900',
+      isDisabled ? 'text-cool-400' : isDanger ? 'text-danger' : 'text-cool-900',
     )}
   >
-    <span aria-hidden="true" className={cn('shrink-0', isDanger ? 'text-danger' : 'text-cool-500')}>
+    <span
+      aria-hidden="true"
+      className={cn(
+        'shrink-0',
+        isDisabled ? 'text-cool-300' : isDanger ? 'text-danger' : 'text-cool-500',
+      )}
+    >
       {icon}
     </span>
     {label}
@@ -54,7 +73,11 @@ const MoreMenuItem = ({ icon, label, isDanger, trailingText, onClick }: MoreMenu
   </Menu.Item>
 );
 
-// TODO: 전사·요약 다운로드는 API 연동 때 구현한다.
+const getDownloadFilename = (meetingTitle: string, contentType: string, extension: string) => {
+  const safeTitle = meetingTitle.trim().replace(/[\\/:*?"<>|]/g, '_') || '회의';
+  return `${safeTitle}-${contentType}.${extension}`;
+};
+
 export const CompletedMeetingMoreMenu = ({
   teamId,
   meetingId,
@@ -69,6 +92,7 @@ export const CompletedMeetingMoreMenu = ({
   const { mutate: deleteAudio } = useDeleteAudioFile();
   const { requestDelete } = useMeetingDelete({ teamId, meetingId });
   const [openDialog, setOpenDialog] = useState<MoreMenuDialog | null>(null);
+  const [downloadingText, setDownloadingText] = useState<'transcript' | 'summary' | null>(null);
   const isLeader = viewerRole === 'leader';
   const isAudioExpired = audio.kind === 'expired';
   const audioFileId = audio.kind === 'available' ? audio.audioFileId : null;
@@ -119,6 +143,71 @@ export const CompletedMeetingMoreMenu = ({
     downloadFile(audioDownload.downloadUrl, `${meetingTitle}-음성.mp4`);
   };
 
+  const handleDownloadTranscript = async () => {
+    setDownloadingText('transcript');
+
+    try {
+      const segments = await queryClient.fetchQuery({
+        queryKey: meetingKeys.transcript(meetingId),
+        queryFn: () => getMeetingTranscript(meetingId),
+      });
+      const entries = mapTranscriptSegments(segments);
+
+      if (entries.length === 0) {
+        showToast('다운로드할 전사가 없습니다.', 'info');
+        return;
+      }
+
+      const content = entries
+        .map(
+          (entry) =>
+            `[${formatTimestamp(Math.floor(entry.startedAtMs / 1000))}] ${entry.speakerName}\n${entry.text}`,
+        )
+        .join('\n\n');
+
+      downloadTextFile(content, getDownloadFilename(meetingTitle, '전사', 'txt'));
+      showToast('전사 파일을 다운로드했습니다.', 'success');
+    } catch (error) {
+      showToast(
+        error instanceof MeetingApiError ? error.message : '전사 다운로드에 실패했습니다.',
+        'danger',
+      );
+    } finally {
+      setDownloadingText(null);
+    }
+  };
+
+  const handleDownloadSummary = async () => {
+    setDownloadingText('summary');
+
+    try {
+      const summary = await queryClient.fetchQuery({
+        queryKey: meetingKeys.summary(meetingId),
+        queryFn: () => getMeetingSummary(meetingId),
+      });
+      const content = summary?.content?.trim();
+
+      if (!content) {
+        showToast('다운로드할 요약이 없습니다.', 'info');
+        return;
+      }
+
+      downloadTextFile(
+        content,
+        getDownloadFilename(meetingTitle, '요약', 'md'),
+        'text/markdown;charset=utf-8',
+      );
+      showToast('요약 파일을 다운로드했습니다.', 'success');
+    } catch (error) {
+      showToast(
+        error instanceof MeetingApiError ? error.message : '요약 다운로드에 실패했습니다.',
+        'danger',
+      );
+    } finally {
+      setDownloadingText(null);
+    }
+  };
+
   return (
     <>
       <Menu.Root>
@@ -145,11 +234,15 @@ export const CompletedMeetingMoreMenu = ({
               />
               <MoreMenuItem
                 icon={<FileText className="size-4" strokeWidth={2} />}
-                label="전사 다운로드"
+                label={downloadingText === 'transcript' ? '전사 다운로드 중...' : '전사 다운로드'}
+                isDisabled={downloadingText !== null}
+                onClick={() => void handleDownloadTranscript()}
               />
               <MoreMenuItem
                 icon={<FileText className="size-4" strokeWidth={2} />}
-                label="요약 다운로드"
+                label={downloadingText === 'summary' ? '요약 다운로드 중...' : '요약 다운로드'}
+                isDisabled={downloadingText !== null}
+                onClick={() => void handleDownloadSummary()}
               />
               {isLeader && (
                 <>

@@ -18,6 +18,8 @@ export { MeetingApiError } from './model/errors';
 export { getMeetingSummaryPhase } from './model/meeting-summary-phase';
 export { meetingKeys } from './model/query-keys';
 export { deleteAudioFile } from './api/delete-audio-file';
+export { getMeetingSummary } from './api/get-meeting-summary';
+export { getMeetingTranscript } from './api/get-meeting-transcript';
 export { useAudioDownloadUrl } from './model/useAudioDownloadUrl';
 export { useAudioFile } from './model/useAudioFile';
 export { useCreateMeeting } from './model/useCreateMeeting';
