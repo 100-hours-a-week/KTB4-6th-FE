@@ -37,7 +37,7 @@ export const TranscriptTab = ({
 
   return (
     <div className="flex flex-1 flex-col px-5 py-5">
-      <div className="sticky top-0 z-10 flex flex-col gap-3 bg-white pb-3">
+      <div className="sticky top-0 z-10 flex flex-col gap-3 pb-3">
         <form
           onSubmit={(event) => {
             event.preventDefault();
