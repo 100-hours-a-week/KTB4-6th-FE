@@ -11,6 +11,7 @@ import {
 } from 'react';
 import type { ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import * as Sentry from '@sentry/nextjs';
 import { joinMeeting } from '../api/join-meeting';
 import { getCurrentMeetingQueryKey } from './current-meeting-query-key';
 import { createListenerRegistry } from './listener-registry';
@@ -91,7 +92,10 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
       let url: URL;
       try {
         url = new URL(`/api/v1/meetings/${encodeURIComponent(meetingId)}/events`, baseUrl);
-      } catch {
+      } catch (error) {
+        Sentry.captureException(error, {
+          tags: { feature: 'meeting-sse', 'meeting.id': meetingId },
+        });
         setStatuses((current) => ({ ...current, [meetingId]: 'error' }));
         return;
       }
@@ -112,7 +116,11 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
           const source = new EventSource(url.toString(), { withCredentials: true });
           sources.current.set(meetingId, source);
 
+          // 연결 자체가 실패했는지, 연결된 뒤에 끊겼는지 구분하기 위해 기록한다.
+          let opened = false;
+
           source.onopen = () => {
+            opened = true;
             setStatuses((current) => ({ ...current, [meetingId]: 'connected' }));
           };
 
@@ -144,6 +152,17 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
             source.close();
             sources.current.delete(meetingId);
             setStatuses((current) => ({ ...current, [meetingId]: 'error' }));
+
+            // 정상 종료(녹음 종료·회의 삭제)는 이벤트 수신 시 disconnect로 핸들러를 먼저 해제한다.
+            Sentry.captureMessage('회의 SSE 연결 끊김', {
+              level: 'error',
+              tags: {
+                feature: 'meeting-sse',
+                'meeting.id': meetingId,
+                'connection.phase': opened ? 'connected' : 'connecting',
+                'page.visibility': document.visibilityState,
+              },
+            });
           };
         } catch {
           if (!attempt.cancelled) {
