@@ -81,7 +81,7 @@ const createMp4File = async (data: BlobPart, fileName: string) => {
 };
 
 /**
- * OPFS에 나뉘어 저장된 여러 part 파일(각각 독립된 webm 컨테이너)을 하나의 mp4로 합친다.
+ * 녹음 객체별로 나뉜 여러 part(각각 독립된 webm 컨테이너)를 하나의 mp4로 합친다.
  * part가 하나뿐이면 기존 단일 파일 변환과 동일하게 동작한다.
  *
  * 각 part가 서로 다른 MediaRecorder 인스턴스에서 나온 별개의 webm 파일이라, 그냥 바이트를

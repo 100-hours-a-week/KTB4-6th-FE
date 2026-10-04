@@ -86,7 +86,7 @@ export function RecordingSessionManager() {
     if (connectionLost) releaseMicrophone();
 
     if (recoveryAttempts.current >= RECOVERY_MAX_ATTEMPTS) {
-      // 재시도를 다 실패했다 — 더 이어갈 방법이 없으니, 그동안 OPFS에 쌓인 part를
+      // 재시도를 다 실패했다 — 더 이어갈 방법이 없으니, 그동안 로컬에 쌓인 part를
       // 병합·업로드해보고(실패해도 종료 자체는 진행) 정상 종료와 같은 방식으로 회의를 끝낸다.
       // 종료 요청까지 실패해도 다시 시도하지 않는다 — 이펙트가 계속 다시 도는 동안
       // 같은 요청을 무한히 반복해 서버를 두드리게 되기 때문이다.
