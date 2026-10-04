@@ -54,7 +54,7 @@ export const MeetingTranscript = ({
   }, [latestSegmentId, segments.length]);
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col">
+    <div data-clarity-mask="true" className="relative flex min-h-0 flex-1 flex-col">
       <main
         ref={containerRef}
         onScroll={handleScroll}
