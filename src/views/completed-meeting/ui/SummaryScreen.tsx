@@ -43,7 +43,11 @@ export const SummaryScreen = ({
     : (creditsQuery.data?.balance ?? null);
 
   return (
-    <main data-tab="summary" className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+    <main
+      data-tab="summary"
+      data-clarity-mask="true"
+      className="flex min-h-0 flex-1 flex-col overflow-y-auto"
+    >
       {state.kind === 'loading' && <SummaryLoadingState />}
       {state.kind === 'generating' && <SummaryGeneratingState />}
       {state.kind === 'failed' && (
