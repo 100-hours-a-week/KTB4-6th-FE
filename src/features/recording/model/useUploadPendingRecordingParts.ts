@@ -13,6 +13,34 @@ import { useMediaRecorder } from './useMediaRecorder';
 import { useRecordingSessionStore } from './useRecordingSessionStore';
 import { useUploadRecordingFile } from './useUploadRecordingFile';
 
+const WEBM_EBML_HEADER = [0x1a, 0x45, 0xdf, 0xa3];
+const WEBM_CLUSTER_ID = [0x1f, 0x43, 0xb6, 0x75];
+// 오디오 데이터(Cluster)는 헤더 바로 뒤에 오므로 앞부분만 확인한다.
+const WEBM_CLUSTER_SEARCH_BYTES = 64 * 1024;
+
+const startsWith = (bytes: Uint8Array, pattern: number[]) =>
+  pattern.every((value, index) => bytes[index] === value);
+
+const includesSequence = (bytes: Uint8Array, pattern: number[]) => {
+  for (let start = 0; start <= bytes.length - pattern.length; start += 1) {
+    if (pattern.every((value, index) => bytes[start + index] === value)) return true;
+  }
+  return false;
+};
+
+// 녹음 직후 바로 일시정지하면 헤더 일부만 있는 part가 남아 ffmpeg 병합이 통째로 실패한다.
+// webm은 헤더와 오디오 데이터가 있는 part만, webm이 아닌 형식(mp4 등)은 비어있지 않으면 병합한다.
+const isMergeableRecordingPart = async (part: Blob) => {
+  if (part.size === 0) return false;
+
+  const head = new Uint8Array(
+    await part.slice(0, Math.min(part.size, WEBM_CLUSTER_SEARCH_BYTES)).arrayBuffer(),
+  );
+  if (!startsWith(head, WEBM_EBML_HEADER.slice(0, head.length))) return true;
+
+  return startsWith(head, WEBM_EBML_HEADER) && includesSequence(head, WEBM_CLUSTER_ID);
+};
+
 // IndexedDB 전환 전에 시작된 녹음은 앞부분이 OPFS part로 남아 있어 앞에 붙여 병합한다.
 const readLegacyOpfsParts = async (recordingSessionId: number): Promise<Blob[]> => {
   if (!isOpfsSupported()) return [];
@@ -46,12 +74,12 @@ export const useUploadPendingRecordingParts = () => {
 
     try {
       await flushRecordingChunks();
-      // recorder만 만들어지고 chunk가 하나도 안 쓰인 part는 0바이트로 남는다(재연결 실패 등).
-      // 빈 파일이 하나라도 섞이면 ffmpeg 병합이 통째로 실패하므로 여기서 걸러낸다.
-      const parts = [
+      const allParts = [
         ...(await readLegacyOpfsParts(recordingSessionId)),
         ...(isIndexedDbSupported() ? await readRecordingChunkParts(recordingSessionId) : []),
-      ].filter((part) => part.size > 0);
+      ];
+      const mergeable = await Promise.all(allParts.map(isMergeableRecordingPart));
+      const parts = allParts.filter((_, index) => mergeable[index]);
       if (parts.length === 0) throw new Error('저장된 녹음 파일이 없습니다.');
 
       stage = 'convert';
