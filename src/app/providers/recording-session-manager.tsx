@@ -1,175 +1,23 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useRecordingChunkBuffer, useRecordingSessionStore } from '@/features/recording';
 import { useRecordingWebSocket } from '@/features/recording-websocket';
-import {
-  acknowledgeRecordingChunks,
-  appendRecordingChunk,
-  useCompleteRecording,
-  useMediaRecorder,
-  useRecordingChunkBuffer,
-  useRecordingSessionStore,
-  useUploadPendingRecordingParts,
-  waitForChunkCursor,
-} from '@/features/recording';
-import { useAppToast } from '@/shared/ui';
+import { useRecordingAckSync } from './use-recording-ack-sync';
+import { useRecordingConnectionRecovery } from './use-recording-connection-recovery';
+import { useRecordingStreamStart } from './use-recording-stream-start';
 
-const RECOVERY_MAX_ATTEMPTS = 2;
-const RECOVERY_RETRY_DELAY_MS = 2000;
-
+/** 앱 전역에서 녹음 소켓 연결·복구·녹음 시작과 로컬 chunk 관리를 맡는다. */
 export function RecordingSessionManager() {
-  const activeRecording = useRecordingSessionStore((state) => state.activeRecording);
-  const isPausedByUser = useRecordingSessionStore((state) => state.isPausedByUser);
-  const setOperation = useRecordingSessionStore((state) => state.setOperation);
-  const clearActiveRecording = useRecordingSessionStore((state) => state.clearActiveRecording);
-  const recorderStatus = useMediaRecorder((state) => state.status);
-  const prepareMicrophone = useMediaRecorder((state) => state.prepare);
-  const startBrowserRecording = useMediaRecorder((state) => state.start);
-  const releaseMicrophone = useMediaRecorder((state) => state.release);
-  const uploadPendingRecordingParts = useUploadPendingRecordingParts();
-  const completeRecording = useCompleteRecording();
-  const { statuses, connect, sendAudioChunk, disconnect, addMessageListener } =
-    useRecordingWebSocket();
-  const { showToast } = useAppToast();
-  const recordingSessionId = activeRecording?.recordingSessionId;
-  const socketStatus = recordingSessionId === undefined ? undefined : statuses[recordingSessionId];
-  const recoveryAttempts = useRef(0);
-  const hasGivenUp = useRef(false);
-  useRecordingChunkBuffer(recordingSessionId ?? null);
-
-  useEffect(
-    () =>
-      addMessageListener((id, message) => {
-        if (message.type === 'ack') acknowledgeRecordingChunks(id, message.seq);
-      }),
-    [addMessageListener],
+  const recordingSessionId = useRecordingSessionStore(
+    (state) => state.activeRecording?.recordingSessionId,
   );
+  const { statuses } = useRecordingWebSocket();
+  const socketStatus = recordingSessionId === undefined ? undefined : statuses[recordingSessionId];
 
-  // 녹음 세션이 바뀌면(새로 시작했거나 종료됐거나) 이전 세션의 재시도 기록은 버린다.
-  useEffect(() => {
-    recoveryAttempts.current = 0;
-    hasGivenUp.current = false;
-  }, [recordingSessionId]);
-
-  useEffect(() => {
-    if (recordingSessionId === undefined) return;
-
-    if (socketStatus === 'connected' && useMediaRecorder.getState().status === 'ready') {
-      let cancelled = false;
-      void (async () => {
-        try {
-          if (!(await waitForChunkCursor(recordingSessionId))) {
-            throw new Error('녹음 chunk 순번을 정하지 못했습니다.');
-          }
-          if (cancelled) return;
-          startBrowserRecording((chunk) => {
-            appendRecordingChunk(chunk, (seq) => sendAudioChunk(recordingSessionId, chunk, seq));
-          });
-          recoveryAttempts.current = 0;
-        } catch {
-          if (cancelled) return;
-          disconnect(recordingSessionId);
-          releaseMicrophone();
-          showToast('브라우저 녹음을 시작하지 못했습니다.', 'danger');
-        }
-      })();
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    // 일시정지는 이제 recorder를 없애는 방식이라 recorderStatus가 'paused'가 될 일은 없다.
-    const connectionLost =
-      socketStatus === 'error' ||
-      socketStatus === 'unconfigured' ||
-      (socketStatus === 'idle' && recorderStatus === 'recording');
-
-    // 사용자가 직접 일시정지한 거라면(recorder도 이때 없앤다) 자동으로 끼어들지 않고
-    // 재개를 눌러 isPausedByUser가 false가 될 때까지 기다린다.
-    if (isPausedByUser) return;
-
-    // recorder는 준비됐는데 소켓이 아직 없는 상태면 연결만 하면 된다.
-    // prepareMicrophone()이 진행되는 동안 recorderStatus가 바뀌면서 이펙트가 다시 도는데,
-    // 그때 정리 함수가 원래 흐름을 취소해버리기 때문에 이 단계를 따로 두지 않으면
-    // 마이크만 준비된 채로 연결이 영영 시도되지 않는다.
-    if (!connectionLost && recorderStatus === 'ready' && socketStatus !== 'connecting') {
-      const { audioFormat } = useMediaRecorder.getState();
-      if (audioFormat) connect(recordingSessionId, audioFormat);
-      return;
-    }
-
-    // 소켓만 끊긴 경우든, 새로고침 등으로 recorder 자체가 없어진 경우든 전부 같은 방식으로
-    // 복구한다 — 마이크·recorder를 다시 만들고 같은 recordingSessionId로 재연결한다.
-    const needsRecovery = connectionLost || recorderStatus === 'idle';
-    if (!needsRecovery) return;
-
-    if (connectionLost) releaseMicrophone();
-
-    if (recoveryAttempts.current >= RECOVERY_MAX_ATTEMPTS) {
-      // 재시도를 다 실패했다 — 더 이어갈 방법이 없으니, 그동안 로컬에 쌓인 part를
-      // 병합·업로드해보고(실패해도 종료 자체는 진행) 정상 종료와 같은 방식으로 회의를 끝낸다.
-      // 종료 요청까지 실패해도 다시 시도하지 않는다 — 이펙트가 계속 다시 도는 동안
-      // 같은 요청을 무한히 반복해 서버를 두드리게 되기 때문이다.
-      if (!hasGivenUp.current && useRecordingSessionStore.getState().operation === 'idle') {
-        hasGivenUp.current = true;
-        setOperation('finishing');
-        void (async () => {
-          try {
-            await uploadPendingRecordingParts(recordingSessionId).catch(() => {});
-            await completeRecording.mutateAsync(recordingSessionId);
-            disconnect(recordingSessionId);
-            clearActiveRecording(recordingSessionId);
-          } catch {
-            showToast('연결이 끊겨 회의를 자동으로 종료하려 했지만 실패했습니다.', 'danger');
-          } finally {
-            setOperation('idle');
-          }
-        })();
-      }
-      return;
-    }
-
-    let cancelled = false;
-    const attemptNumber = recoveryAttempts.current + 1;
-    recoveryAttempts.current = attemptNumber;
-
-    const timeoutId = window.setTimeout(
-      () => {
-        if (cancelled) return;
-        void (async () => {
-          try {
-            const audioFormat = await prepareMicrophone();
-            if (cancelled) return;
-            connect(recordingSessionId, audioFormat);
-          } catch {
-            // 실패하면 recoveryAttempts가 이미 늘어난 채라 다음 렌더에서 다시 시도된다.
-          }
-        })();
-      },
-      attemptNumber === 1 ? 0 : RECOVERY_RETRY_DELAY_MS * attemptNumber,
-    );
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timeoutId);
-    };
-  }, [
-    clearActiveRecording,
-    completeRecording,
-    connect,
-    disconnect,
-    isPausedByUser,
-    prepareMicrophone,
-    recorderStatus,
-    recordingSessionId,
-    releaseMicrophone,
-    sendAudioChunk,
-    setOperation,
-    showToast,
-    socketStatus,
-    startBrowserRecording,
-    uploadPendingRecordingParts,
-  ]);
+  useRecordingChunkBuffer();
+  useRecordingAckSync();
+  const { resetAttempts } = useRecordingConnectionRecovery({ recordingSessionId, socketStatus });
+  useRecordingStreamStart({ recordingSessionId, socketStatus, onStarted: resetAttempts });
 
   return null;
 }
