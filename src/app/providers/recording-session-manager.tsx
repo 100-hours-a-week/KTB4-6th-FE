@@ -9,6 +9,7 @@ import {
   useRecordingChunkBuffer,
   useRecordingSessionStore,
   useUploadPendingRecordingParts,
+  waitForChunkCursor,
 } from '@/features/recording';
 import { useAppToast } from '@/shared/ui';
 
@@ -44,18 +45,27 @@ export function RecordingSessionManager() {
     if (recordingSessionId === undefined) return;
 
     if (socketStatus === 'connected' && useMediaRecorder.getState().status === 'ready') {
-      recoveryAttempts.current = 0;
-      try {
-        startBrowserRecording((chunk) => {
-          sendAudioChunk(recordingSessionId, chunk);
-          appendRecordingChunk(chunk);
-        });
-      } catch {
-        disconnect(recordingSessionId);
-        releaseMicrophone();
-        showToast('브라우저 녹음을 시작하지 못했습니다.', 'danger');
-      }
-      return;
+      let cancelled = false;
+      void (async () => {
+        try {
+          if (!(await waitForChunkCursor(recordingSessionId))) {
+            throw new Error('녹음 chunk 순번을 정하지 못했습니다.');
+          }
+          if (cancelled) return;
+          startBrowserRecording((chunk) => {
+            appendRecordingChunk(chunk, () => sendAudioChunk(recordingSessionId, chunk));
+          });
+          recoveryAttempts.current = 0;
+        } catch {
+          if (cancelled) return;
+          disconnect(recordingSessionId);
+          releaseMicrophone();
+          showToast('브라우저 녹음을 시작하지 못했습니다.', 'danger');
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
     }
 
     // 일시정지는 이제 recorder를 없애는 방식이라 recorderStatus가 'paused'가 될 일은 없다.

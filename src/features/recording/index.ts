@@ -5,6 +5,7 @@ export {
   appendRecordingChunk,
   flushRecordingChunks,
   useRecordingChunkBuffer,
+  waitForChunkCursor,
 } from './model/useRecordingChunkBuffer';
 export { readOpfsPartFilesInOrder, removeOpfsPartFiles } from './model/opfs-recording-parts';
 export { useRecordingSessionStore } from './model/useRecordingSessionStore';
