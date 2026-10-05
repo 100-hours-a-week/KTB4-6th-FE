@@ -12,14 +12,20 @@ import {
 } from 'react';
 import * as Sentry from '@sentry/nextjs';
 import type { AudioFormat } from '@/entities/recording';
+import {
+  createAudioFrame,
+  createRecoveryFinishedMessage,
+  isRecoveryMessage,
+  parseSocketMessage,
+  type RecordingSocketMessage,
+  type RecoveryMessage,
+  type RecoveryMessageType,
+} from './recording-socket-protocol';
+import { createRecoveryMessageInbox } from './recovery-message-inbox';
+import { reportSocketFailure } from './report-socket-failure';
 
 export type RecordingWebSocketStatus =
   'idle' | 'unconfigured' | 'connecting' | 'connected' | 'error';
-
-export type RecordingSocketMessage =
-  | { type: 'ack'; seq: number }
-  | { type: 'recovery.start'; lastProcessedSequence: number }
-  | { type: 'stream.ready' };
 
 type RecordingSocketMessageListener = (
   recordingSessionId: number,
@@ -33,81 +39,31 @@ interface RecordingWebSocketContextValue {
   sendRecoveryFinished: (recordingSessionId: number, lastSequence: number) => void;
   disconnect: (recordingSessionId: number) => void;
   addMessageListener: (listener: RecordingSocketMessageListener) => () => void;
+  waitForRecoveryMessage: (
+    recordingSessionId: number,
+    types: RecoveryMessageType[],
+    timeoutMs: number,
+  ) => Promise<RecoveryMessage>;
 }
 
 const RecordingWebSocketContext = createContext<RecordingWebSocketContextValue | null>(null);
 
-const SEQ_HEADER_BYTES = 8;
-
-const parseSocketMessage = (data: unknown): RecordingSocketMessage | null => {
-  if (typeof data !== 'string') return null;
-
-  let message: Record<string, unknown>;
-  try {
-    const parsed: unknown = JSON.parse(data);
-    if (typeof parsed !== 'object' || parsed === null) return null;
-    message = parsed as Record<string, unknown>;
-  } catch {
-    return null;
-  }
-
-  switch (message.type) {
-    case 'ack':
-      return Number.isSafeInteger(message.seq) ? { type: 'ack', seq: message.seq as number } : null;
-    case 'recovery.start':
-      return Number.isSafeInteger(message.lastProcessedSequence)
-        ? {
-            type: 'recovery.start',
-            lastProcessedSequence: message.lastProcessedSequence as number,
-          }
-        : null;
-    case 'stream.ready':
-      return { type: 'stream.ready' };
-    default:
-      return null;
-  }
-};
-
-const createAudioFrame = (chunk: Blob, seq: number) => {
-  const header = new ArrayBuffer(SEQ_HEADER_BYTES);
-  new DataView(header).setBigUint64(0, BigInt(seq), false);
-  return new Blob([header, chunk]);
-};
-
-/** 녹음 음성 전송 연결이 끊긴 사실을 보고한다. 이후 음성은 서버로 실시간 전송되지 않는다. */
-const reportSocketFailure = (
-  message: string,
-  recordingSessionId: number,
-  opened: boolean,
-  closeEvent?: CloseEvent,
-) => {
-  Sentry.captureMessage(message, {
-    level: 'error',
-    tags: {
-      feature: 'recording-websocket',
-      'recording.session_id': recordingSessionId,
-      'connection.phase': opened ? 'connected' : 'connecting',
-      'page.visibility': document.visibilityState,
-      ...(closeEvent && { 'websocket.close_code': closeEvent.code }),
-    },
-    ...(closeEvent && {
-      contexts: {
-        websocket: {
-          code: closeEvent.code,
-          reason: closeEvent.reason,
-          wasClean: closeEvent.wasClean,
-        },
-      },
-    }),
-  });
-};
-
 export function RecordingWebSocketProvider({ children }: { children: ReactNode }) {
   const sockets = useRef(new Map<number, WebSocket>());
   const messageListeners = useRef(new Set<RecordingSocketMessageListener>());
+  const recoveryInbox = useRef(createRecoveryMessageInbox());
   const [statuses, setStatuses] = useState<Record<number, RecordingWebSocketStatus>>({});
 
+  const waitForRecoveryMessage = useCallback(
+    (recordingSessionId: number, types: RecoveryMessageType[], timeoutMs: number) =>
+      sockets.current.has(recordingSessionId)
+        ? recoveryInbox.current.wait(recordingSessionId, types, timeoutMs)
+        : Promise.reject(new Error('녹음 WebSocket 연결이 없습니다.')),
+    [],
+  );
+
   const disconnect = useCallback((recordingSessionId: number) => {
+    recoveryInbox.current.clear(recordingSessionId);
     const socket = sockets.current.get(recordingSessionId);
     if (socket) {
       sockets.current.delete(recordingSessionId);
@@ -122,6 +78,7 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
 
   const connect = useCallback((recordingSessionId: number, audioFormat: AudioFormat) => {
     if (sockets.current.has(recordingSessionId)) return;
+    recoveryInbox.current.clear(recordingSessionId);
 
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
     if (!baseUrl) {
@@ -167,11 +124,13 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
       const message = parseSocketMessage(event.data);
       if (!message) return;
       messageListeners.current.forEach((listener) => listener(recordingSessionId, message));
+      if (isRecoveryMessage(message)) recoveryInbox.current.deliver(recordingSessionId, message);
     };
 
     socket.onerror = () => {
       if (sockets.current.get(recordingSessionId) !== socket) return;
       sockets.current.delete(recordingSessionId);
+      recoveryInbox.current.clear(recordingSessionId);
       socket.close();
       setStatuses((current) => ({ ...current, [recordingSessionId]: 'error' }));
       reportSocketFailure('녹음 WebSocket 오류', recordingSessionId, opened);
@@ -181,6 +140,7 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
     socket.onclose = (event) => {
       if (sockets.current.get(recordingSessionId) !== socket) return;
       sockets.current.delete(recordingSessionId);
+      recoveryInbox.current.clear(recordingSessionId);
       setStatuses((current) => ({ ...current, [recordingSessionId]: 'error' }));
       reportSocketFailure('녹음 WebSocket 연결 종료', recordingSessionId, opened, event);
     };
@@ -194,7 +154,7 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
   const sendRecoveryFinished = useCallback((recordingSessionId: number, lastSequence: number) => {
     const socket = sockets.current.get(recordingSessionId);
     if (socket?.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify({ type: 'recovery.finished', lastSequence }));
+      socket.send(createRecoveryFinishedMessage(lastSequence));
     }
   }, []);
 
@@ -227,8 +187,17 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
       sendRecoveryFinished,
       disconnect,
       addMessageListener,
+      waitForRecoveryMessage,
     }),
-    [statuses, connect, sendAudioChunk, sendRecoveryFinished, disconnect, addMessageListener],
+    [
+      statuses,
+      connect,
+      sendAudioChunk,
+      sendRecoveryFinished,
+      disconnect,
+      addMessageListener,
+      waitForRecoveryMessage,
+    ],
   );
 
   return (
