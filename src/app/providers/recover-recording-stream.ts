@@ -17,6 +17,8 @@ interface RecoverRecordingStreamParams {
   ) => Promise<{ seq: number; data: Blob }[]>;
   sendAudioChunk: (recordingSessionId: number, chunk: Blob, seq: number) => void;
   sendRecoveryFinished: (recordingSessionId: number, lastSequence: number) => void;
+  /** 이전 녹음이 있어 이어서 녹음해야 할 때(첫 연결이 아닐 때) 한 번 호출된다. */
+  onResuming?: () => void;
 }
 
 /**
@@ -30,6 +32,7 @@ export const recoverRecordingStream = async ({
   getChunksToResend,
   sendAudioChunk,
   sendRecoveryFinished,
+  onResuming,
 }: RecoverRecordingStreamParams) => {
   let message = await waitForRecoveryMessage(
     recordingSessionId,
@@ -42,6 +45,7 @@ export const recoverRecordingStream = async ({
     const { lastProcessedSequence } = message;
 
     const chunks = await getChunksToResend(recordingSessionId, lastProcessedSequence);
+    if (round === 1 && (lastProcessedSequence > 0 || chunks.length > 0)) onResuming?.();
     chunks.forEach((chunk) => sendAudioChunk(recordingSessionId, chunk.data, chunk.seq));
     sendRecoveryFinished(recordingSessionId, chunks.at(-1)?.seq ?? lastProcessedSequence);
 

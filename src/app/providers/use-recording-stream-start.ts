@@ -6,6 +6,7 @@ import {
   getRecordingChunksToResend,
   prepareChunkCursor,
   useMediaRecorder,
+  useRecordingSessionStore,
 } from '@/features/recording';
 import {
   useRecordingWebSocket,
@@ -34,6 +35,7 @@ export const useRecordingStreamStart = ({
   const releaseMicrophone = useMediaRecorder((state) => state.release);
   const { sendAudioChunk, sendRecoveryFinished, disconnect, waitForRecoveryMessage } =
     useRecordingWebSocket();
+  const setIsResumingStream = useRecordingSessionStore((state) => state.setIsResumingStream);
   const { showToast } = useAppToast();
   // 연결 하나에 복구가 한 번만 돌도록 막고, 연결이 바뀌면 진행 중이던 복구 결과는 버린다.
   const runId = useRef(0);
@@ -66,6 +68,7 @@ export const useRecordingStreamStart = ({
           getChunksToResend: getRecordingChunksToResend,
           sendAudioChunk,
           sendRecoveryFinished,
+          onResuming: () => setIsResumingStream(true),
         });
         await prepareChunkCursor(recordingSessionId, lastProcessedSequence);
         if (currentRunId !== runId.current) return;
@@ -77,6 +80,7 @@ export const useRecordingStreamStart = ({
       } catch {
         if (currentRunId === runId.current) handleFailed(recordingSessionId);
       } finally {
+        setIsResumingStream(false);
         if (currentRunId === runId.current) isStarting.current = false;
       }
     })();
@@ -85,6 +89,7 @@ export const useRecordingStreamStart = ({
     recordingSessionId,
     sendAudioChunk,
     sendRecoveryFinished,
+    setIsResumingStream,
     socketStatus,
     startBrowserRecording,
     waitForRecoveryMessage,
