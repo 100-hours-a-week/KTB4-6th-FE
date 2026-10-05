@@ -16,18 +16,43 @@ import type { AudioFormat } from '@/entities/recording';
 export type RecordingWebSocketStatus =
   'idle' | 'unconfigured' | 'connecting' | 'connected' | 'error';
 
+export type RecordingSocketMessage = { type: 'ack'; seq: number };
+
+type RecordingSocketMessageListener = (
+  recordingSessionId: number,
+  message: RecordingSocketMessage,
+) => void;
+
 interface RecordingWebSocketContextValue {
   statuses: Record<number, RecordingWebSocketStatus>;
   connect: (recordingSessionId: number, audioFormat: AudioFormat) => void;
   sendAudioChunk: (recordingSessionId: number, chunk: Blob, seq: number) => void;
   disconnect: (recordingSessionId: number) => void;
+  addMessageListener: (listener: RecordingSocketMessageListener) => () => void;
 }
 
 const RecordingWebSocketContext = createContext<RecordingWebSocketContextValue | null>(null);
 
 const SEQ_HEADER_BYTES = 8;
 
-/** BE와 맞춘 형식: [순번 8바이트, big-endian unsigned][오디오 바이트] */
+const parseSocketMessage = (data: unknown): RecordingSocketMessage | null => {
+  if (typeof data !== 'string') return null;
+  try {
+    const message: unknown = JSON.parse(data);
+    if (
+      typeof message === 'object' &&
+      message !== null &&
+      'type' in message &&
+      message.type === 'ack' &&
+      'seq' in message &&
+      Number.isSafeInteger(message.seq)
+    ) {
+      return { type: 'ack', seq: message.seq as number };
+    }
+  } catch {}
+  return null;
+};
+
 const createAudioFrame = (chunk: Blob, seq: number) => {
   const header = new ArrayBuffer(SEQ_HEADER_BYTES);
   new DataView(header).setBigUint64(0, BigInt(seq), false);
@@ -64,6 +89,7 @@ const reportSocketFailure = (
 
 export function RecordingWebSocketProvider({ children }: { children: ReactNode }) {
   const sockets = useRef(new Map<number, WebSocket>());
+  const messageListeners = useRef(new Set<RecordingSocketMessageListener>());
   const [statuses, setStatuses] = useState<Record<number, RecordingWebSocketStatus>>({});
 
   const disconnect = useCallback((recordingSessionId: number) => {
@@ -73,6 +99,7 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
       socket.onopen = null;
       socket.onerror = null;
       socket.onclose = null;
+      socket.onmessage = null;
       socket.close();
     }
     setStatuses((current) => ({ ...current, [recordingSessionId]: 'idle' }));
@@ -120,6 +147,13 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
       setStatuses((current) => ({ ...current, [recordingSessionId]: 'connected' }));
     };
 
+    socket.onmessage = (event: MessageEvent) => {
+      if (sockets.current.get(recordingSessionId) !== socket) return;
+      const message = parseSocketMessage(event.data);
+      if (!message) return;
+      messageListeners.current.forEach((listener) => listener(recordingSessionId, message));
+    };
+
     socket.onerror = () => {
       if (sockets.current.get(recordingSessionId) !== socket) return;
       sockets.current.delete(recordingSessionId);
@@ -149,15 +183,23 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
         socket.onopen = null;
         socket.onerror = null;
         socket.onclose = null;
+        socket.onmessage = null;
         socket.close();
       });
       activeSockets.clear();
     };
   }, []);
 
+  const addMessageListener = useCallback((listener: RecordingSocketMessageListener) => {
+    messageListeners.current.add(listener);
+    return () => {
+      messageListeners.current.delete(listener);
+    };
+  }, []);
+
   const value = useMemo(
-    () => ({ statuses, connect, sendAudioChunk, disconnect }),
-    [statuses, connect, sendAudioChunk, disconnect],
+    () => ({ statuses, connect, sendAudioChunk, disconnect, addMessageListener }),
+    [statuses, connect, sendAudioChunk, disconnect, addMessageListener],
   );
 
   return (

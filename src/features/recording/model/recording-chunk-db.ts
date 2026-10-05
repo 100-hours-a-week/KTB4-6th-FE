@@ -106,6 +106,19 @@ export const getPendingRecordingChunks = async (recordingSessionId: number) => {
   return db.getAllFromIndex(STORE_NAME, 'bySessionStatus', [recordingSessionId, 'pending']);
 };
 
+/** 이 세션에서 seq 이하의 수신 미확인 chunk를 수신 확인(acked)으로 바꾼다. */
+export const markRecordingChunksAcked = async (recordingSessionId: number, seq: number) => {
+  const db = await getDb();
+  const tx = db.transaction(STORE_NAME, 'readwrite');
+  let cursor = await tx.store.index('bySessionStatus').openCursor([recordingSessionId, 'pending']);
+
+  while (cursor && cursor.value.seq <= seq) {
+    await cursor.update({ ...cursor.value, status: 'acked' });
+    cursor = await cursor.continue();
+  }
+  await tx.done;
+};
+
 export const deleteRecordingChunks = async (recordingSessionId: number) => {
   const db = await getDb();
   await db.delete(STORE_NAME, sessionRange(recordingSessionId));

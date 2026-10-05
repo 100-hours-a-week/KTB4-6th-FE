@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useRecordingWebSocket } from '@/features/recording-websocket';
 import {
+  acknowledgeRecordingChunks,
   appendRecordingChunk,
   useCompleteRecording,
   useMediaRecorder,
@@ -27,13 +28,22 @@ export function RecordingSessionManager() {
   const releaseMicrophone = useMediaRecorder((state) => state.release);
   const uploadPendingRecordingParts = useUploadPendingRecordingParts();
   const completeRecording = useCompleteRecording();
-  const { statuses, connect, sendAudioChunk, disconnect } = useRecordingWebSocket();
+  const { statuses, connect, sendAudioChunk, disconnect, addMessageListener } =
+    useRecordingWebSocket();
   const { showToast } = useAppToast();
   const recordingSessionId = activeRecording?.recordingSessionId;
   const socketStatus = recordingSessionId === undefined ? undefined : statuses[recordingSessionId];
   const recoveryAttempts = useRef(0);
   const hasGivenUp = useRef(false);
   useRecordingChunkBuffer(recordingSessionId ?? null);
+
+  useEffect(
+    () =>
+      addMessageListener((id, message) => {
+        if (message.type === 'ack') acknowledgeRecordingChunks(id, message.seq);
+      }),
+    [addMessageListener],
+  );
 
   // 녹음 세션이 바뀌면(새로 시작했거나 종료됐거나) 이전 세션의 재시도 기록은 버린다.
   useEffect(() => {

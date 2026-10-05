@@ -6,6 +6,7 @@ import {
   deleteStaleRecordingChunks,
   getNextRecordingChunkPosition,
   isIndexedDbSupported,
+  markRecordingChunksAcked,
   putRecordingChunk,
 } from './recording-chunk-db';
 import { useMediaRecorder } from './useMediaRecorder';
@@ -85,6 +86,16 @@ export const appendRecordingChunk = (chunk: Blob, send: (seq: number) => void) =
   pendingChunkWrite = pendingChunkWrite.then(() =>
     putRecordingChunk(record).catch((error: unknown) => {
       reportChunkSaveFailure(record.recordingSessionId, error);
+    }),
+  );
+};
+
+/** BE가 받았다고 확인한 순번까지 수신 확인으로 표시한다. 해당 chunk가 저장된 뒤에 처리한다. */
+export const acknowledgeRecordingChunks = (recordingSessionId: number, seq: number) => {
+  if (!isIndexedDbSupported()) return;
+  pendingChunkWrite = pendingChunkWrite.then(() =>
+    markRecordingChunksAcked(recordingSessionId, seq).catch((error: unknown) => {
+      reportChunkSaveFailure(recordingSessionId, error);
     }),
   );
 };
