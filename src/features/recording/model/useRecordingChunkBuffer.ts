@@ -5,12 +5,13 @@ import * as Sentry from '@sentry/nextjs';
 import {
   deleteStaleRecordingChunks,
   getNextRecordingChunkPosition,
+  getPendingRecordingChunks,
   isIndexedDbSupported,
+  markRecordingChunksAcked,
   putRecordingChunk,
 } from './recording-chunk-db';
-import { useMediaRecorder } from './useMediaRecorder';
 
-/** IndexedDB에 다음으로 저장할 chunk의 위치. 녹음 객체가 바뀔 때마다 새로 정한다. */
+/** 다음 chunk에 붙일 순번·녹음 객체 번호. 녹음 객체가 바뀔 때마다 새로 정한다. */
 interface ChunkCursor {
   recordingSessionId: number;
   seq: number;
@@ -18,6 +19,8 @@ interface ChunkCursor {
 }
 
 let chunkCursor: ChunkCursor | null = null;
+// 순번은 전송에도 쓰여서, 저장 대기열과 별도로 번호 결정만 기다릴 수 있게 나눠 둔다.
+let pendingCursor: Promise<void> = Promise.resolve();
 let pendingChunkWrite: Promise<void> = Promise.resolve();
 let reportedFailureSessionId: number | null = null;
 
@@ -38,62 +41,98 @@ const reportChunkSaveFailure = (recordingSessionId: number, error: unknown) => {
   });
 };
 
-const startChunkPart = (recordingSessionId: number) => {
-  pendingChunkWrite = pendingChunkWrite
-    .then(async () => {
-      if (chunkCursor?.recordingSessionId === recordingSessionId) {
-        chunkCursor = { ...chunkCursor, partIndex: chunkCursor.partIndex + 1 };
-        return;
-      }
-      const position = await getNextRecordingChunkPosition(recordingSessionId);
-      chunkCursor = { recordingSessionId, ...position };
-    })
-    .catch((error: unknown) => {
-      // 위치를 못 정하면 이 녹음 객체의 chunk는 IndexedDB에 저장하지 않는다 — 실시간 전송에는 영향 없다.
-      chunkCursor = null;
-      reportChunkSaveFailure(recordingSessionId, error);
-    });
-};
+/**
+ * 새 녹음 객체의 시작 순번·녹음 객체 번호를 정한다.
+ * 순번은 저장된 마지막 순번과 BE가 처리한 순번 중 큰 쪽 다음부터 이어간다.
+ */
+export const prepareChunkCursor = (recordingSessionId: number, lastProcessedSequence: number) => {
+  pendingCursor = pendingCursor.then(async () => {
+    const minSeq = lastProcessedSequence + 1;
+    if (chunkCursor?.recordingSessionId === recordingSessionId) {
+      chunkCursor = {
+        recordingSessionId,
+        seq: Math.max(chunkCursor.seq, minSeq),
+        partIndex: chunkCursor.partIndex + 1,
+      };
+      return;
+    }
 
-export const appendRecordingChunk = (chunk: Blob) => {
-  const createdAt = Date.now();
-
-  pendingChunkWrite = pendingChunkWrite.then(async () => {
-    const cursor = chunkCursor;
-    if (!cursor) return;
-
-    const seq = cursor.seq;
-    cursor.seq += 1;
     try {
-      await putRecordingChunk({
-        recordingSessionId: cursor.recordingSessionId,
-        seq,
-        partIndex: cursor.partIndex,
-        status: 'pending',
-        createdAt,
-        data: chunk,
-      });
+      const position = isIndexedDbSupported()
+        ? await getNextRecordingChunkPosition(recordingSessionId)
+        : { seq: 1, partIndex: 0 };
+      chunkCursor = {
+        recordingSessionId,
+        seq: Math.max(position.seq, minSeq),
+        partIndex: position.partIndex,
+      };
     } catch (error) {
-      // 개별 chunk 저장 실패는 실시간 전송 경로에는 영향 없다.
-      reportChunkSaveFailure(cursor.recordingSessionId, error);
+      // 저장된 위치를 못 읽어도 BE가 처리한 순번 다음부터 녹음을 이어간다. part 번호는 기존과 겹치지 않게 둔다.
+      chunkCursor = { recordingSessionId, seq: minSeq, partIndex: Date.now() };
+      reportChunkSaveFailure(recordingSessionId, error);
     }
   });
+  return pendingCursor;
+};
+
+/** BE가 처리한 순번까지 수신 확인으로 표시하고, 아직 확인받지 못한 chunk를 순번대로 반환한다. */
+export const getRecordingChunksToResend = async (
+  recordingSessionId: number,
+  lastProcessedSequence: number,
+) => {
+  if (!isIndexedDbSupported()) return [];
+  await pendingChunkWrite;
+  try {
+    await markRecordingChunksAcked(recordingSessionId, lastProcessedSequence);
+    return await getPendingRecordingChunks(recordingSessionId);
+  } catch (error) {
+    reportChunkSaveFailure(recordingSessionId, error);
+    return [];
+  }
+};
+
+/** chunk에 순번을 붙여 같은 순번으로 전송하고 IndexedDB에 저장한다. */
+export const appendRecordingChunk = (chunk: Blob, send: (seq: number) => void) => {
+  const cursor = chunkCursor;
+  if (!cursor) return;
+
+  const seq = cursor.seq;
+  cursor.seq += 1;
+  send(seq);
+
+  if (!isIndexedDbSupported()) return;
+  const record = {
+    recordingSessionId: cursor.recordingSessionId,
+    seq,
+    partIndex: cursor.partIndex,
+    status: 'pending' as const,
+    createdAt: Date.now(),
+    data: chunk,
+  };
+  pendingChunkWrite = pendingChunkWrite.then(() =>
+    putRecordingChunk(record).catch((error: unknown) => {
+      reportChunkSaveFailure(record.recordingSessionId, error);
+    }),
+  );
+};
+
+/** BE가 받았다고 확인한 순번까지 수신 확인으로 표시한다. 해당 chunk가 저장된 뒤에 처리한다. */
+export const acknowledgeRecordingChunks = (recordingSessionId: number, seq: number) => {
+  if (!isIndexedDbSupported()) return;
+  pendingChunkWrite = pendingChunkWrite.then(() =>
+    markRecordingChunksAcked(recordingSessionId, seq).catch((error: unknown) => {
+      reportChunkSaveFailure(recordingSessionId, error);
+    }),
+  );
 };
 
 /** 저장된 chunk를 읽기 전에 불러야 마지막 chunk까지 포함된다. */
-export const flushRecordingChunks = () => pendingChunkWrite;
+export const flushRecordingChunks = () => Promise.all([pendingCursor, pendingChunkWrite]);
 
-/** 녹음 객체가 바뀔 때마다 새 part로 chunk를 IndexedDB에 저장해둔다(로컬 백업). */
-export const useRecordingChunkBuffer = (recordingSessionId: number | null) => {
-  const recorder = useMediaRecorder((state) => state.recorder);
-
+/** 앱 시작 시 오래된 세션의 chunk를 정리한다. */
+export const useRecordingChunkBuffer = () => {
   useEffect(() => {
     if (!isIndexedDbSupported()) return;
     void deleteStaleRecordingChunks(STALE_CHUNK_AGE_MS).catch(() => {});
   }, []);
-
-  useEffect(() => {
-    if (recordingSessionId === null || recorder === null || !isIndexedDbSupported()) return;
-    startChunkPart(recordingSessionId);
-  }, [recorder, recordingSessionId]);
 };

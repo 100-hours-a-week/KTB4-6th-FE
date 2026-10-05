@@ -108,13 +108,14 @@ export const CurrentMeetingPage = ({
     handleSubmitEditForm,
     handleCloseEditForm,
   } = useMeetingInfoEdit({ meetingId, meeting });
-  const { isOpen: isRecordingObjectLostNoticeOpen } = useRecordingObjectLostAutoEnd({
-    isPreview,
-    isRecorder,
-    isActivelyRecording: isRecording || isPaused,
-    isCompleted,
-    isPausedByUser,
-  });
+  const { isOpen: isRecordingObjectLostNoticeOpen, isResuming: isResumingRecording } =
+    useRecordingObjectLostAutoEnd({
+      isPreview,
+      isRecorder,
+      isActivelyRecording: isRecording || isPaused,
+      isCompleted,
+      isPausedByUser,
+    });
   // 녹음자의 화면이 꺼져서 녹음 객체가 소실되는 걸 막는다.
   useWakeLock(!isPreview && isRecorder && (isRecording || isPaused));
   // 녹음자가 실수로 새로고침·탭을 닫아 녹음 객체를 잃는 걸 막는다.
@@ -231,7 +232,9 @@ export const CurrentMeetingPage = ({
       )}
 
       {isEnding && <MeetingEndingOverlay />}
-      {isRecordingObjectLostNoticeOpen && <RecordingObjectLostOverlay />}
+      {isRecordingObjectLostNoticeOpen && (
+        <RecordingObjectLostOverlay isResuming={isResumingRecording} />
+      )}
     </div>
   );
 };

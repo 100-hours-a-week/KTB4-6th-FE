@@ -37,8 +37,11 @@ export const useCurrentMeetingConnection = ({
 
   if (hasConnectionError) return 'error';
 
+  // 녹음 종료로 닫혔거나 다른 탭·기기로 대체된 소켓은 다시 연결하지 않으므로 연결 대기로 보지 않는다.
+  const isSocketSettled =
+    socketStatus === 'connected' || socketStatus === 'closed' || socketStatus === 'superseded';
   return sseStatus === 'connected' &&
-    (recordingSessionId === null || socketStatus === 'connected' || isPausedByUser)
+    (recordingSessionId === null || isSocketSettled || isPausedByUser)
     ? 'connected'
     : 'connecting';
 };

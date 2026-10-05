@@ -27,12 +27,15 @@ interface RecordingSessionState {
    * 재연결을 시도하지 않도록 구분하는 데 쓴다.
    */
   isPausedByUser: boolean;
+  /** 재연결 후 끊긴 동안의 녹음을 다시 보내고 새 녹음을 준비하는 중인지 */
+  isResumingStream: boolean;
   setActiveRecording: (recording: ActiveRecording) => void;
   clearActiveRecording: (recordingSessionId: number) => void;
   setPendingUpload: (upload: PendingRecordingUpload) => void;
   markPendingUploadCompleted: (recordingSessionId: number) => void;
   setOperation: (operation: RecordingOperation) => void;
   setIsPausedByUser: (isPausedByUser: boolean) => void;
+  setIsResumingStream: (isResumingStream: boolean) => void;
 }
 
 export const useRecordingSessionStore = create<RecordingSessionState>((set, get) => ({
@@ -40,12 +43,23 @@ export const useRecordingSessionStore = create<RecordingSessionState>((set, get)
   pendingUpload: null,
   operation: 'idle',
   isPausedByUser: false,
+  isResumingStream: false,
 
   setActiveRecording: (recording) =>
-    set({ activeRecording: recording, pendingUpload: null, isPausedByUser: false }),
+    set({
+      activeRecording: recording,
+      pendingUpload: null,
+      isPausedByUser: false,
+      isResumingStream: false,
+    }),
   clearActiveRecording: (recordingSessionId) => {
     if (get().activeRecording?.recordingSessionId === recordingSessionId) {
-      set({ activeRecording: null, pendingUpload: null, isPausedByUser: false });
+      set({
+        activeRecording: null,
+        pendingUpload: null,
+        isPausedByUser: false,
+        isResumingStream: false,
+      });
     }
   },
   setPendingUpload: (pendingUpload) => set({ pendingUpload }),
@@ -57,4 +71,5 @@ export const useRecordingSessionStore = create<RecordingSessionState>((set, get)
   },
   setOperation: (operation) => set({ operation }),
   setIsPausedByUser: (isPausedByUser) => set({ isPausedByUser }),
+  setIsResumingStream: (isResumingStream) => set({ isResumingStream }),
 }));

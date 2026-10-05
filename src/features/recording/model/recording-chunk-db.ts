@@ -70,7 +70,7 @@ export const putRecordingChunk = async (chunk: RecordingChunk) => {
 };
 
 /**
- * 세션 마지막 chunk를 뒤에서부터 하나만 읽어 다음 seq·partIndex 반환, 없으면 (0, 0)
+ * 세션 마지막 chunk를 뒤에서부터 하나만 읽어 다음 seq·partIndex 반환, 없으면 (1, 0)
  */
 export const getNextRecordingChunkPosition = async (recordingSessionId: number) => {
   const db = await getDb();
@@ -78,7 +78,7 @@ export const getNextRecordingChunkPosition = async (recordingSessionId: number) 
     .transaction(STORE_NAME)
     .store.openCursor(sessionRange(recordingSessionId), 'prev');
 
-  if (!cursor) return { seq: 0, partIndex: 0 };
+  if (!cursor) return { seq: 1, partIndex: 0 };
   return { seq: cursor.value.seq + 1, partIndex: cursor.value.partIndex + 1 };
 };
 
@@ -106,6 +106,19 @@ export const getPendingRecordingChunks = async (recordingSessionId: number) => {
   return db.getAllFromIndex(STORE_NAME, 'bySessionStatus', [recordingSessionId, 'pending']);
 };
 
+/** 이 세션에서 seq 이하의 수신 미확인 chunk를 수신 확인(acked)으로 바꾼다. */
+export const markRecordingChunksAcked = async (recordingSessionId: number, seq: number) => {
+  const db = await getDb();
+  const tx = db.transaction(STORE_NAME, 'readwrite');
+  let cursor = await tx.store.index('bySessionStatus').openCursor([recordingSessionId, 'pending']);
+
+  while (cursor && cursor.value.seq <= seq) {
+    await cursor.update({ ...cursor.value, status: 'acked' });
+    cursor = await cursor.continue();
+  }
+  await tx.done;
+};
+
 export const deleteRecordingChunks = async (recordingSessionId: number) => {
   const db = await getDb();
   await db.delete(STORE_NAME, sessionRange(recordingSessionId));
@@ -120,7 +133,6 @@ export const deleteStaleRecordingChunks = async (maxAgeMs: number, now = Date.no
   const db = await getDb();
   const tx = db.transaction(STORE_NAME, 'readwrite');
 
-  // 세션별로 가장 앞 chunk 키를 찾아 다음 세션으로 건너뛰며 순회한다.
   let sessionCursor = await tx.store.openKeyCursor();
   while (sessionCursor) {
     const [recordingSessionId] = sessionCursor.key;
