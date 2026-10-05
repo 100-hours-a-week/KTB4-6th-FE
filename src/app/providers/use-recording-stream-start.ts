@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useEffectEvent, useRef } from 'react';
+import * as Sentry from '@sentry/nextjs';
 import {
   appendRecordingChunk,
   getRecordingChunksToResend,
@@ -42,7 +43,11 @@ export const useRecordingStreamStart = ({
   const isStarting = useRef(false);
 
   const handleStarted = useEffectEvent(onStarted);
-  const handleFailed = useEffectEvent((id: number) => {
+  // 소켓이 끊겨 실패한 경우는 연결 실패로 이미 보고돼서, 연결이 살아 있는 채 실패한 경우만 여기로 온다.
+  const handleFailed = useEffectEvent((id: number, error: unknown) => {
+    Sentry.captureException(error, {
+      tags: { feature: 'recording-recovery', 'recording.session_id': id },
+    });
     disconnect(id);
     releaseMicrophone();
     showToast('브라우저 녹음을 시작하지 못했습니다.', 'danger');
@@ -77,8 +82,8 @@ export const useRecordingStreamStart = ({
           appendRecordingChunk(chunk, (seq) => sendAudioChunk(recordingSessionId, chunk, seq));
         });
         handleStarted();
-      } catch {
-        if (currentRunId === runId.current) handleFailed(recordingSessionId);
+      } catch (error) {
+        if (currentRunId === runId.current) handleFailed(recordingSessionId, error);
       } finally {
         setIsResumingStream(false);
         if (currentRunId === runId.current) isStarting.current = false;
