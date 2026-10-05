@@ -16,7 +16,10 @@ import type { AudioFormat } from '@/entities/recording';
 export type RecordingWebSocketStatus =
   'idle' | 'unconfigured' | 'connecting' | 'connected' | 'error';
 
-export type RecordingSocketMessage = { type: 'ack'; seq: number };
+export type RecordingSocketMessage =
+  | { type: 'ack'; seq: number }
+  | { type: 'recovery.start'; lastProcessedSequence: number }
+  | { type: 'stream.ready' };
 
 type RecordingSocketMessageListener = (
   recordingSessionId: number,
@@ -27,6 +30,7 @@ interface RecordingWebSocketContextValue {
   statuses: Record<number, RecordingWebSocketStatus>;
   connect: (recordingSessionId: number, audioFormat: AudioFormat) => void;
   sendAudioChunk: (recordingSessionId: number, chunk: Blob, seq: number) => void;
+  sendRecoveryFinished: (recordingSessionId: number, lastSequence: number) => void;
   disconnect: (recordingSessionId: number) => void;
   addMessageListener: (listener: RecordingSocketMessageListener) => () => void;
 }
@@ -37,20 +41,31 @@ const SEQ_HEADER_BYTES = 8;
 
 const parseSocketMessage = (data: unknown): RecordingSocketMessage | null => {
   if (typeof data !== 'string') return null;
+
+  let message: Record<string, unknown>;
   try {
-    const message: unknown = JSON.parse(data);
-    if (
-      typeof message === 'object' &&
-      message !== null &&
-      'type' in message &&
-      message.type === 'ack' &&
-      'seq' in message &&
-      Number.isSafeInteger(message.seq)
-    ) {
-      return { type: 'ack', seq: message.seq as number };
-    }
-  } catch {}
-  return null;
+    const parsed: unknown = JSON.parse(data);
+    if (typeof parsed !== 'object' || parsed === null) return null;
+    message = parsed as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+
+  switch (message.type) {
+    case 'ack':
+      return Number.isSafeInteger(message.seq) ? { type: 'ack', seq: message.seq as number } : null;
+    case 'recovery.start':
+      return Number.isSafeInteger(message.lastProcessedSequence)
+        ? {
+            type: 'recovery.start',
+            lastProcessedSequence: message.lastProcessedSequence as number,
+          }
+        : null;
+    case 'stream.ready':
+      return { type: 'stream.ready' };
+    default:
+      return null;
+  }
 };
 
 const createAudioFrame = (chunk: Blob, seq: number) => {
@@ -176,6 +191,13 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
     if (socket?.readyState === WebSocket.OPEN) socket.send(createAudioFrame(chunk, seq));
   }, []);
 
+  const sendRecoveryFinished = useCallback((recordingSessionId: number, lastSequence: number) => {
+    const socket = sockets.current.get(recordingSessionId);
+    if (socket?.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ type: 'recovery.finished', lastSequence }));
+    }
+  }, []);
+
   useEffect(() => {
     const activeSockets = sockets.current;
     return () => {
@@ -198,8 +220,15 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
   }, []);
 
   const value = useMemo(
-    () => ({ statuses, connect, sendAudioChunk, disconnect, addMessageListener }),
-    [statuses, connect, sendAudioChunk, disconnect, addMessageListener],
+    () => ({
+      statuses,
+      connect,
+      sendAudioChunk,
+      sendRecoveryFinished,
+      disconnect,
+      addMessageListener,
+    }),
+    [statuses, connect, sendAudioChunk, sendRecoveryFinished, disconnect, addMessageListener],
   );
 
   return (
