@@ -8,6 +8,11 @@ export type RecoveryMessage = Extract<RecordingSocketMessage, { type: RecoveryMe
 
 const SEQ_HEADER_BYTES = 8;
 
+/** 녹음이 종료(COMPLETED)돼 BE가 닫음 */
+export const CLOSE_CODE_COMPLETED = 1000;
+/** 같은 녹음으로 새 연결이 들어와 BE가 이전 연결을 닫음 */
+export const CLOSE_CODE_SUPERSEDED = 4001;
+
 export const isRecoveryMessage = (message: RecordingSocketMessage): message is RecoveryMessage =>
   message.type === 'recovery.start' || message.type === 'stream.ready';
 

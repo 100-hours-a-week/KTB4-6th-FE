@@ -62,6 +62,10 @@ export const useRecordingConnectionRecovery = ({
     }
   });
 
+  const notifyRecordingElsewhere = useEffectEvent(() => {
+    showToast('다른 탭이나 기기에서 녹음이 진행되고 있어요');
+  });
+
   // 녹음 세션이 바뀌면(새로 시작했거나 종료됐거나) 이전 세션의 재시도 기록은 버린다.
   useEffect(() => {
     recoveryAttempts.current = 0;
@@ -72,6 +76,14 @@ export const useRecordingConnectionRecovery = ({
     if (recordingSessionId === undefined) return;
     // 연결됐고 녹음 객체도 준비됐으면 녹음 시작은 useRecordingStreamStart가 맡는다.
     if (socketStatus === 'connected' && recorderStatus === 'ready') return;
+
+    // 녹음이 종료됐거나 다른 탭·기기가 녹음을 가져갔으면 재연결하지 않고 이 탭의 녹음만 멈춘다.
+    if (socketStatus === 'closed' || socketStatus === 'superseded') {
+      if (recorderStatus === 'idle') return;
+      releaseMicrophone();
+      if (socketStatus === 'superseded') notifyRecordingElsewhere();
+      return;
+    }
 
     // 일시정지는 recorder를 없애는 방식이라 recorderStatus가 'paused'가 될 일은 없다.
     const connectionLost =

@@ -13,6 +13,8 @@ import {
 import * as Sentry from '@sentry/nextjs';
 import type { AudioFormat } from '@/entities/recording';
 import {
+  CLOSE_CODE_COMPLETED,
+  CLOSE_CODE_SUPERSEDED,
   createAudioFrame,
   createRecoveryFinishedMessage,
   isRecoveryMessage,
@@ -24,8 +26,9 @@ import {
 import { createRecoveryMessageInbox } from './recovery-message-inbox';
 import { reportSocketFailure } from './report-socket-failure';
 
+/** closed: 녹음 종료로 BE가 닫음, superseded: 다른 탭·기기의 새 연결로 대체됨. 둘 다 재연결하지 않는다. */
 export type RecordingWebSocketStatus =
-  'idle' | 'unconfigured' | 'connecting' | 'connected' | 'error';
+  'idle' | 'unconfigured' | 'connecting' | 'connected' | 'error' | 'closed' | 'superseded';
 
 type RecordingSocketMessageListener = (
   recordingSessionId: number,
@@ -141,6 +144,13 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
       if (sockets.current.get(recordingSessionId) !== socket) return;
       sockets.current.delete(recordingSessionId);
       recoveryInbox.current.clear(recordingSessionId);
+
+      if (event.code === CLOSE_CODE_COMPLETED || event.code === CLOSE_CODE_SUPERSEDED) {
+        const status = event.code === CLOSE_CODE_COMPLETED ? 'closed' : 'superseded';
+        setStatuses((current) => ({ ...current, [recordingSessionId]: status }));
+        return;
+      }
+
       setStatuses((current) => ({ ...current, [recordingSessionId]: 'error' }));
       reportSocketFailure('녹음 WebSocket 연결 종료', recordingSessionId, opened, event);
     };

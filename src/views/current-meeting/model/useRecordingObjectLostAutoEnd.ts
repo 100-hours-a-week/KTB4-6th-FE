@@ -1,6 +1,7 @@
 'use client';
 
-import { useMediaRecorder } from '@/features/recording';
+import { useMediaRecorder, useRecordingSessionStore } from '@/features/recording';
+import { useRecordingWebSocket } from '@/features/recording-websocket';
 
 interface UseRecordingObjectLostAutoEndParams {
   isPreview: boolean;
@@ -28,13 +29,21 @@ export const useRecordingObjectLostAutoEnd = ({
   isPausedByUser,
 }: UseRecordingObjectLostAutoEndParams) => {
   const recorder = useMediaRecorder((state) => state.recorder);
+  const recordingSessionId = useRecordingSessionStore(
+    (state) => state.activeRecording?.recordingSessionId,
+  );
+  const { statuses } = useRecordingWebSocket();
+  // 다른 탭·기기가 녹음을 가져간 거라면 이 탭의 녹음 객체가 없는 게 정상이다.
+  const isRecordingElsewhere =
+    recordingSessionId !== undefined && statuses[recordingSessionId] === 'superseded';
   const isOpen =
     !isPreview &&
     !isCompleted &&
     isRecorder &&
     isActivelyRecording &&
     recorder === null &&
-    !isPausedByUser;
+    !isPausedByUser &&
+    !isRecordingElsewhere;
 
   return { isOpen };
 };
