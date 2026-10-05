@@ -19,11 +19,20 @@ export type RecordingWebSocketStatus =
 interface RecordingWebSocketContextValue {
   statuses: Record<number, RecordingWebSocketStatus>;
   connect: (recordingSessionId: number, audioFormat: AudioFormat) => void;
-  sendAudioChunk: (recordingSessionId: number, chunk: Blob) => void;
+  sendAudioChunk: (recordingSessionId: number, chunk: Blob, seq: number) => void;
   disconnect: (recordingSessionId: number) => void;
 }
 
 const RecordingWebSocketContext = createContext<RecordingWebSocketContextValue | null>(null);
+
+const SEQ_HEADER_BYTES = 8;
+
+/** BE와 맞춘 형식: [순번 8바이트, big-endian unsigned][오디오 바이트] */
+const createAudioFrame = (chunk: Blob, seq: number) => {
+  const header = new ArrayBuffer(SEQ_HEADER_BYTES);
+  new DataView(header).setBigUint64(0, BigInt(seq), false);
+  return new Blob([header, chunk]);
+};
 
 /** 녹음 음성 전송 연결이 끊긴 사실을 보고한다. 이후 음성은 서버로 실시간 전송되지 않는다. */
 const reportSocketFailure = (
@@ -128,9 +137,9 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
     };
   }, []);
 
-  const sendAudioChunk = useCallback((recordingSessionId: number, chunk: Blob) => {
+  const sendAudioChunk = useCallback((recordingSessionId: number, chunk: Blob, seq: number) => {
     const socket = sockets.current.get(recordingSessionId);
-    if (socket?.readyState === WebSocket.OPEN) socket.send(chunk);
+    if (socket?.readyState === WebSocket.OPEN) socket.send(createAudioFrame(chunk, seq));
   }, []);
 
   useEffect(() => {

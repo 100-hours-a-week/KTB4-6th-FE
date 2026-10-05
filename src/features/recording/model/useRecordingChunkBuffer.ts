@@ -49,7 +49,7 @@ const startChunkPart = (recordingSessionId: number) => {
       }
       const position = isIndexedDbSupported()
         ? await getNextRecordingChunkPosition(recordingSessionId)
-        : { seq: 0, partIndex: 0 };
+        : { seq: 1, partIndex: 0 };
       chunkCursor = { recordingSessionId, ...position };
     })
     .catch((error: unknown) => {

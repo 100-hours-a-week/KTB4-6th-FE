@@ -53,7 +53,7 @@ export function RecordingSessionManager() {
           }
           if (cancelled) return;
           startBrowserRecording((chunk) => {
-            appendRecordingChunk(chunk, () => sendAudioChunk(recordingSessionId, chunk));
+            appendRecordingChunk(chunk, (seq) => sendAudioChunk(recordingSessionId, chunk, seq));
           });
           recoveryAttempts.current = 0;
         } catch {
