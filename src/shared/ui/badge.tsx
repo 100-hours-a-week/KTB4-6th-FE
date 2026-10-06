@@ -6,7 +6,9 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
+        brand: 'bg-brand-100 text-brand-600',
         success: 'bg-success-bg text-success',
+        warning: 'bg-warning-bg text-warning',
         danger: 'bg-danger-bg text-danger',
         outline: 'border border-cool-200 text-cool-600',
         neutral: 'bg-cool-100 text-cool-600',
