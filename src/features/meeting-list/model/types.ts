@@ -3,7 +3,7 @@ export interface ApiErrorPayload {
   message: string;
 }
 
-export type MeetingListItemStatus = 'WAITING' | 'IN_PROGRESS' | 'COMPLETED';
+export type MeetingListItemStatus = 'SCHEDULED' | 'WAITING' | 'IN_PROGRESS' | 'COMPLETED';
 
 export interface MeetingListItemData {
   meetingId: number;

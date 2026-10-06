@@ -6,6 +6,7 @@ import type {
 import type { Meeting } from './type';
 
 const MEETING_STATUS_BY_API_STATUS: Record<MeetingListItemStatus, Meeting['status']> = {
+  SCHEDULED: 'scheduled',
   WAITING: 'waiting',
   IN_PROGRESS: 'in_progress',
   COMPLETED: 'completed',
