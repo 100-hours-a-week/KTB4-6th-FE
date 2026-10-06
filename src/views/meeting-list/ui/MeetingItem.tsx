@@ -27,11 +27,11 @@ export const MeetingItem = ({ meeting, teamId, onRename, onDelete }: MeetingItem
       >
         {meeting.title}
       </Link>
-      <span className="truncate text-xs text-cool-500">{meeting.startedAtLabel}</span>
+      <span className="truncate text-xs text-cool-500">{meeting.time}</span>
     </span>
 
-    {meeting.durationLabel ? (
-      <span className="shrink-0 text-sm font-medium text-cool-600">{meeting.durationLabel}</span>
+    {meeting.subLabel ? (
+      <span className="shrink-0 text-sm font-medium text-cool-600">{meeting.subLabel}</span>
     ) : null}
 
     {onRename && onDelete && (

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { MeetingApiError } from '@/features/meeting';
 import { DeleteConfirmDialog, useAppToast } from '@/shared/ui';
-import type { Meeting, TeamMemberRole } from '../model/type';
+import type { Meeting, MeetingDateGroup, TeamMemberRole } from '../model/type';
 import { useDeleteMeeting } from '../model/useDeleteMeeting';
 import { useRenameMeeting } from '../model/useRenameMeeting';
 import { InProgressMeetingItem } from './InProgressMeetingItem';
@@ -10,7 +10,7 @@ import { MeetingRenameDialog } from './MeetingRenameDialog';
 import { MeetingListLoadMore } from './MeetingListLoadMore';
 
 interface MeetingListSectionProps {
-  meetings: Meeting[];
+  groups: MeetingDateGroup[];
   teamId: number;
   viewerRole: TeamMemberRole;
   hasMore: boolean;
@@ -25,7 +25,7 @@ type MeetingDialog = {
 } | null;
 
 export const MeetingListSection = ({
-  meetings,
+  groups,
   teamId,
   viewerRole,
   hasMore,
@@ -37,6 +37,7 @@ export const MeetingListSection = ({
   const { mutate: deleteMeeting } = useDeleteMeeting(teamId);
   const [dialog, setDialog] = useState<MeetingDialog>(null);
   const isLeader = viewerRole === 'leader';
+  const meetings = groups.flatMap((group) => group.meetings);
 
   const closeDialog = () => setDialog(null);
 

@@ -1,9 +1,10 @@
 import type {
   MeetingListData,
+  MeetingListGroupData,
   MeetingListItemData,
   MeetingListItemStatus,
 } from '@/features/meeting-list';
-import type { Meeting } from './type';
+import type { Meeting, MeetingDateGroup } from './type';
 
 const MEETING_STATUS_BY_API_STATUS: Record<MeetingListItemStatus, Meeting['status']> = {
   SCHEDULED: 'scheduled',
@@ -11,6 +12,8 @@ const MEETING_STATUS_BY_API_STATUS: Record<MeetingListItemStatus, Meeting['statu
   IN_PROGRESS: 'in_progress',
   COMPLETED: 'completed',
 };
+
+const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 const formatMinutes = (totalMinutes: number) => {
   const hours = Math.floor(totalMinutes / 60);
@@ -22,35 +25,61 @@ const formatMinutes = (totalMinutes: number) => {
   return `${hours}시간 ${minutes}분`;
 };
 
-const formatDate = (dateTime: string) => dateTime.slice(0, 10).replaceAll('-', '.');
 const formatTime = (dateTime: string) => dateTime.slice(11, 16);
 
-const getStartedAtLabel = (meeting: MeetingListItemData) => {
-  const startAt =
-    meeting.status === 'WAITING' ? meeting.scheduledAt : (meeting.startedAt ?? meeting.scheduledAt);
-  const date = formatDate(startAt);
-  const time = formatTime(startAt);
+// 그룹 날짜는 시간대 없는 `YYYY-MM-DD`라 UTC로 읽어야 실행 환경 시간대와 상관없이 요일이 맞다.
+const formatGroupLabel = (date: string, currentYear: string) => {
+  const [year, month, day] = date.split('-');
+  const weekday = WEEKDAYS[new Date(Date.UTC(+year, +month - 1, +day)).getUTCDay()];
+  const monthDay = `${month}.${day} (${weekday})`;
 
-  return meeting.status === 'IN_PROGRESS' ? `${date} · ${time} 시작` : `${date} ${time}`;
+  return year === currentYear ? monthDay : `${year}.${monthDay}`;
 };
 
+const getStartAt = (meeting: MeetingListItemData) =>
+  meeting.status === 'SCHEDULED' || meeting.status === 'WAITING'
+    ? meeting.scheduledAt
+    : (meeting.startedAt ?? meeting.scheduledAt);
+
 const getDurationLabel = (meeting: MeetingListItemData) => {
-  if (meeting.status !== 'COMPLETED' || !meeting.startedAt || !meeting.endedAt) return undefined;
+  if (!meeting.startedAt || !meeting.endedAt) return undefined;
 
   const durationMs = new Date(meeting.endedAt).getTime() - new Date(meeting.startedAt).getTime();
 
   return formatMinutes(Math.max(0, Math.ceil(durationMs / 60000)));
 };
 
+const getSubLabel = (meeting: MeetingListItemData) => {
+  if (meeting.status !== 'COMPLETED') {
+    return `목표 ${formatMinutes(meeting.targetDurationMinutes)}`;
+  }
+
+  const durationLabel = getDurationLabel(meeting);
+
+  return durationLabel && `${durationLabel} 진행`;
+};
+
 const toMeeting = (meeting: MeetingListItemData): Meeting => ({
   id: meeting.meetingId,
   title: meeting.title,
   status: MEETING_STATUS_BY_API_STATUS[meeting.status],
-  startedAtLabel: getStartedAtLabel(meeting),
-  durationLabel: getDurationLabel(meeting),
+  time: formatTime(getStartAt(meeting)),
+  subLabel: getSubLabel(meeting),
 });
 
-export const toMeetings = (pages: MeetingListData[]): Meeting[] =>
-  pages.flatMap((page) =>
-    page.groups.flatMap((group) => [...group.meetings].reverse().map(toMeeting)),
-  );
+const toMeetingDateGroup = (
+  group: MeetingListGroupData,
+  currentYear: string,
+): MeetingDateGroup => ({
+  date: group.date,
+  label: formatGroupLabel(group.date, currentYear),
+  meetingCount: group.meetingCount,
+  meetings: group.meetings.map(toMeeting),
+});
+
+/** 서버가 날짜 단위로 페이지를 나누고 정렬해 주므로, 순서를 바꾸거나 그룹을 합치지 않는다. */
+export const toMeetingDateGroups = (
+  pages: MeetingListData[],
+  currentYear: string,
+): MeetingDateGroup[] =>
+  pages.flatMap((page) => page.groups.map((group) => toMeetingDateGroup(group, currentYear)));

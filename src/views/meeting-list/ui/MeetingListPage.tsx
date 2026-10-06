@@ -18,7 +18,7 @@ export const MeetingListPage = ({ teamId }: MeetingListPageProps) => {
   const { data: team } = useTeamDetail(teamId);
   // 팀 정보가 오기 전에는 팀원으로 취급해 팀장 전용 메뉴가 잠깐 보이지 않게 한다.
   const viewerRole: TeamMemberRole = team?.role === 'LEADER' ? 'leader' : 'member';
-  const { status, meetings, hasMore, loadMoreStatus, loadMore } = useMeetingListPageData(teamId);
+  const { status, groups, hasMore, loadMoreStatus, loadMore } = useMeetingListPageData(teamId);
 
   return (
     <div className="flex min-h-[844px] flex-1 flex-col bg-cool-50">
@@ -34,7 +34,7 @@ export const MeetingListPage = ({ teamId }: MeetingListPageProps) => {
         <MeetingListErrorState />
       ) : (
         <MeetingListSection
-          meetings={meetings}
+          groups={groups}
           teamId={teamId}
           viewerRole={viewerRole}
           hasMore={hasMore}

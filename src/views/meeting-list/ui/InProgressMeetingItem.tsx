@@ -35,7 +35,7 @@ export const InProgressMeetingItem = ({
         </Link>
         <Badge variant="danger">진행 중</Badge>
       </span>
-      <span className="truncate text-xs text-cool-500">{meeting.startedAtLabel}</span>
+      <span className="truncate text-xs text-cool-500">{meeting.time} 시작</span>
     </span>
 
     {onRename && onDelete && (
