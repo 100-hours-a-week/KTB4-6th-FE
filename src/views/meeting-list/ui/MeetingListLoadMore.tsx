@@ -1,5 +1,6 @@
 'use client';
 
+import type { RefObject } from 'react';
 import { useInfiniteScrollTrigger } from '@/shared/lib';
 import type { MeetingListLoadMoreStatus } from '../model/type';
 
@@ -7,16 +8,19 @@ interface MeetingListLoadMoreProps {
   hasMore: boolean;
   status: MeetingListLoadMoreStatus;
   onLoadMore: () => void;
+  scrollRootRef: RefObject<HTMLDivElement | null>;
 }
 
-/**
- * 목록 맨 아래에서 다음 회의를 이어서 불러오는 영역. 이 영역이 화면 하단 근처에 보이면 onLoadMore를 부른다.
- * 불러오는 중이거나 실패했을 때는 감시를 멈추고, 실패하면 직접 다시 시도하게 한다.
- */
-export const MeetingListLoadMore = ({ hasMore, status, onLoadMore }: MeetingListLoadMoreProps) => {
+export const MeetingListLoadMore = ({
+  hasMore,
+  status,
+  onLoadMore,
+  scrollRootRef,
+}: MeetingListLoadMoreProps) => {
   const triggerRef = useInfiniteScrollTrigger<HTMLDivElement>(
     onLoadMore,
     hasMore && status === 'idle',
+    scrollRootRef,
   );
 
   if (!hasMore) {

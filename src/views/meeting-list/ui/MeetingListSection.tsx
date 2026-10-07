@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type RefObject } from 'react';
 import { MeetingApiError } from '@/features/meeting';
 import { DeleteConfirmDialog, useAppToast } from '@/shared/ui';
 import type {
@@ -24,6 +24,7 @@ interface MeetingListSectionProps {
   hasMore: boolean;
   loadMoreStatus: 'idle' | 'loading' | 'error';
   onLoadMore: () => void;
+  scrollRootRef: RefObject<HTMLDivElement | null>;
 }
 
 // 열려 있는 다이얼로그. 어떤 회의에 대해 어떤 종류가 열렸는지를 함께 담고, null이면 열린 것이 없다.
@@ -40,6 +41,7 @@ export const MeetingListSection = ({
   hasMore,
   loadMoreStatus,
   onLoadMore,
+  scrollRootRef,
 }: MeetingListSectionProps) => {
   const { showToast } = useAppToast();
   const { mutate: renameMeeting } = useRenameMeeting(teamId);
@@ -49,7 +51,6 @@ export const MeetingListSection = ({
 
   const closeDialog = () => setDialog(null);
 
-  // 팀장에게만 콜백을 넘기고, 팀원에게는 넘기지 않아 항목이 ⋯ 메뉴를 그리지 않는다.
   const getMenuActions = (meeting: Meeting): MeetingMenuActions | undefined =>
     isLeader
       ? {
@@ -141,6 +142,7 @@ export const MeetingListSection = ({
                 hasMore={hasMore}
                 status={loadMoreStatus}
                 onLoadMore={onLoadMore}
+                scrollRootRef={scrollRootRef}
               />
             )}
           </>
