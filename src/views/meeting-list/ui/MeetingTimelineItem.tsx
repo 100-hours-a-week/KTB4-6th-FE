@@ -19,18 +19,25 @@ export const MeetingTimelineItem = ({
   onDelete,
 }: MeetingTimelineItemProps) => {
   const badge = MEETING_STATUS_BADGE[meeting.status];
+  const isCompleted = meeting.status === 'completed';
 
   return (
     <li className="relative pb-3 pl-5 last:pb-0">
       <span
         aria-hidden="true"
-        className="absolute top-[7px] left-0 size-[11px] rounded-full bg-cool-400"
+        className={cn(
+          'absolute top-3 bottom-0 left-1 border-l-2 border-brand-200',
+          !isCompleted && 'border-dashed',
+        )}
       />
+      {/* 점 둘레를 배경색으로 감싸 선이 점에서 끊겨 보이게 한다. 종료 전 회의는 속이 빈 원으로 그린다. */}
       <span
         aria-hidden="true"
         className={cn(
-          'absolute top-5 bottom-0 left-[5px] border-l-[1.5px] border-cool-300',
-          meeting.status !== 'completed' && 'border-dashed',
+          'absolute top-[7px] left-0 size-[11px] rounded-full',
+          isCompleted
+            ? 'bg-brand-400 shadow-[0_0_0_3px_var(--color-cool-50)]'
+            : 'bg-white shadow-[inset_0_0_0_2px_var(--color-brand-400),0_0_0_3px_var(--color-cool-50)]',
         )}
       />
 
