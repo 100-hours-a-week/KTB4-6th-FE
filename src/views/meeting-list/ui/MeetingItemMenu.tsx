@@ -9,6 +9,7 @@ interface MeetingItemMenuProps {
   meetingTitle: string;
   onRename: () => void;
   onDelete: () => void;
+  triggerClassName?: string;
 }
 
 interface MenuItemProps {
@@ -33,15 +34,22 @@ const MenuItem = ({ icon, label, isDanger, onClick }: MenuItemProps) => (
   </Menu.Item>
 );
 
-/** 회의 항목 오른쪽의 ⋯ 메뉴. 어떤 동작을 할지는 부모가 콜백으로 정한다. */
-export const MeetingItemMenu = ({ meetingTitle, onRename, onDelete }: MeetingItemMenuProps) => {
+export const MeetingItemMenu = ({
+  meetingTitle,
+  onRename,
+  onDelete,
+  triggerClassName,
+}: MeetingItemMenuProps) => {
   const frame = useAppFrameElement();
 
   return (
     <Menu.Root>
       <Menu.Trigger
         aria-label={`${meetingTitle} 더 보기`}
-        className="flex size-9 shrink-0 items-center justify-center rounded-full text-cool-500 transition-colors hover:bg-cool-100"
+        className={cn(
+          'flex size-9 shrink-0 items-center justify-center rounded-full text-cool-500 transition-colors hover:bg-cool-100',
+          triggerClassName,
+        )}
       >
         <Ellipsis className="size-5" strokeWidth={2} />
       </Menu.Trigger>

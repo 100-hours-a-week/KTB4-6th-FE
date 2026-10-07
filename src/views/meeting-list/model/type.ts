@@ -14,6 +14,11 @@ export interface Meeting {
   subLabel?: string;
 }
 
+export interface MeetingMenuActions {
+  onRename: () => void;
+  onDelete: () => void;
+}
+
 export interface TodayMeetings {
   label: string;
   meetingCount: number;
