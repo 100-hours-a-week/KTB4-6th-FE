@@ -11,7 +11,7 @@ import type {
 
 interface UseMeetingListPageDataResult {
   status: MeetingListStatus;
-  /** 오늘 회의가 없으면 null */
+  isEmpty: boolean;
   today: TodayMeetings | null;
   groups: MeetingDateGroup[];
 
@@ -23,7 +23,6 @@ interface UseMeetingListPageDataResult {
 
 const noop = () => {};
 
-// en-CA는 날짜를 `YYYY-MM-DD`로 표시한다.
 const kstDateFormatter = new Intl.DateTimeFormat('en-CA', {
   timeZone: 'Asia/Seoul',
   year: 'numeric',
@@ -37,13 +36,13 @@ export const useMeetingListPageData = (teamId: number): UseMeetingListPageDataRe
     useMeetingList(teamId);
   const todayQuery = useTodayMeetings(teamId, today);
 
-  // 두 조회가 모두 도착해야 그린다. 이미 받은 데이터가 있으면 다시 불러오다 실패해도 화면은 그대로 둔다.
   if (!data || !todayQuery.data) {
     const isError =
       (!data && status === 'error') || (!todayQuery.data && todayQuery.status === 'error');
 
     return {
       status: isError ? 'error' : 'loading',
+      isEmpty: false,
       today: null,
       groups: [],
       hasMore: false,
@@ -58,16 +57,19 @@ export const useMeetingListPageData = (teamId: number): UseMeetingListPageDataRe
       ? 'error'
       : 'idle';
 
-  // 이미 불러오는 중에 다시 요청하면 진행 중인 요청이 취소될 수 있어 막는다.
   const loadMore = () => {
     if (!hasNextPage || isFetchingNextPage) return;
     void fetchNextPage();
   };
 
+  const todayMeetings = toTodayMeetings(todayQuery.data, today);
+  const groups = toMeetingDateGroups(data.pages, today);
+
   return {
     status: 'success',
-    today: toTodayMeetings(todayQuery.data, today),
-    groups: toMeetingDateGroups(data.pages, today),
+    isEmpty: !todayMeetings && groups.length === 0 && !hasNextPage,
+    today: todayMeetings,
+    groups,
     hasMore: hasNextPage,
     loadMoreStatus,
     loadMore,
