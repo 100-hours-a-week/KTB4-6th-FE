@@ -94,7 +94,9 @@ export const CurrentMeetingHeader = ({
 
       <div className="mt-4 flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="truncate text-xl font-bold text-cool-900">{meeting.title}</h2>
+          <h2 data-clarity-mask="true" className="truncate text-xl font-bold text-cool-900">
+            {meeting.title}
+          </h2>
           <p className="mt-1 text-sm text-cool-500">
             참여자 {meeting.participantCount} / {teamMemberCount ?? '-'}
           </p>
@@ -160,11 +162,13 @@ export const CurrentMeetingHeader = ({
           </div>
           <div>
             <dt className="font-semibold text-cool-900">회의 목적</dt>
-            <dd className="mt-1 leading-6 break-words text-cool-700">{meeting.purpose}</dd>
+            <dd data-clarity-mask="true" className="mt-1 leading-6 break-words text-cool-700">
+              {meeting.purpose}
+            </dd>
           </div>
           <div>
             <dt className="font-semibold text-cool-900">비고</dt>
-            <dd className="mt-1 leading-6 break-words text-cool-700">
+            <dd data-clarity-mask="true" className="mt-1 leading-6 break-words text-cool-700">
               {meeting.note || <span className="text-cool-400">없음</span>}
             </dd>
           </div>

@@ -32,7 +32,7 @@ export const AppToastProvider = ({ children }: AppToastProviderProps) => {
     <Toast.Provider timeout={TOAST_DURATION_MS}>
       {children}
       <Toast.Portal container={frame}>
-        <Toast.Viewport className="pointer-events-none absolute inset-x-0 bottom-6 z-[100] flex flex-col items-center gap-2 px-4">
+        <Toast.Viewport className="pointer-events-none fixed inset-x-0 bottom-6 z-[100] mx-auto flex w-full max-w-[390px] flex-col items-center gap-2 px-4">
           <AppToastList />
         </Toast.Viewport>
       </Toast.Portal>

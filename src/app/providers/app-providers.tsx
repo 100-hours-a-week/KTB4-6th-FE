@@ -6,6 +6,7 @@ import { MeetingSseProvider } from '@/features/meeting-sse';
 import { RecordingWebSocketProvider } from '@/features/recording-websocket';
 import { AppToastProvider } from '@/shared/ui';
 
+import { ClarityAnalytics } from './clarity-analytics';
 import { ThemeProvider } from './theme-provider';
 import { RecordingSessionManager } from './recording-session-manager';
 import { reportQueryError } from './report-query-error';
@@ -36,6 +37,7 @@ export function AppProviders({ children }: AppProvidersProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <ClarityAnalytics />
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
         <MeetingSseProvider>
           <AppToastProvider>

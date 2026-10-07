@@ -40,7 +40,9 @@ export const CompletedMeetingHeader = ({
         <Menu className="size-5" strokeWidth={2} />
       </button>
       <div className="min-w-0 flex-1">
-        <h1 className="truncate text-xl font-bold text-cool-900">{meeting.title}</h1>
+        <h1 data-clarity-mask="true" className="truncate text-xl font-bold text-cool-900">
+          {meeting.title}
+        </h1>
         <p className="mt-1 text-xs whitespace-nowrap text-cool-500">
           {formatMeetingPeriod(meeting.startedAt, meeting.endedAt)}
         </p>

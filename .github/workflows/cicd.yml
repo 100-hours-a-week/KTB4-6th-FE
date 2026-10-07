@@ -31,6 +31,7 @@ jobs:
       NEXT_PUBLIC_KAKAO_REDIRECT_URI: ${{ secrets.NEXT_PUBLIC_KAKAO_REDIRECT_URI }}
       NEXT_PUBLIC_API_BASE_URL: ${{ secrets.NEXT_PUBLIC_API_BASE_URL }}
       NEXT_PUBLIC_GA_ID: ${{ secrets.NEXT_PUBLIC_GA_ID }}
+      NEXT_PUBLIC_CLARITY_PROJECT_ID: ${{ vars.NEXT_PUBLIC_CLARITY_PROJECT_ID }}
       NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
       NEXT_PUBLIC_SENTRY_ENVIRONMENT: ${{ github.ref_name == 'dev' && 'staging' || 'production' }}
       NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE: ${{ vars.SENTRY_TRACES_SAMPLE_RATE || '0.1' }}
@@ -59,6 +60,12 @@ jobs:
             echo "::error::NEXT_PUBLIC_API_BASE_URL 누락"
             exit 1
           }
+          if [ "$DEPLOY_ENV" = "production" ]; then
+            [ -n "$NEXT_PUBLIC_CLARITY_PROJECT_ID" ] || {
+              echo "::error::NEXT_PUBLIC_CLARITY_PROJECT_ID 누락"
+              exit 1
+            }
+          fi
           echo "::notice::FE 빌드 설정: NEXT_PUBLIC_KAKAO_REST_API_KEY, NEXT_PUBLIC_KAKAO_REDIRECT_URI, NEXT_PUBLIC_API_BASE_URL 설정됨"
 
       # 전체 커밋 SHA를 태그로 사용해 배포 이미지를 정확히 식별한다.
@@ -89,6 +96,7 @@ jobs:
             NEXT_PUBLIC_KAKAO_REDIRECT_URI=${{ env.NEXT_PUBLIC_KAKAO_REDIRECT_URI }}
             NEXT_PUBLIC_API_BASE_URL=${{ env.NEXT_PUBLIC_API_BASE_URL }}
             NEXT_PUBLIC_GA_ID=${{ env.NEXT_PUBLIC_GA_ID }}
+            NEXT_PUBLIC_CLARITY_PROJECT_ID=${{ env.NEXT_PUBLIC_CLARITY_PROJECT_ID }}
             NEXT_PUBLIC_SENTRY_DSN=${{ env.NEXT_PUBLIC_SENTRY_DSN }}
             NEXT_PUBLIC_SENTRY_ENVIRONMENT=${{ env.NEXT_PUBLIC_SENTRY_ENVIRONMENT }}
             NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE=${{ env.NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE }}

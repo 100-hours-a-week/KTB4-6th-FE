@@ -2,8 +2,11 @@ export { useCompleteRecording } from './model/useCompleteRecording';
 export { isInsufficientCreditError } from './model/errors';
 export { useMediaRecorder } from './model/useMediaRecorder';
 export {
+  acknowledgeRecordingChunks,
   appendRecordingChunk,
   flushRecordingChunks,
+  getRecordingChunksToResend,
+  prepareChunkCursor,
   useRecordingChunkBuffer,
 } from './model/useRecordingChunkBuffer';
 export { readOpfsPartFilesInOrder, removeOpfsPartFiles } from './model/opfs-recording-parts';

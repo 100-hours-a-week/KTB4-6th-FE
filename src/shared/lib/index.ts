@@ -6,12 +6,6 @@ export { useInfiniteScrollTrigger } from './use-infinite-scroll-trigger';
 export { withWaGwa } from './korean-particle';
 export { parseServerDate } from './parse-server-date';
 export { downloadFile, downloadTextFile } from './download-file';
-export {
-  isOpfsSupported,
-  listOpfsFileNames,
-  openOpfsFileForWriting,
-  readOpfsFile,
-  removeOpfsFile,
-} from './opfs';
+export { isOpfsSupported, listOpfsFileNames, readOpfsFile, removeOpfsFile } from './opfs';
 export { useBeforeUnloadWarning } from './use-before-unload-warning';
 export { useWakeLock } from './use-wake-lock';
