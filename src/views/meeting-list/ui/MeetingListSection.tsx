@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import { MeetingApiError } from '@/features/meeting';
 import { DeleteConfirmDialog, useAppToast } from '@/shared/ui';
-import type { Meeting, TeamMemberRole } from '../model/type';
+import type { Meeting, MeetingDateGroup, TeamMemberRole } from '../model/type';
 import { useDeleteMeeting } from '../model/useDeleteMeeting';
 import { useRenameMeeting } from '../model/useRenameMeeting';
-import { InProgressMeetingItem } from './InProgressMeetingItem';
-import { MeetingItem } from './MeetingItem';
+import { MeetingDateSection } from './MeetingDateSection';
 import { MeetingRenameDialog } from './MeetingRenameDialog';
 import { MeetingListLoadMore } from './MeetingListLoadMore';
+import { MeetingTimelineItem } from './MeetingTimelineItem';
 
 interface MeetingListSectionProps {
-  meetings: Meeting[];
+  groups: MeetingDateGroup[];
   teamId: number;
   viewerRole: TeamMemberRole;
   hasMore: boolean;
@@ -25,7 +25,7 @@ type MeetingDialog = {
 } | null;
 
 export const MeetingListSection = ({
-  meetings,
+  groups,
   teamId,
   viewerRole,
   hasMore,
@@ -74,47 +74,50 @@ export const MeetingListSection = ({
       <section className="mt-6 flex flex-1 flex-col px-5 pb-8">
         <h2 className="text-base font-bold text-cool-900">전체 회의</h2>
 
-        {meetings.length === 0 ? (
+        {groups.length === 0 ? (
           <div className="motion-safe:animate-in motion-safe:fade-in motion-safe:animation-duration-300 mt-3 flex min-h-40 flex-col items-center justify-center rounded-2xl border border-dashed border-cool-200 bg-white px-4 text-center">
             <p className="text-sm font-semibold text-cool-700">전체 회의가 없어요.</p>
             <p className="mt-1 text-sm text-cool-500">새 회의를 만들어 시작해보세요.</p>
           </div>
         ) : (
           <>
-            <div className="mt-3 flex flex-col gap-2.5">
-              {meetings.map((meeting) => {
-                // 팀장에게만 콜백을 넘기고, 팀원에게는 넘기지 않아 항목이 ⋯ 메뉴를 그리지 않는다.
-                const menuActions = isLeader
-                  ? {
-                      onRename: () => setDialog({ meeting, type: 'rename' }),
-                      onDelete: () => setDialog({ meeting, type: 'delete' }),
-                    }
-                  : {};
-
-                return meeting.status === 'in_progress' ? (
-                  <InProgressMeetingItem
-                    key={meeting.id}
-                    meeting={meeting}
-                    teamId={teamId}
-                    {...menuActions}
-                  />
-                ) : (
-                  <MeetingItem
-                    key={meeting.id}
-                    meeting={meeting}
-                    teamId={teamId}
-                    {...menuActions}
-                  />
-                );
-              })}
+            <div className="mt-4 flex items-center gap-2">
+              <span className="text-[13px] font-medium text-cool-500">날짜별 회의</span>
+              <span aria-hidden="true" className="h-px flex-1 bg-cool-200" />
             </div>
-            {meetings.length > 0 && (
-              <MeetingListLoadMore
-                hasMore={hasMore}
-                status={loadMoreStatus}
-                onLoadMore={onLoadMore}
-              />
-            )}
+            <div className="mt-4 flex flex-col gap-10">
+              {groups.map((group) => (
+                <MeetingDateSection
+                  key={group.date}
+                  label={group.label}
+                  meetingCount={group.meetingCount}
+                >
+                  {group.meetings.map((meeting) => {
+                    // 팀장에게만 콜백을 넘기고, 팀원에게는 넘기지 않아 항목이 ⋯ 메뉴를 그리지 않는다.
+                    const menuActions = isLeader
+                      ? {
+                          onRename: () => setDialog({ meeting, type: 'rename' }),
+                          onDelete: () => setDialog({ meeting, type: 'delete' }),
+                        }
+                      : {};
+
+                    return (
+                      <MeetingTimelineItem
+                        key={meeting.id}
+                        meeting={meeting}
+                        teamId={teamId}
+                        {...menuActions}
+                      />
+                    );
+                  })}
+                </MeetingDateSection>
+              ))}
+            </div>
+            <MeetingListLoadMore
+              hasMore={hasMore}
+              status={loadMoreStatus}
+              onLoadMore={onLoadMore}
+            />
           </>
         )}
       </section>

@@ -1,12 +1,12 @@
 'use client';
 
 import { useMeetingList } from '@/features/meeting-list';
-import { toMeetings } from './map-meeting-list';
-import type { Meeting, MeetingListLoadMoreStatus, MeetingListStatus } from './type';
+import { toMeetingDateGroups } from './map-meeting-list';
+import type { MeetingDateGroup, MeetingListLoadMoreStatus, MeetingListStatus } from './type';
 
 interface UseMeetingListPageDataResult {
   status: MeetingListStatus;
-  meetings: Meeting[];
+  groups: MeetingDateGroup[];
 
   hasMore: boolean;
 
@@ -16,6 +16,14 @@ interface UseMeetingListPageDataResult {
 
 const noop = () => {};
 
+const kstYearFormatter = new Intl.DateTimeFormat('ko-KR', {
+  timeZone: 'Asia/Seoul',
+  year: 'numeric',
+});
+
+const getKstCurrentYear = () =>
+  kstYearFormatter.formatToParts(new Date()).find(({ type }) => type === 'year')?.value ?? '';
+
 export const useMeetingListPageData = (teamId: number): UseMeetingListPageDataResult => {
   const { status, data, hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage } =
     useMeetingList(teamId);
@@ -23,7 +31,7 @@ export const useMeetingListPageData = (teamId: number): UseMeetingListPageDataRe
   if (!data) {
     return {
       status: status === 'error' ? 'error' : 'loading',
-      meetings: [],
+      groups: [],
       hasMore: false,
       loadMoreStatus: 'idle',
       loadMore: noop,
@@ -44,7 +52,7 @@ export const useMeetingListPageData = (teamId: number): UseMeetingListPageDataRe
 
   return {
     status: 'success',
-    meetings: toMeetings(data.pages),
+    groups: toMeetingDateGroups(data.pages, getKstCurrentYear()),
     hasMore: hasNextPage,
     loadMoreStatus,
     loadMore,
