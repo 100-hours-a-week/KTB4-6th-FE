@@ -12,6 +12,7 @@ import type {
 import { useDeleteMeeting } from '../model/useDeleteMeeting';
 import { useRenameMeeting } from '../model/useRenameMeeting';
 import { MeetingDateSection } from './MeetingDateSection';
+import { MeetingInfoEditDialog } from './MeetingInfoEditDialog';
 import { MeetingRenameDialog } from './MeetingRenameDialog';
 import { MeetingListLoadMore } from './MeetingListLoadMore';
 import { MeetingTimelineItem } from './MeetingTimelineItem';
@@ -31,7 +32,7 @@ interface MeetingListSectionProps {
 
 type MeetingDialog = {
   meeting: Meeting;
-  type: 'rename' | 'delete';
+  type: 'editInfo' | 'rename' | 'delete';
 } | null;
 
 export const MeetingListSection = ({
@@ -55,6 +56,7 @@ export const MeetingListSection = ({
   const getMenuActions = (meeting: Meeting): MeetingMenuActions => ({
     state: getMeetingMenuState({ meeting, viewerRole, viewerTeamMemberId }),
     onRename: () => setDialog({ meeting, type: 'rename' }),
+    onEditInfo: () => setDialog({ meeting, type: 'editInfo' }),
     onDelete: () => setDialog({ meeting, type: 'delete' }),
   });
 
@@ -139,6 +141,13 @@ export const MeetingListSection = ({
         <MeetingRenameDialog
           currentTitle={dialog.meeting.title}
           onConfirm={handleConfirmRename}
+          onClose={closeDialog}
+        />
+      )}
+      {dialog?.type === 'editInfo' && (
+        <MeetingInfoEditDialog
+          meetingId={dialog.meeting.id}
+          teamId={teamId}
           onClose={closeDialog}
         />
       )}
