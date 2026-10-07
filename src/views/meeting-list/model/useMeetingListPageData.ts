@@ -1,11 +1,18 @@
 'use client';
 
-import { useMeetingList } from '@/features/meeting-list';
-import { toMeetingDateGroups } from './map-meeting-list';
-import type { MeetingDateGroup, MeetingListLoadMoreStatus, MeetingListStatus } from './type';
+import { useMeetingList, useTodayMeetings } from '@/features/meeting-list';
+import { toMeetingDateGroups, toTodayMeetings } from './map-meeting-list';
+import type {
+  MeetingDateGroup,
+  MeetingListLoadMoreStatus,
+  MeetingListStatus,
+  TodayMeetings,
+} from './type';
 
 interface UseMeetingListPageDataResult {
   status: MeetingListStatus;
+  /** 오늘 회의가 없으면 null */
+  today: TodayMeetings | null;
   groups: MeetingDateGroup[];
 
   hasMore: boolean;
@@ -16,21 +23,28 @@ interface UseMeetingListPageDataResult {
 
 const noop = () => {};
 
-const kstYearFormatter = new Intl.DateTimeFormat('ko-KR', {
+// en-CA는 날짜를 `YYYY-MM-DD`로 표시한다.
+const kstDateFormatter = new Intl.DateTimeFormat('en-CA', {
   timeZone: 'Asia/Seoul',
   year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
 });
 
-const getKstCurrentYear = () =>
-  kstYearFormatter.formatToParts(new Date()).find(({ type }) => type === 'year')?.value ?? '';
-
 export const useMeetingListPageData = (teamId: number): UseMeetingListPageDataResult => {
+  const today = kstDateFormatter.format(new Date());
   const { status, data, hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage } =
     useMeetingList(teamId);
+  const todayQuery = useTodayMeetings(teamId, today);
 
-  if (!data) {
+  // 두 조회가 모두 도착해야 그린다. 이미 받은 데이터가 있으면 다시 불러오다 실패해도 화면은 그대로 둔다.
+  if (!data || !todayQuery.data) {
+    const isError =
+      (!data && status === 'error') || (!todayQuery.data && todayQuery.status === 'error');
+
     return {
-      status: status === 'error' ? 'error' : 'loading',
+      status: isError ? 'error' : 'loading',
+      today: null,
       groups: [],
       hasMore: false,
       loadMoreStatus: 'idle',
@@ -52,7 +66,8 @@ export const useMeetingListPageData = (teamId: number): UseMeetingListPageDataRe
 
   return {
     status: 'success',
-    groups: toMeetingDateGroups(data.pages, getKstCurrentYear()),
+    today: toTodayMeetings(todayQuery.data, today),
+    groups: toMeetingDateGroups(data.pages, today),
     hasMore: hasNextPage,
     loadMoreStatus,
     loadMore,

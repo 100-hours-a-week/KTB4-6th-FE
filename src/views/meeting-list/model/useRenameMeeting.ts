@@ -50,6 +50,11 @@ export const useRenameMeeting = (teamId: number) => {
             ),
           },
       );
+
+      queryClient.setQueriesData<MeetingListData>(
+        { queryKey: meetingListKeys.todayAll(teamId) },
+        (cache) => cache && renameMeetingInPage(cache, updated.meetingId, updated.title),
+      );
     },
   });
 };

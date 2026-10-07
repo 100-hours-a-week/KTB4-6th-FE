@@ -4,7 +4,7 @@ import type {
   MeetingListItemData,
   MeetingListItemStatus,
 } from '@/features/meeting-list';
-import type { Meeting, MeetingDateGroup } from './type';
+import type { Meeting, MeetingDateGroup, TodayMeetings } from './type';
 
 const MEETING_STATUS_BY_API_STATUS: Record<MeetingListItemStatus, Meeting['status']> = {
   SCHEDULED: 'scheduled',
@@ -77,9 +77,23 @@ const toMeetingDateGroup = (
   meetings: group.meetings.map(toMeeting),
 });
 
-/** 서버가 날짜 단위로 페이지를 나누고 정렬해 주므로, 순서를 바꾸거나 그룹을 합치지 않는다. */
-export const toMeetingDateGroups = (
-  pages: MeetingListData[],
-  currentYear: string,
-): MeetingDateGroup[] =>
-  pages.flatMap((page) => page.groups.map((group) => toMeetingDateGroup(group, currentYear)));
+export const toMeetingDateGroups = (pages: MeetingListData[], today: string): MeetingDateGroup[] =>
+  pages.flatMap((page) =>
+    page.groups
+      .filter((group) => group.date !== today)
+      .map((group) => toMeetingDateGroup(group, today.slice(0, 4))),
+  );
+
+export const toTodayMeetings = (data: MeetingListData, today: string): TodayMeetings | null => {
+  const group = data.groups.find(({ date }) => date === today);
+  if (!group || group.meetings.length === 0) return null;
+
+  const meetings = group.meetings.map(toMeeting);
+
+  return {
+    label: formatGroupLabel(today, today.slice(0, 4)),
+    meetingCount: group.meetingCount,
+    inProgressMeeting: meetings.find(({ status }) => status === 'in_progress'),
+    otherMeetings: meetings.filter(({ status }) => status !== 'in_progress'),
+  };
+};
