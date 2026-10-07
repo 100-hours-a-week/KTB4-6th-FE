@@ -8,44 +8,96 @@ import { MeetingItemMenu } from './MeetingItemMenu';
 interface MeetingTimelineItemProps {
   meeting: Meeting;
   teamId: number;
+  /** today는 오늘 회의 영역(brand-100 배경) 안에서 쓴다 */
+  tone?: 'default' | 'today';
   onRename?: () => void;
   onDelete?: () => void;
 }
 
+interface TimelineStyle {
+  line: string;
+  dot: string;
+  time: string;
+}
+
+// 점 둘레를 놓인 영역의 배경색으로 감싸 선이 점에서 끊겨 보이게 한다. 종료 전 회의는 속이 빈 원으로 그린다.
+const OPEN_DOT = {
+  default:
+    'bg-white shadow-[inset_0_0_0_2px_var(--color-brand-400),0_0_0_3px_var(--color-cool-50)]',
+  today:
+    'bg-white shadow-[inset_0_0_0_2px_var(--color-brand-400),0_0_0_3px_var(--color-brand-100)]',
+};
+
+const TIMELINE_STYLE: Record<'default' | 'today', Record<Meeting['status'], TimelineStyle>> = {
+  default: {
+    completed: {
+      line: 'border-brand-200',
+      dot: 'bg-brand-400 shadow-[0_0_0_3px_var(--color-cool-50)]',
+      time: 'text-cool-900',
+    },
+    scheduled: {
+      line: 'border-dashed border-brand-200',
+      dot: OPEN_DOT.default,
+      time: 'text-brand-600',
+    },
+    waiting: {
+      line: 'border-dashed border-brand-200',
+      dot: OPEN_DOT.default,
+      time: 'text-cool-900',
+    },
+    in_progress: {
+      line: 'border-dashed border-brand-200',
+      dot: OPEN_DOT.default,
+      time: 'text-cool-900',
+    },
+  },
+  today: {
+    completed: {
+      line: 'border-brand-500',
+      dot: 'bg-brand-600 shadow-[0_0_0_3px_var(--color-brand-100)]',
+      time: 'text-cool-900',
+    },
+    scheduled: {
+      line: 'border-dashed border-brand-300',
+      dot: OPEN_DOT.today,
+      time: 'text-brand-600',
+    },
+    waiting: {
+      line: 'border-dashed border-warning/60',
+      dot: 'bg-white shadow-[inset_0_0_0_2px_var(--color-warning),0_0_0_3px_var(--color-brand-100)]',
+      time: 'text-warning',
+    },
+    in_progress: {
+      line: 'border-dashed border-brand-300',
+      dot: OPEN_DOT.today,
+      time: 'text-cool-900',
+    },
+  },
+};
+
 export const MeetingTimelineItem = ({
   meeting,
   teamId,
+  tone = 'default',
   onRename,
   onDelete,
 }: MeetingTimelineItemProps) => {
   const badge = MEETING_STATUS_BADGE[meeting.status];
-  const isCompleted = meeting.status === 'completed';
+  const style = TIMELINE_STYLE[tone][meeting.status];
 
   return (
     <li className="relative pb-3 pl-5 last:pb-0">
       <span
         aria-hidden="true"
-        className={cn(
-          'absolute top-3 bottom-0 left-1 border-l-2 border-brand-200',
-          !isCompleted && 'border-dashed',
-        )}
+        className={cn('absolute top-3 bottom-0 left-1 border-l-2', style.line)}
       />
-      {/* 점 둘레를 배경색으로 감싸 선이 점에서 끊겨 보이게 한다. 종료 전 회의는 속이 빈 원으로 그린다. */}
       <span
         aria-hidden="true"
-        className={cn(
-          'absolute top-[7px] left-0 size-[11px] rounded-full',
-          isCompleted
-            ? 'bg-brand-400 shadow-[0_0_0_3px_var(--color-cool-50)]'
-            : 'bg-white shadow-[inset_0_0_0_2px_var(--color-brand-400),0_0_0_3px_var(--color-cool-50)]',
-        )}
+        className={cn('absolute top-[7px] left-0 size-[11px] rounded-full', style.dot)}
       />
 
       <span
-        className={cn(
-          'block text-[15px] leading-[25px] font-semibold tabular-nums',
-          meeting.status === 'scheduled' ? 'text-brand-600' : 'text-cool-900',
-        )}
+        className={cn('block text-[15px] leading-[25px] font-semibold tabular-nums', style.time)}
       >
         {meeting.time}
       </span>

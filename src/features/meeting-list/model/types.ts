@@ -27,6 +27,14 @@ export interface MeetingListData {
   hasNext: boolean;
 }
 
+export interface MeetingListParams {
+  cursor?: string;
+  /** `YYYY-MM-DD`, 포함 */
+  from?: string;
+  /** `YYYY-MM-DD`, 포함 */
+  to?: string;
+}
+
 export interface MeetingListResponse {
   success: boolean;
   data: MeetingListData | null;
