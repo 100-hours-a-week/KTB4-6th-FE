@@ -43,6 +43,7 @@ export const MeetingListPage = ({ teamId }: MeetingListPageProps) => {
             groups={groups}
             teamId={teamId}
             viewerRole={viewerRole}
+            viewerTeamMemberId={team?.teamMemberId ?? null}
             hasMore={hasMore}
             loadMoreStatus={loadMoreStatus}
             onLoadMore={loadMore}

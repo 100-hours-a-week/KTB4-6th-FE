@@ -1,6 +1,7 @@
 import { useState, type RefObject } from 'react';
 import { MeetingApiError } from '@/features/meeting';
 import { DeleteConfirmDialog, useAppToast } from '@/shared/ui';
+import { getMeetingMenuState } from '../model/get-meeting-menu-state';
 import type {
   Meeting,
   MeetingDateGroup,
@@ -11,6 +12,7 @@ import type {
 import { useDeleteMeeting } from '../model/useDeleteMeeting';
 import { useRenameMeeting } from '../model/useRenameMeeting';
 import { MeetingDateSection } from './MeetingDateSection';
+import { MeetingInfoEditDialog } from './MeetingInfoEditDialog';
 import { MeetingRenameDialog } from './MeetingRenameDialog';
 import { MeetingListLoadMore } from './MeetingListLoadMore';
 import { MeetingTimelineItem } from './MeetingTimelineItem';
@@ -21,6 +23,7 @@ interface MeetingListSectionProps {
   groups: MeetingDateGroup[];
   teamId: number;
   viewerRole: TeamMemberRole;
+  viewerTeamMemberId: number | null;
   hasMore: boolean;
   loadMoreStatus: 'idle' | 'loading' | 'error';
   onLoadMore: () => void;
@@ -29,7 +32,7 @@ interface MeetingListSectionProps {
 
 type MeetingDialog = {
   meeting: Meeting;
-  type: 'rename' | 'delete';
+  type: 'editInfo' | 'rename' | 'delete';
 } | null;
 
 export const MeetingListSection = ({
@@ -37,6 +40,7 @@ export const MeetingListSection = ({
   groups,
   teamId,
   viewerRole,
+  viewerTeamMemberId,
   hasMore,
   loadMoreStatus,
   onLoadMore,
@@ -46,17 +50,15 @@ export const MeetingListSection = ({
   const { mutate: renameMeeting } = useRenameMeeting(teamId);
   const { mutate: deleteMeeting } = useDeleteMeeting(teamId);
   const [dialog, setDialog] = useState<MeetingDialog>(null);
-  const isLeader = viewerRole === 'leader';
 
   const closeDialog = () => setDialog(null);
 
-  const getMenuActions = (meeting: Meeting): MeetingMenuActions | undefined =>
-    isLeader
-      ? {
-          onRename: () => setDialog({ meeting, type: 'rename' }),
-          onDelete: () => setDialog({ meeting, type: 'delete' }),
-        }
-      : undefined;
+  const getMenuActions = (meeting: Meeting): MeetingMenuActions => ({
+    state: getMeetingMenuState({ meeting, viewerRole, viewerTeamMemberId }),
+    onRename: () => setDialog({ meeting, type: 'rename' }),
+    onEditInfo: () => setDialog({ meeting, type: 'editInfo' }),
+    onDelete: () => setDialog({ meeting, type: 'delete' }),
+  });
 
   const handleConfirmRename = (title: string) => {
     if (dialog?.type !== 'rename') return;
@@ -116,7 +118,7 @@ export const MeetingListSection = ({
                       key={meeting.id}
                       meeting={meeting}
                       teamId={teamId}
-                      {...getMenuActions(meeting)}
+                      menuActions={getMenuActions(meeting)}
                     />
                   ))}
                 </MeetingDateSection>
@@ -139,6 +141,13 @@ export const MeetingListSection = ({
         <MeetingRenameDialog
           currentTitle={dialog.meeting.title}
           onConfirm={handleConfirmRename}
+          onClose={closeDialog}
+        />
+      )}
+      {dialog?.type === 'editInfo' && (
+        <MeetingInfoEditDialog
+          meetingId={dialog.meeting.id}
+          teamId={teamId}
           onClose={closeDialog}
         />
       )}

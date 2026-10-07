@@ -6,11 +6,9 @@ import { MeetingTimelineItem } from './MeetingTimelineItem';
 interface TodayMeetingSectionProps {
   today: TodayMeetings;
   teamId: number;
-  /** 메뉴를 쓸 수 없는 회의는 undefined를 돌려준다 */
-  getMenuActions: (meeting: Meeting) => MeetingMenuActions | undefined;
+  getMenuActions: (meeting: Meeting) => MeetingMenuActions;
 }
 
-// 타임라인 점 둘레 링이 이 배경색(brand-100)에 맞춰져 있다. 배경을 바꾸면 MeetingTimelineItem의 today 톤도 함께 바꾼다.
 export const TodayMeetingSection = ({
   today,
   teamId,
@@ -56,7 +54,7 @@ export const TodayMeetingSection = ({
                 meeting={meeting}
                 teamId={teamId}
                 tone="today"
-                {...getMenuActions(meeting)}
+                menuActions={getMenuActions(meeting)}
               />
             ))}
           </ol>

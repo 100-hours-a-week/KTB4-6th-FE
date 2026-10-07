@@ -5,7 +5,7 @@ import { MeetingItemMenu } from './MeetingItemMenu';
 interface InProgressMeetingCardProps {
   meeting: Meeting;
   teamId: number;
-  menuActions?: MeetingMenuActions;
+  menuActions: MeetingMenuActions;
 }
 
 export const InProgressMeetingCard = ({
@@ -30,11 +30,11 @@ export const InProgressMeetingCard = ({
       </span>
     </div>
 
-    {menuActions && (
+    {menuActions.state.isVisible && (
       <div className="relative z-10">
         <MeetingItemMenu
           meetingTitle={meeting.title}
-          {...menuActions}
+          menuActions={menuActions}
           triggerClassName="text-white hover:bg-white/15"
         />
       </div>

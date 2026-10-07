@@ -2,16 +2,14 @@ import Link from 'next/link';
 import { cn } from '@/shared/lib';
 import { Badge } from '@/shared/ui';
 import { MEETING_STATUS_BADGE } from '../model/meeting-status-badge';
-import type { Meeting } from '../model/type';
+import type { Meeting, MeetingMenuActions } from '../model/type';
 import { MeetingItemMenu } from './MeetingItemMenu';
 
 interface MeetingTimelineItemProps {
   meeting: Meeting;
   teamId: number;
-  /** today는 오늘 회의 영역(brand-100 배경) 안에서 쓴다 */
   tone?: 'default' | 'today';
-  onRename?: () => void;
-  onDelete?: () => void;
+  menuActions: MeetingMenuActions;
 }
 
 interface TimelineStyle {
@@ -20,7 +18,6 @@ interface TimelineStyle {
   time: string;
 }
 
-// 점 둘레를 놓인 영역의 배경색으로 감싸 선이 점에서 끊겨 보이게 한다. 종료 전 회의는 속이 빈 원으로 그린다.
 const OPEN_DOT = {
   default:
     'bg-white shadow-[inset_0_0_0_2px_var(--color-brand-400),0_0_0_3px_var(--color-cool-50)]',
@@ -79,8 +76,7 @@ export const MeetingTimelineItem = ({
   meeting,
   teamId,
   tone = 'default',
-  onRename,
-  onDelete,
+  menuActions,
 }: MeetingTimelineItemProps) => {
   const badge = MEETING_STATUS_BADGE[meeting.status];
   const style = TIMELINE_STYLE[tone][meeting.status];
@@ -123,9 +119,9 @@ export const MeetingTimelineItem = ({
           )}
         </span>
 
-        {onRename && onDelete && (
+        {menuActions.state.isVisible && (
           <div className="relative z-10">
-            <MeetingItemMenu meetingTitle={meeting.title} onRename={onRename} onDelete={onDelete} />
+            <MeetingItemMenu meetingTitle={meeting.title} menuActions={menuActions} />
           </div>
         )}
       </div>
