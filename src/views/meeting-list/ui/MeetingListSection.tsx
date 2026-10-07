@@ -85,7 +85,7 @@ export const MeetingListSection = ({
               <span className="text-[13px] font-medium text-cool-500">날짜별 회의</span>
               <span aria-hidden="true" className="h-px flex-1 bg-cool-200" />
             </div>
-            <div className="mt-4 flex flex-col gap-6">
+            <div className="mt-4 flex flex-col gap-10">
               {groups.map((group) => (
                 <MeetingDateSection
                   key={group.date}

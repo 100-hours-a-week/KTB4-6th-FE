@@ -12,13 +12,6 @@ interface MeetingTimelineItemProps {
   onDelete?: () => void;
 }
 
-const TIME_COLOR_BY_STATUS: Record<Meeting['status'], string> = {
-  scheduled: 'text-brand-600',
-  waiting: 'text-warning',
-  in_progress: 'text-danger',
-  completed: 'text-cool-900',
-};
-
 export const MeetingTimelineItem = ({
   meeting,
   teamId,
@@ -28,7 +21,7 @@ export const MeetingTimelineItem = ({
   const badge = MEETING_STATUS_BADGE[meeting.status];
 
   return (
-    <li className="relative pb-3 pl-6">
+    <li className="relative pb-3 pl-5 last:pb-0">
       <span
         aria-hidden="true"
         className="absolute top-[7px] left-0 size-[11px] rounded-full bg-cool-400"
@@ -43,8 +36,8 @@ export const MeetingTimelineItem = ({
 
       <span
         className={cn(
-          'block font-mono text-[15px] leading-[25px] font-medium tabular-nums',
-          TIME_COLOR_BY_STATUS[meeting.status],
+          'block text-[15px] leading-[25px] font-semibold tabular-nums',
+          meeting.status === 'scheduled' ? 'text-brand-600' : 'text-cool-900',
         )}
       >
         {meeting.time}
