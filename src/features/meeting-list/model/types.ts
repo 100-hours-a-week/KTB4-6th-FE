@@ -7,6 +7,7 @@ export type MeetingListItemStatus = 'SCHEDULED' | 'WAITING' | 'IN_PROGRESS' | 'C
 
 export interface MeetingListItemData {
   meetingId: number;
+  createdByTeamMemberId?: number;
   title: string;
   scheduledAt: string;
   startedAt: string | null;

@@ -61,6 +61,7 @@ const getSubLabel = (meeting: MeetingListItemData) => {
 
 const toMeeting = (meeting: MeetingListItemData): Meeting => ({
   id: meeting.meetingId,
+  createdByTeamMemberId: meeting.createdByTeamMemberId ?? null,
   title: meeting.title,
   status: MEETING_STATUS_BY_API_STATUS[meeting.status],
   time: formatTime(getStartAt(meeting)),

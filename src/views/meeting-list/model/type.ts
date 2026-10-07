@@ -6,11 +6,10 @@ export type MeetingListStatus = 'success' | 'loading' | 'error';
 
 export interface Meeting {
   id: number;
+  createdByTeamMemberId: number | null;
   title: string;
   status: 'scheduled' | 'waiting' | 'in_progress' | 'completed';
-  /** `11:00`. 시작 전 회의는 예정 시각, 그 외는 시작 시각 */
   time: string;
-  /** `28분 진행` 또는 `목표 30분` */
   subLabel?: string;
 }
 
