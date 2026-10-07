@@ -4,6 +4,15 @@ export type MeetingListLoadMoreStatus = 'idle' | 'loading' | 'error';
 
 export type MeetingListStatus = 'success' | 'loading' | 'error';
 
+export type MeetingMenuItemState = 'hidden' | 'enabled' | 'locked';
+
+export interface MeetingMenuState {
+  isVisible: boolean;
+  editInfo: MeetingMenuItemState;
+  rename: MeetingMenuItemState;
+  delete: MeetingMenuItemState;
+}
+
 export interface Meeting {
   id: number;
   createdByTeamMemberId: number | null;
