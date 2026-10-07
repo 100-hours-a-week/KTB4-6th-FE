@@ -1,5 +1,4 @@
 import { useState, type RefObject } from 'react';
-import { MeetingApiError } from '@/features/meeting';
 import { DeleteConfirmDialog, useAppToast } from '@/shared/ui';
 import { getMeetingMenuState } from '../model/get-meeting-menu-state';
 import type {
@@ -69,11 +68,7 @@ export const MeetingListSection = ({
       { meetingId, title },
       {
         onSuccess: () => showToast('회의 이름이 변경되었습니다', 'success'),
-        onError: (error) =>
-          showToast(
-            error instanceof MeetingApiError ? error.message : '회의 이름 변경에 실패했습니다.',
-            'danger',
-          ),
+        onError: () => showToast('회의 이름 변경에 실패했습니다. 다시 시도해주세요.', 'danger'),
       },
     );
   };
