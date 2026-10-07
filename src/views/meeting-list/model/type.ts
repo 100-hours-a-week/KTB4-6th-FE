@@ -23,6 +23,8 @@ export interface Meeting {
 }
 
 export interface MeetingMenuActions {
+  state: MeetingMenuState;
+  onEditInfo?: () => void;
   onRename: () => void;
   onDelete: () => void;
 }
