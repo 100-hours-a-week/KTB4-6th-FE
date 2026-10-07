@@ -10,7 +10,7 @@ interface ApiResponse<T> {
 interface MeetingDetailData {
   title: string;
   purpose: string;
-  note: string;
+  note: string | null;
   /** 예정 시작 시각. 시간대 표기 없이 오는 서버 시각이다. 수정 화면에는 아직 반영하지 않는다(V2) */
   scheduledAt: string;
   targetDurationMinutes: number;
@@ -105,7 +105,7 @@ export const getCurrentMeetingState = async (meetingId: number): Promise<Current
   return {
     title: meeting.title,
     purpose: meeting.purpose,
-    note: meeting.note,
+    note: meeting.note ?? '',
     targetMinutes: meeting.targetDurationMinutes,
     participantCount: participantList.participantsCount,
     recorderName,
