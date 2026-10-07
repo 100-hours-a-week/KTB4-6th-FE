@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import { useTeamDetail } from '@/features/team-management';
 import { MeetingListHeader } from './MeetingListHeader';
 import { NavigationSidebar } from '@/widgets/navigation-sidebar';
+import { MeetingListEmptyState } from './MeetingListEmptyState';
 import { MeetingListErrorState } from './MeetingListErrorState';
 import { MeetingListSection } from './MeetingListSection';
 import { MeetingListSkeleton } from './MeetingListSkeleton';
@@ -17,7 +18,7 @@ export const MeetingListPage = ({ teamId }: MeetingListPageProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { data: team } = useTeamDetail(teamId);
   const viewerRole: TeamMemberRole = team?.role === 'LEADER' ? 'leader' : 'member';
-  const { status, today, groups, hasMore, loadMoreStatus, loadMore } =
+  const { status, isEmpty, today, groups, hasMore, loadMoreStatus, loadMore } =
     useMeetingListPageData(teamId);
   const scrollRootRef = useRef<HTMLDivElement>(null);
 
@@ -34,6 +35,8 @@ export const MeetingListPage = ({ teamId }: MeetingListPageProps) => {
           <MeetingListSkeleton />
         ) : status === 'error' ? (
           <MeetingListErrorState />
+        ) : isEmpty ? (
+          <MeetingListEmptyState teamId={teamId} />
         ) : (
           <MeetingListSection
             today={today}
