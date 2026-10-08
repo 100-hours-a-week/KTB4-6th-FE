@@ -39,7 +39,6 @@ export interface TodayMeetings {
 
 export interface MeetingDateGroup {
   date: string;
-  /** 올해는 `09.22 (화)`, 다른 해는 `2025.09.22 (월)` */
   label: string;
   meetingCount: number;
   meetings: Meeting[];
