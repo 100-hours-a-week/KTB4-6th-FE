@@ -2,21 +2,30 @@
 
 import { useNotifications } from '@/features/notification';
 import { NotificationListItem } from './NotificationListItem';
+import { NotificationsEmptyState } from './NotificationsEmptyState';
+import { NotificationsErrorState } from './NotificationsErrorState';
 import { NotificationsHeader } from './NotificationsHeader';
+import { NotificationsSkeleton } from './NotificationsSkeleton';
 
 interface NotificationsPageProps {
   teamId: number;
 }
 
 export const NotificationsPage = ({ teamId }: NotificationsPageProps) => {
-  const { data: notifications } = useNotifications(teamId);
+  const { data: notifications, isPending, isError } = useNotifications(teamId);
   const hasUnread = notifications?.some((notification) => !notification.isRead) ?? false;
 
   return (
     <div className="flex h-dvh min-h-[844px] flex-col bg-white">
       <NotificationsHeader teamId={teamId} isReadAllDisabled={!hasUnread} />
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-        {notifications && (
+        {isPending ? (
+          <NotificationsSkeleton />
+        ) : isError ? (
+          <NotificationsErrorState />
+        ) : notifications.length === 0 ? (
+          <NotificationsEmptyState />
+        ) : (
           <>
             <ul>
               {notifications.map((notification) => (
