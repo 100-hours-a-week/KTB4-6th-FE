@@ -5,6 +5,7 @@ export type { CopyStatus } from './use-copy-to-clipboard';
 export { useInfiniteScrollTrigger } from './use-infinite-scroll-trigger';
 export { withWaGwa } from './korean-particle';
 export { parseServerDate } from './parse-server-date';
+export { formatRelativeTime } from './format-relative-time';
 export { downloadFile, downloadTextFile } from './download-file';
 export { isOpfsSupported, listOpfsFileNames, readOpfsFile, removeOpfsFile } from './opfs';
 export { useBeforeUnloadWarning } from './use-before-unload-warning';
