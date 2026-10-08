@@ -8,7 +8,7 @@ const toCreatedAt = (elapsedMs: number) => new Date(Date.now() - elapsedMs).toIS
 
 const createMockNotifications = (): NotificationData[] => [
   {
-    notificationId: 6,
+    notificationId: 7,
     type: 'MEETING_STARTED',
     referenceType: 'MEETING',
     referenceId: 1,
@@ -17,7 +17,7 @@ const createMockNotifications = (): NotificationData[] => [
     createdAt: toCreatedAt(5 * MINUTE_MS),
   },
   {
-    notificationId: 5,
+    notificationId: 6,
     type: 'SUMMARY_READY',
     referenceType: 'MEETING',
     referenceId: 1,
@@ -26,7 +26,7 @@ const createMockNotifications = (): NotificationData[] => [
     createdAt: toCreatedAt(30 * MINUTE_MS),
   },
   {
-    notificationId: 4,
+    notificationId: 5,
     type: 'CREDIT_EARNED',
     referenceType: 'CREDIT_LEDGER',
     referenceId: null,
@@ -35,7 +35,7 @@ const createMockNotifications = (): NotificationData[] => [
     createdAt: toCreatedAt(HOUR_MS),
   },
   {
-    notificationId: 3,
+    notificationId: 4,
     type: 'MEMBER_JOINED',
     referenceType: 'TEAM',
     referenceId: null,
@@ -44,7 +44,7 @@ const createMockNotifications = (): NotificationData[] => [
     createdAt: toCreatedAt(2 * HOUR_MS),
   },
   {
-    notificationId: 2,
+    notificationId: 3,
     type: 'REPORT_READY',
     referenceType: 'REPORT',
     referenceId: 1,
@@ -53,8 +53,17 @@ const createMockNotifications = (): NotificationData[] => [
     createdAt: toCreatedAt(DAY_MS),
   },
   {
+    notificationId: 2,
+    type: 'MEMBER_REJOINED',
+    referenceType: 'TEAM',
+    referenceId: null,
+    body: '박서준 님이 팀에 다시 합류했습니다',
+    isRead: true,
+    createdAt: toCreatedAt(2 * DAY_MS),
+  },
+  {
     notificationId: 1,
-    type: 'MEMBER_JOINED',
+    type: 'TEAM_JOINED',
     referenceType: 'TEAM',
     referenceId: null,
     body: '팀에 합류했어요! 이제 팀원들과 회의를 시작해보세요.',

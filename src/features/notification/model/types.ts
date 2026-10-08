@@ -1,5 +1,12 @@
 export type NotificationType =
-  'MEETING_STARTED' | 'SUMMARY_READY' | 'CREDIT_EARNED' | 'MEMBER_JOINED' | 'REPORT_READY';
+  | 'MEETING_STARTED'
+  | 'SUMMARY_READY'
+  | 'CREDIT_EARNED'
+  | 'MEMBER_JOINED'
+  | 'MEMBER_REJOINED'
+  | 'TEAM_JOINED'
+  | 'TEAM_REJOINED'
+  | 'REPORT_READY';
 
 export type NotificationReferenceType = 'MEETING' | 'REPORT' | 'CREDIT_LEDGER' | 'TEAM';
 
