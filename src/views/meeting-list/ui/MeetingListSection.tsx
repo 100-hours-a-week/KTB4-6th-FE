@@ -6,6 +6,7 @@ import type {
   Meeting,
   MeetingDateGroup,
   MeetingMenuActions,
+  MeetingSearchResultsData,
   TeamMemberRole,
   TodayMeetings,
 } from '../model/type';
@@ -15,6 +16,7 @@ import { MeetingDateSection } from './MeetingDateSection';
 import { MeetingInfoEditDialog } from './MeetingInfoEditDialog';
 import { MeetingRenameDialog } from './MeetingRenameDialog';
 import { MeetingListLoadMore } from './MeetingListLoadMore';
+import { MeetingSearchResults } from './MeetingSearchResults';
 import { MeetingTimelineItem } from './MeetingTimelineItem';
 import { TodayMeetingSection } from './TodayMeetingSection';
 
@@ -28,6 +30,7 @@ interface MeetingListSectionProps {
   loadMoreStatus: 'idle' | 'loading' | 'error';
   onLoadMore: () => void;
   scrollRootRef: RefObject<HTMLDivElement | null>;
+  searchResults: MeetingSearchResultsData | null;
   className?: string;
 }
 
@@ -46,6 +49,7 @@ export const MeetingListSection = ({
   loadMoreStatus,
   onLoadMore,
   scrollRootRef,
+  searchResults,
   className,
 }: MeetingListSectionProps) => {
   const { showToast } = useAppToast();
@@ -90,48 +94,63 @@ export const MeetingListSection = ({
   return (
     <>
       <section className={cn('mt-6 flex flex-1 flex-col px-5 pb-8', className)}>
-        <h2 className="text-base font-bold text-cool-900">전체 회의</h2>
-
-        {today && (
-          <div className="mt-3">
-            <TodayMeetingSection today={today} teamId={teamId} getMenuActions={getMenuActions} />
-          </div>
-        )}
-
-        {groups.length > 0 && (
-          <>
-            <div className="mt-6 flex items-center gap-2">
-              <span className="text-[13px] font-medium text-cool-500">날짜별 회의</span>
-              <span aria-hidden="true" className="h-px flex-1 bg-cool-200" />
-            </div>
-            <div className="mt-4 flex flex-col gap-10">
-              {groups.map((group) => (
-                <MeetingDateSection
-                  key={group.date}
-                  label={group.label}
-                  meetingCount={group.meetingCount}
-                >
-                  {group.meetings.map((meeting) => (
-                    <MeetingTimelineItem
-                      key={meeting.id}
-                      meeting={meeting}
-                      teamId={teamId}
-                      menuActions={getMenuActions(meeting)}
-                    />
-                  ))}
-                </MeetingDateSection>
-              ))}
-            </div>
-          </>
-        )}
-
-        {(groups.length > 0 || hasMore) && (
-          <MeetingListLoadMore
-            hasMore={hasMore}
-            status={loadMoreStatus}
-            onLoadMore={onLoadMore}
+        {searchResults ? (
+          <MeetingSearchResults
+            results={searchResults}
+            teamId={teamId}
+            getMenuActions={getMenuActions}
             scrollRootRef={scrollRootRef}
           />
+        ) : (
+          <>
+            <h2 className="text-base font-bold text-cool-900">전체 회의</h2>
+
+            {today && (
+              <div className="mt-3">
+                <TodayMeetingSection
+                  today={today}
+                  teamId={teamId}
+                  getMenuActions={getMenuActions}
+                />
+              </div>
+            )}
+
+            {groups.length > 0 && (
+              <>
+                <div className="mt-6 flex items-center gap-2">
+                  <span className="text-[13px] font-medium text-cool-500">날짜별 회의</span>
+                  <span aria-hidden="true" className="h-px flex-1 bg-cool-200" />
+                </div>
+                <div className="mt-4 flex flex-col gap-10">
+                  {groups.map((group) => (
+                    <MeetingDateSection
+                      key={group.date}
+                      label={group.label}
+                      meetingCount={group.meetingCount}
+                    >
+                      {group.meetings.map((meeting) => (
+                        <MeetingTimelineItem
+                          key={meeting.id}
+                          meeting={meeting}
+                          teamId={teamId}
+                          menuActions={getMenuActions(meeting)}
+                        />
+                      ))}
+                    </MeetingDateSection>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {(groups.length > 0 || hasMore) && (
+              <MeetingListLoadMore
+                hasMore={hasMore}
+                status={loadMoreStatus}
+                onLoadMore={onLoadMore}
+                scrollRootRef={scrollRootRef}
+              />
+            )}
+          </>
         )}
       </section>
 

@@ -2,20 +2,12 @@
 
 import { useMeetingSearch } from '@/features/meeting-list';
 import { toMeetingSearchResults } from './map-meeting-list';
-import type { Meeting, MeetingListLoadMoreStatus, MeetingListStatus } from './type';
-
-interface UseMeetingSearchResultsResult {
-  status: MeetingListStatus;
-  meetings: Meeting[];
-  hasMore: boolean;
-  loadMoreStatus: MeetingListLoadMoreStatus;
-  loadMore: () => void;
-}
+import type { MeetingSearchResultsData } from './type';
 
 export const useMeetingSearchResults = (
   teamId: number,
   keyword: string,
-): UseMeetingSearchResultsResult => {
+): MeetingSearchResultsData => {
   const { status, data, hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage } =
     useMeetingSearch(teamId, keyword);
 
@@ -26,6 +18,7 @@ export const useMeetingSearchResults = (
 
   if (!data) {
     return {
+      keyword,
       status: status === 'error' ? 'error' : 'loading',
       meetings: [],
       hasMore: false,
@@ -35,6 +28,7 @@ export const useMeetingSearchResults = (
   }
 
   return {
+    keyword,
     status: 'success',
     meetings: toMeetingSearchResults(data.pages),
     hasMore: hasNextPage,

@@ -2,38 +2,25 @@
 
 import type { RefObject } from 'react';
 import { Search } from 'lucide-react';
-import type {
-  Meeting,
-  MeetingListLoadMoreStatus,
-  MeetingListStatus,
-  MeetingMenuActions,
-} from '../model/type';
+import type { Meeting, MeetingMenuActions, MeetingSearchResultsData } from '../model/type';
 import { MeetingCard } from './MeetingCard';
 import { MeetingListLoadMore } from './MeetingListLoadMore';
 
 interface MeetingSearchResultsProps {
-  keyword: string;
-  status: MeetingListStatus;
-  meetings: Meeting[];
+  results: MeetingSearchResultsData;
   teamId: number;
   getMenuActions: (meeting: Meeting) => MeetingMenuActions;
-  hasMore: boolean;
-  loadMoreStatus: MeetingListLoadMoreStatus;
-  onLoadMore: () => void;
   scrollRootRef: RefObject<HTMLDivElement | null>;
 }
 
 export const MeetingSearchResults = ({
-  keyword,
-  status,
-  meetings,
+  results,
   teamId,
   getMenuActions,
-  hasMore,
-  loadMoreStatus,
-  onLoadMore,
   scrollRootRef,
 }: MeetingSearchResultsProps) => {
+  const { keyword, status, meetings, hasMore, loadMoreStatus, loadMore } = results;
+
   if (status === 'loading') {
     return (
       <div role="status" aria-label="검색 결과를 불러오는 중" className="motion-safe:animate-pulse">
@@ -95,7 +82,7 @@ export const MeetingSearchResults = ({
       <MeetingListLoadMore
         hasMore={hasMore}
         status={loadMoreStatus}
-        onLoadMore={onLoadMore}
+        onLoadMore={loadMore}
         scrollRootRef={scrollRootRef}
       />
     </>
