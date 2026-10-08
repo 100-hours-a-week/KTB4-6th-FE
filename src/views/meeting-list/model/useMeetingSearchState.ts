@@ -7,6 +7,7 @@ export const MEETING_SEARCH_MAX_LENGTH = 20;
 
 export const useMeetingSearchState = () => {
   const { showToast } = useAppToast();
+  const [isOpen, setIsOpen] = useState(false);
   const [query, setQueryState] = useState('');
   const [submittedKeyword, setSubmittedKeyword] = useState('');
 
@@ -22,14 +23,17 @@ export const useMeetingSearchState = () => {
   };
 
   const cancel = () => {
+    setIsOpen(false);
     setQueryState('');
     setSubmittedKeyword('');
   };
 
   return {
+    isOpen,
     query,
     submittedKeyword,
     isSearching: submittedKeyword !== '',
+    open: () => setIsOpen(true),
     setQuery,
     clearQuery: () => setQueryState(''),
     submit,

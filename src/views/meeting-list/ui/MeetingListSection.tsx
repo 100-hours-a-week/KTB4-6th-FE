@@ -1,4 +1,5 @@
 import { useState, type RefObject } from 'react';
+import { cn } from '@/shared/lib';
 import { DeleteConfirmDialog, useAppToast } from '@/shared/ui';
 import { getMeetingMenuState } from '../model/get-meeting-menu-state';
 import type {
@@ -27,6 +28,7 @@ interface MeetingListSectionProps {
   loadMoreStatus: 'idle' | 'loading' | 'error';
   onLoadMore: () => void;
   scrollRootRef: RefObject<HTMLDivElement | null>;
+  className?: string;
 }
 
 type MeetingDialog = {
@@ -44,6 +46,7 @@ export const MeetingListSection = ({
   loadMoreStatus,
   onLoadMore,
   scrollRootRef,
+  className,
 }: MeetingListSectionProps) => {
   const { showToast } = useAppToast();
   const { mutate: renameMeeting } = useRenameMeeting(teamId);
@@ -86,7 +89,7 @@ export const MeetingListSection = ({
 
   return (
     <>
-      <section className="mt-6 flex flex-1 flex-col px-5 pb-8">
+      <section className={cn('mt-6 flex flex-1 flex-col px-5 pb-8', className)}>
         <h2 className="text-base font-bold text-cool-900">전체 회의</h2>
 
         {today && (
