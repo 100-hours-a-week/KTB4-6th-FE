@@ -27,7 +27,6 @@ const formatMinutes = (totalMinutes: number) => {
 
 const formatTime = (dateTime: string) => dateTime.slice(11, 16);
 
-// `2026-10-07` → `2026.10.07`
 const formatDate = (date: string) => date.replaceAll('-', '.');
 
 const formatGroupLabel = (date: string) => {
