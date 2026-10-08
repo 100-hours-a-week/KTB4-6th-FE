@@ -1,44 +1,70 @@
-import { useState } from 'react';
-import { MeetingApiError } from '@/features/meeting';
+import { useState, type RefObject } from 'react';
+import { cn } from '@/shared/lib';
 import { DeleteConfirmDialog, useAppToast } from '@/shared/ui';
-import type { Meeting, TeamMemberRole } from '../model/type';
+import { getMeetingMenuState } from '../model/get-meeting-menu-state';
+import type {
+  Meeting,
+  MeetingDateGroup,
+  MeetingMenuActions,
+  MeetingSearchResultsData,
+  TeamMemberRole,
+  TodayMeetings,
+} from '../model/type';
 import { useDeleteMeeting } from '../model/useDeleteMeeting';
 import { useRenameMeeting } from '../model/useRenameMeeting';
-import { InProgressMeetingItem } from './InProgressMeetingItem';
-import { MeetingItem } from './MeetingItem';
+import { MeetingDateSection } from './MeetingDateSection';
+import { MeetingInfoEditDialog } from './MeetingInfoEditDialog';
 import { MeetingRenameDialog } from './MeetingRenameDialog';
 import { MeetingListLoadMore } from './MeetingListLoadMore';
+import { MeetingSearchResults } from './MeetingSearchResults';
+import { MeetingTimelineItem } from './MeetingTimelineItem';
+import { TodayMeetingSection } from './TodayMeetingSection';
 
 interface MeetingListSectionProps {
-  meetings: Meeting[];
+  today: TodayMeetings | null;
+  groups: MeetingDateGroup[];
   teamId: number;
   viewerRole: TeamMemberRole;
+  viewerTeamMemberId: number | null;
   hasMore: boolean;
   loadMoreStatus: 'idle' | 'loading' | 'error';
   onLoadMore: () => void;
+  scrollRootRef: RefObject<HTMLDivElement | null>;
+  searchResults: MeetingSearchResultsData | null;
+  className?: string;
 }
 
-// 열려 있는 다이얼로그. 어떤 회의에 대해 어떤 종류가 열렸는지를 함께 담고, null이면 열린 것이 없다.
 type MeetingDialog = {
   meeting: Meeting;
-  type: 'rename' | 'delete';
+  type: 'editInfo' | 'rename' | 'delete';
 } | null;
 
 export const MeetingListSection = ({
-  meetings,
+  today,
+  groups,
   teamId,
   viewerRole,
+  viewerTeamMemberId,
   hasMore,
   loadMoreStatus,
   onLoadMore,
+  scrollRootRef,
+  searchResults,
+  className,
 }: MeetingListSectionProps) => {
   const { showToast } = useAppToast();
   const { mutate: renameMeeting } = useRenameMeeting(teamId);
   const { mutate: deleteMeeting } = useDeleteMeeting(teamId);
   const [dialog, setDialog] = useState<MeetingDialog>(null);
-  const isLeader = viewerRole === 'leader';
 
   const closeDialog = () => setDialog(null);
+
+  const getMenuActions = (meeting: Meeting): MeetingMenuActions => ({
+    state: getMeetingMenuState({ meeting, viewerRole, viewerTeamMemberId }),
+    onRename: () => setDialog({ meeting, type: 'rename' }),
+    onEditInfo: () => setDialog({ meeting, type: 'editInfo' }),
+    onDelete: () => setDialog({ meeting, type: 'delete' }),
+  });
 
   const handleConfirmRename = (title: string) => {
     if (dialog?.type !== 'rename') return;
@@ -49,11 +75,7 @@ export const MeetingListSection = ({
       { meetingId, title },
       {
         onSuccess: () => showToast('회의 이름이 변경되었습니다', 'success'),
-        onError: (error) =>
-          showToast(
-            error instanceof MeetingApiError ? error.message : '회의 이름 변경에 실패했습니다.',
-            'danger',
-          ),
+        onError: () => showToast('회의 이름 변경에 실패했습니다. 다시 시도해주세요.', 'danger'),
       },
     );
   };
@@ -71,48 +93,61 @@ export const MeetingListSection = ({
 
   return (
     <>
-      <section className="mt-6 flex flex-1 flex-col px-5 pb-8">
-        <h2 className="text-base font-bold text-cool-900">전체 회의</h2>
-
-        {meetings.length === 0 ? (
-          <div className="motion-safe:animate-in motion-safe:fade-in motion-safe:animation-duration-300 mt-3 flex min-h-40 flex-col items-center justify-center rounded-2xl border border-dashed border-cool-200 bg-white px-4 text-center">
-            <p className="text-sm font-semibold text-cool-700">전체 회의가 없어요.</p>
-            <p className="mt-1 text-sm text-cool-500">새 회의를 만들어 시작해보세요.</p>
-          </div>
+      <section className={cn('mt-6 flex flex-1 flex-col px-5 pb-8', className)}>
+        {searchResults ? (
+          <MeetingSearchResults
+            results={searchResults}
+            teamId={teamId}
+            getMenuActions={getMenuActions}
+            scrollRootRef={scrollRootRef}
+          />
         ) : (
           <>
-            <div className="mt-3 flex flex-col gap-2.5">
-              {meetings.map((meeting) => {
-                // 팀장에게만 콜백을 넘기고, 팀원에게는 넘기지 않아 항목이 ⋯ 메뉴를 그리지 않는다.
-                const menuActions = isLeader
-                  ? {
-                      onRename: () => setDialog({ meeting, type: 'rename' }),
-                      onDelete: () => setDialog({ meeting, type: 'delete' }),
-                    }
-                  : {};
+            <h2 className="text-base font-bold text-cool-900">전체 회의</h2>
 
-                return meeting.status === 'in_progress' ? (
-                  <InProgressMeetingItem
-                    key={meeting.id}
-                    meeting={meeting}
-                    teamId={teamId}
-                    {...menuActions}
-                  />
-                ) : (
-                  <MeetingItem
-                    key={meeting.id}
-                    meeting={meeting}
-                    teamId={teamId}
-                    {...menuActions}
-                  />
-                );
-              })}
-            </div>
-            {meetings.length > 0 && (
+            {today && (
+              <div className="mt-3">
+                <TodayMeetingSection
+                  today={today}
+                  teamId={teamId}
+                  getMenuActions={getMenuActions}
+                />
+              </div>
+            )}
+
+            {groups.length > 0 && (
+              <>
+                <div className="mt-6 flex items-center gap-2">
+                  <span className="text-[13px] font-medium text-cool-500">날짜별 회의</span>
+                  <span aria-hidden="true" className="h-px flex-1 bg-cool-200" />
+                </div>
+                <div className="mt-4 flex flex-col gap-10">
+                  {groups.map((group) => (
+                    <MeetingDateSection
+                      key={group.date}
+                      label={group.label}
+                      meetingCount={group.meetingCount}
+                    >
+                      {group.meetings.map((meeting) => (
+                        <MeetingTimelineItem
+                          key={meeting.id}
+                          meeting={meeting}
+                          teamId={teamId}
+                          menuActions={getMenuActions(meeting)}
+                        />
+                      ))}
+                    </MeetingDateSection>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {(groups.length > 0 || hasMore) && (
               <MeetingListLoadMore
                 hasMore={hasMore}
                 status={loadMoreStatus}
                 onLoadMore={onLoadMore}
+                scrollRootRef={scrollRootRef}
               />
             )}
           </>
@@ -123,6 +158,13 @@ export const MeetingListSection = ({
         <MeetingRenameDialog
           currentTitle={dialog.meeting.title}
           onConfirm={handleConfirmRename}
+          onClose={closeDialog}
+        />
+      )}
+      {dialog?.type === 'editInfo' && (
+        <MeetingInfoEditDialog
+          meetingId={dialog.meeting.id}
+          teamId={teamId}
           onClose={closeDialog}
         />
       )}
