@@ -30,10 +30,9 @@ export interface MeetingListData {
 
 export interface MeetingListParams {
   cursor?: string;
-  /** `YYYY-MM-DD`, 포함 */
   from?: string;
-  /** `YYYY-MM-DD`, 포함 */
   to?: string;
+  keyword?: string;
 }
 
 export interface MeetingListResponse {

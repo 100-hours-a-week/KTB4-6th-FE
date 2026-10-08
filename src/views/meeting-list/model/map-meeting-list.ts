@@ -27,13 +27,13 @@ const formatMinutes = (totalMinutes: number) => {
 
 const formatTime = (dateTime: string) => dateTime.slice(11, 16);
 
-// 그룹 날짜는 시간대 없는 `YYYY-MM-DD`라 UTC로 읽어야 실행 환경 시간대와 상관없이 요일이 맞다.
-const formatGroupLabel = (date: string, currentYear: string) => {
+const formatDate = (date: string) => date.replaceAll('-', '.');
+
+const formatGroupLabel = (date: string) => {
   const [year, month, day] = date.split('-');
   const weekday = WEEKDAYS[new Date(Date.UTC(+year, +month - 1, +day)).getUTCDay()];
-  const monthDay = `${month}.${day} (${weekday})`;
 
-  return year === currentYear ? monthDay : `${year}.${monthDay}`;
+  return `${formatDate(date)} (${weekday})`;
 };
 
 const getStartAt = (meeting: MeetingListItemData) =>
@@ -68,21 +68,16 @@ const toMeeting = (meeting: MeetingListItemData): Meeting => ({
   subLabel: getSubLabel(meeting),
 });
 
-const toMeetingDateGroup = (
-  group: MeetingListGroupData,
-  currentYear: string,
-): MeetingDateGroup => ({
+const toMeetingDateGroup = (group: MeetingListGroupData): MeetingDateGroup => ({
   date: group.date,
-  label: formatGroupLabel(group.date, currentYear),
+  label: formatGroupLabel(group.date),
   meetingCount: group.meetingCount,
   meetings: group.meetings.map(toMeeting),
 });
 
 export const toMeetingDateGroups = (pages: MeetingListData[], today: string): MeetingDateGroup[] =>
   pages.flatMap((page) =>
-    page.groups
-      .filter((group) => group.date !== today)
-      .map((group) => toMeetingDateGroup(group, today.slice(0, 4))),
+    page.groups.filter((group) => group.date !== today).map(toMeetingDateGroup),
   );
 
 export const toTodayMeetings = (data: MeetingListData, today: string): TodayMeetings | null => {
@@ -92,9 +87,21 @@ export const toTodayMeetings = (data: MeetingListData, today: string): TodayMeet
   const meetings = group.meetings.map(toMeeting);
 
   return {
-    label: formatGroupLabel(today, today.slice(0, 4)),
+    label: formatGroupLabel(today),
     meetingCount: group.meetingCount,
     inProgressMeeting: meetings.find(({ status }) => status === 'in_progress'),
     otherMeetings: meetings.filter(({ status }) => status !== 'in_progress'),
   };
 };
+
+export const toMeetingSearchResults = (pages: MeetingListData[]): Meeting[] =>
+  pages.flatMap((page) =>
+    page.groups.flatMap((group) =>
+      group.meetings.map(toMeeting).map((meeting) => ({
+        ...meeting,
+        subLabel: [formatDate(group.date), meeting.time, meeting.subLabel]
+          .filter(Boolean)
+          .join(' · '),
+      })),
+    ),
+  );

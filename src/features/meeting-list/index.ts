@@ -9,4 +9,5 @@ export type {
 
 export { meetingListKeys } from './model/query-keys';
 export { useMeetingList } from './model/useMeetingList';
+export { useMeetingSearch } from './model/useMeetingSearch';
 export { useTodayMeetings } from './model/useTodayMeetings';

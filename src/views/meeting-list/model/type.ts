@@ -32,14 +32,21 @@ export interface MeetingMenuActions {
 export interface TodayMeetings {
   label: string;
   meetingCount: number;
-  /** 진행 중 회의는 한 번에 하나뿐이다 */
   inProgressMeeting?: Meeting;
   otherMeetings: Meeting[];
 }
 
+export interface MeetingSearchResultsData {
+  keyword: string;
+  status: MeetingListStatus;
+  meetings: Meeting[];
+  hasMore: boolean;
+  loadMoreStatus: MeetingListLoadMoreStatus;
+  loadMore: () => void;
+}
+
 export interface MeetingDateGroup {
   date: string;
-  /** 올해는 `09.22 (화)`, 다른 해는 `2025.09.22 (월)` */
   label: string;
   meetingCount: number;
   meetings: Meeting[];

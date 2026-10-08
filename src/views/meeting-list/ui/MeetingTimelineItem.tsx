@@ -1,9 +1,6 @@
-import Link from 'next/link';
 import { cn } from '@/shared/lib';
-import { Badge } from '@/shared/ui';
-import { MEETING_STATUS_BADGE } from '../model/meeting-status-badge';
 import type { Meeting, MeetingMenuActions } from '../model/type';
-import { MeetingItemMenu } from './MeetingItemMenu';
+import { MeetingCard } from './MeetingCard';
 
 interface MeetingTimelineItemProps {
   meeting: Meeting;
@@ -78,7 +75,6 @@ export const MeetingTimelineItem = ({
   tone = 'default',
   menuActions,
 }: MeetingTimelineItemProps) => {
-  const badge = MEETING_STATUS_BADGE[meeting.status];
   const style = TIMELINE_STYLE[tone][meeting.status];
 
   return (
@@ -98,33 +94,7 @@ export const MeetingTimelineItem = ({
         {meeting.time}
       </span>
 
-      <div className="relative mt-2 flex items-center gap-1 rounded-xl border border-cool-200 bg-white py-3.5 pr-1 pl-4 transition-colors hover:border-brand-200">
-        <span className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <span className="flex min-w-0 items-center gap-1.5">
-            <Link
-              href={`/teams/${teamId}/meetings/${meeting.id}`}
-              className="truncate text-base font-semibold text-cool-900 outline-none after:absolute after:inset-0 after:rounded-xl focus-visible:after:ring-2 focus-visible:after:ring-brand-600"
-            >
-              {meeting.title}
-            </Link>
-            <Badge
-              variant={badge.variant}
-              className="rounded px-1.5 py-1 text-[11.5px] leading-none font-semibold"
-            >
-              {badge.label}
-            </Badge>
-          </span>
-          {meeting.subLabel && (
-            <span className="truncate text-[13px] text-cool-500">{meeting.subLabel}</span>
-          )}
-        </span>
-
-        {menuActions.state.isVisible && (
-          <div className="relative z-10">
-            <MeetingItemMenu meetingTitle={meeting.title} menuActions={menuActions} />
-          </div>
-        )}
-      </div>
+      <MeetingCard className="mt-2" meeting={meeting} teamId={teamId} menuActions={menuActions} />
     </li>
   );
 };
