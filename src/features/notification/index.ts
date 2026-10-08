@@ -2,3 +2,4 @@ export type { NotificationData, NotificationReferenceType, NotificationType } fr
 
 export { notificationKeys } from './model/query-keys';
 export { useNotifications } from './model/useNotifications';
+export { NotificationTypeIcon } from './ui/NotificationTypeIcon';
