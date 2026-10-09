@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import {
   getNotificationHref,
   useDeleteNotification,
+  useHasUnreadNotification,
   useNotifications,
   useReadAllNotifications,
   useReadNotification,
@@ -28,7 +29,7 @@ export const NotificationsPage = ({ teamId }: NotificationsPageProps) => {
   const { mutate: readAllNotifications } = useReadAllNotifications(teamId);
   const { showToast } = useAppToast();
   const router = useRouter();
-  const hasUnread = notifications?.some((notification) => !notification.isRead) ?? false;
+  const hasUnread = useHasUnreadNotification(teamId);
 
   const handleSelect = (notification: NotificationData) => {
     if (!notification.isRead) {
