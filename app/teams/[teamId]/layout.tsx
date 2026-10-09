@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { NotificationRealtimeConnection } from '@/app/providers';
 import { NotificationBannerHost } from '@/app/ui';
 
 interface TeamLayoutProps {
@@ -13,6 +14,7 @@ export default async function TeamLayout({ children, params }: TeamLayoutProps) 
     <>
       {children}
       <NotificationBannerHost teamId={Number(teamId)} />
+      <NotificationRealtimeConnection />
     </>
   );
 }
