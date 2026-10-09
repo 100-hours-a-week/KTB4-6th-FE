@@ -8,7 +8,7 @@ export type NotificationType =
   | 'TEAM_REJOINED'
   | 'REPORT_READY';
 
-export type NotificationReferenceType = 'MEETING' | 'REPORT' | 'CREDIT_LEDGER' | 'TEAM';
+export type NotificationReferenceType = 'MEETING' | 'REPORT' | 'CREDIT' | 'TEAM';
 
 export interface NotificationData {
   notificationId: number;
