@@ -1,6 +1,12 @@
 'use client';
 
-import { useNotifications } from '@/features/notification';
+import { useRouter } from 'next/navigation';
+import {
+  getNotificationHref,
+  useNotifications,
+  useReadNotification,
+  type NotificationData,
+} from '@/features/notification';
 import { NotificationListItem } from './NotificationListItem';
 import { NotificationsEmptyState } from './NotificationsEmptyState';
 import { NotificationsErrorState } from './NotificationsErrorState';
@@ -13,7 +19,21 @@ interface NotificationsPageProps {
 
 export const NotificationsPage = ({ teamId }: NotificationsPageProps) => {
   const { data: notifications, isPending, isError } = useNotifications(teamId);
+  const { mutate: readNotification } = useReadNotification(teamId);
+  const router = useRouter();
   const hasUnread = notifications?.some((notification) => !notification.isRead) ?? false;
+
+  const handleSelect = (notification: NotificationData) => {
+    if (!notification.isRead) {
+      readNotification(notification.notificationId);
+    }
+
+    const href = getNotificationHref(teamId, notification);
+
+    if (href) {
+      router.push(href);
+    }
+  };
 
   return (
     <div className="flex h-dvh min-h-[844px] flex-col bg-white">
@@ -32,6 +52,7 @@ export const NotificationsPage = ({ teamId }: NotificationsPageProps) => {
                 <NotificationListItem
                   key={notification.notificationId}
                   notification={notification}
+                  onSelect={handleSelect}
                 />
               ))}
             </ul>
