@@ -6,11 +6,16 @@ import { breakSentences, cn, useAppFrameElement } from '@/shared/lib';
 import { getNotificationCategory } from '../model/get-notification-category';
 import { notificationBannerManager } from '../model/notification-banner-manager';
 import type { NotificationData } from '../model/types';
+import { useOpenNotification } from '../model/useOpenNotification';
 import { NotificationTypeIcon } from './NotificationTypeIcon';
 
 const NOTIFICATION_BANNER_DURATION_MS = 3000;
 
-export const NotificationBannerHost = () => {
+interface NotificationBannerHostProps {
+  teamId: number;
+}
+
+export const NotificationBannerHost = ({ teamId }: NotificationBannerHostProps) => {
   const frame = useAppFrameElement();
 
   return (
@@ -20,15 +25,16 @@ export const NotificationBannerHost = () => {
     >
       <Toast.Portal container={frame}>
         <Toast.Viewport className="pointer-events-none fixed inset-x-0 top-3 z-[110] mx-auto flex w-full max-w-[390px] flex-col px-3">
-          <NotificationBannerList />
+          <NotificationBannerList teamId={teamId} />
         </Toast.Viewport>
       </Toast.Portal>
     </Toast.Provider>
   );
 };
 
-const NotificationBannerList = () => {
-  const { toasts } = Toast.useToastManager<NotificationData>();
+const NotificationBannerList = ({ teamId }: NotificationBannerHostProps) => {
+  const { toasts, close } = Toast.useToastManager<NotificationData>();
+  const openNotification = useOpenNotification(teamId);
 
   return toasts.map((toast) => {
     if (!toast.data) {
@@ -50,18 +56,30 @@ const NotificationBannerList = () => {
           'data-swiping:transition-none',
         )}
       >
-        <NotificationTypeIcon type={notification.type} />
-        <div className="min-w-0 flex-1">
-          <p className="text-xs">
-            <span className="font-semibold text-brand-600">
-              {getNotificationCategory(notification.type)}
+        <button
+          type="button"
+          onClick={() => {
+            close(toast.id);
+            openNotification(notification);
+          }}
+          className="flex min-w-0 flex-1 items-center gap-3 rounded-xl text-left focus-visible:ring-3 focus-visible:ring-brand-300 focus-visible:outline-none"
+        >
+          <NotificationTypeIcon type={notification.type} />
+          <span className="min-w-0 flex-1">
+            <span className="block text-xs">
+              <span className="font-semibold text-brand-600">
+                {getNotificationCategory(notification.type)}
+              </span>
+              <span className="ml-1.5 text-cool-500">지금</span>
             </span>
-            <span className="ml-1.5 text-cool-500">지금</span>
-          </p>
-          <Toast.Description className="mt-0.5 line-clamp-2 text-sm font-semibold text-balance break-keep whitespace-pre-line text-cool-900">
-            {breakSentences(notification.body)}
-          </Toast.Description>
-        </div>
+            <Toast.Description
+              render={<span />}
+              className="mt-0.5 line-clamp-2 text-sm font-semibold text-balance break-keep whitespace-pre-line text-cool-900"
+            >
+              {breakSentences(notification.body)}
+            </Toast.Description>
+          </span>
+        </button>
         <Toast.Close
           aria-label="알림 닫기"
           className="flex size-9 shrink-0 items-center justify-center rounded-full text-cool-600 transition-colors hover:bg-cool-100"

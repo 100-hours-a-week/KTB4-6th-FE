@@ -7,6 +7,7 @@ export { notificationKeys } from './model/query-keys';
 export { useDeleteNotification } from './model/useDeleteNotification';
 export { useHasUnreadNotification } from './model/useHasUnreadNotification';
 export { useNotifications } from './model/useNotifications';
+export { useOpenNotification } from './model/useOpenNotification';
 export { useReadAllNotifications } from './model/useReadAllNotifications';
 export { useReadNotification } from './model/useReadNotification';
 export { NotificationBannerHost } from './ui/NotificationBannerHost';
