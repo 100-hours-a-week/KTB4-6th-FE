@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useActiveMeeting, useHome } from '@/features/home';
+import { useHasUnreadNotification } from '@/features/notification';
 import { NavigationSidebar } from '@/widgets/navigation-sidebar';
 import { CreateMeetingButton } from './CreateMeetingButton';
 import { HomeErrorState } from './HomeErrorState';
@@ -24,6 +25,7 @@ export const HomePage = ({ teamId, notice }: HomePageProps) => {
   const { data: home, dataUpdatedAt, isFetching, isError, refetch } = useHome({ isEnabled: true });
 
   const { activeMeeting, isPending: isActiveMeetingPending } = useActiveMeeting(teamId);
+  const hasUnreadNotification = useHasUnreadNotification(teamId);
 
   useRedirectToActiveTeam({
     activeTeamId: home?.team.teamId,
@@ -46,7 +48,11 @@ export const HomePage = ({ teamId, notice }: HomePageProps) => {
 
   return (
     <div className="flex min-h-[844px] flex-1 flex-col bg-cool-50">
-      <HomeHeader onMenuClick={() => setIsSidebarOpen(true)} />
+      <HomeHeader
+        teamId={teamId}
+        hasUnreadNotification={hasUnreadNotification}
+        onMenuClick={() => setIsSidebarOpen(true)}
+      />
       <TeamSummaryCard team={team} />
       <CreateMeetingButton
         teamId={teamId}
