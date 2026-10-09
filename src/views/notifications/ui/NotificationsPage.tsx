@@ -1,6 +1,16 @@
 'use client';
 
-import { useNotifications } from '@/features/notification';
+import { useRouter } from 'next/navigation';
+import {
+  getNotificationHref,
+  useDeleteNotification,
+  useNotifications,
+  useReadAllNotifications,
+  useReadNotification,
+  type NotificationData,
+} from '@/features/notification';
+import { useAppToast } from '@/shared/ui';
+import { notificationToastMessages } from '../model/toast-messages';
 import { NotificationListItem } from './NotificationListItem';
 import { NotificationsEmptyState } from './NotificationsEmptyState';
 import { NotificationsErrorState } from './NotificationsErrorState';
@@ -13,11 +23,50 @@ interface NotificationsPageProps {
 
 export const NotificationsPage = ({ teamId }: NotificationsPageProps) => {
   const { data: notifications, isPending, isError } = useNotifications(teamId);
+  const { mutate: readNotification } = useReadNotification(teamId);
+  const { mutate: deleteNotification } = useDeleteNotification(teamId);
+  const { mutate: readAllNotifications } = useReadAllNotifications(teamId);
+  const { showToast } = useAppToast();
+  const router = useRouter();
   const hasUnread = notifications?.some((notification) => !notification.isRead) ?? false;
+
+  const handleSelect = (notification: NotificationData) => {
+    if (!notification.isRead) {
+      readNotification(notification.notificationId);
+    }
+
+    const href = getNotificationHref(teamId, notification);
+
+    if (href) {
+      router.push(href);
+    }
+  };
+
+  const handleDelete = (notification: NotificationData) => {
+    deleteNotification(notification.notificationId, {
+      onError: () => {
+        const { text, variant } = notificationToastMessages.deleteFailure;
+        showToast(text, variant);
+      },
+    });
+  };
+
+  const handleReadAll = () => {
+    readAllNotifications(undefined, {
+      onError: () => {
+        const { text, variant } = notificationToastMessages.readAllFailure;
+        showToast(text, variant);
+      },
+    });
+  };
 
   return (
     <div className="flex h-dvh min-h-[844px] flex-col bg-white">
-      <NotificationsHeader teamId={teamId} isReadAllDisabled={!hasUnread} />
+      <NotificationsHeader
+        teamId={teamId}
+        isReadAllDisabled={!hasUnread}
+        onReadAllClick={handleReadAll}
+      />
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         {isPending ? (
           <NotificationsSkeleton />
@@ -32,6 +81,8 @@ export const NotificationsPage = ({ teamId }: NotificationsPageProps) => {
                 <NotificationListItem
                   key={notification.notificationId}
                   notification={notification}
+                  onSelect={handleSelect}
+                  onDelete={handleDelete}
                 />
               ))}
             </ul>
