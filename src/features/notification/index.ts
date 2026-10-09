@@ -3,6 +3,7 @@ export type { NotificationData, NotificationReferenceType, NotificationType } fr
 export { getNotificationHref } from './model/get-notification-href';
 export { notificationKeys } from './model/query-keys';
 export { useDeleteNotification } from './model/useDeleteNotification';
+export { useHasUnreadNotification } from './model/useHasUnreadNotification';
 export { useNotifications } from './model/useNotifications';
 export { useReadAllNotifications } from './model/useReadAllNotifications';
 export { useReadNotification } from './model/useReadNotification';

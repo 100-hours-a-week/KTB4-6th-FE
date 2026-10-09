@@ -1,11 +1,6 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { getNotifications } from '../api/get-notifications';
-import { notificationKeys } from './query-keys';
+import { notificationListQueryOptions } from './notification-list-query';
 
-export const useNotifications = (teamId: number) =>
-  useQuery({
-    queryKey: notificationKeys.list(teamId),
-    queryFn: () => getNotifications(teamId),
-  });
+export const useNotifications = (teamId: number) => useQuery(notificationListQueryOptions(teamId));
