@@ -5,9 +5,14 @@ import { getTeamHomePath } from '@/features/home';
 interface NotificationsHeaderProps {
   teamId: number;
   isReadAllDisabled: boolean;
+  onReadAllClick: () => void;
 }
 
-export const NotificationsHeader = ({ teamId, isReadAllDisabled }: NotificationsHeaderProps) => (
+export const NotificationsHeader = ({
+  teamId,
+  isReadAllDisabled,
+  onReadAllClick,
+}: NotificationsHeaderProps) => (
   <header className="grid h-14 shrink-0 grid-cols-[1fr_auto_1fr] items-center border-b border-cool-200 bg-white px-3">
     <Link
       href={getTeamHomePath(teamId)}
@@ -20,6 +25,7 @@ export const NotificationsHeader = ({ teamId, isReadAllDisabled }: Notifications
     <button
       type="button"
       disabled={isReadAllDisabled}
+      onClick={onReadAllClick}
       className="justify-self-end rounded-lg px-2 py-1.5 text-sm font-semibold text-brand-600 transition-colors hover:bg-brand-50 disabled:text-cool-400 disabled:hover:bg-transparent"
     >
       모두 읽음

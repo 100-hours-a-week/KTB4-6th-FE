@@ -5,6 +5,7 @@ import {
   getNotificationHref,
   useDeleteNotification,
   useNotifications,
+  useReadAllNotifications,
   useReadNotification,
   type NotificationData,
 } from '@/features/notification';
@@ -24,6 +25,7 @@ export const NotificationsPage = ({ teamId }: NotificationsPageProps) => {
   const { data: notifications, isPending, isError } = useNotifications(teamId);
   const { mutate: readNotification } = useReadNotification(teamId);
   const { mutate: deleteNotification } = useDeleteNotification(teamId);
+  const { mutate: readAllNotifications } = useReadAllNotifications(teamId);
   const { showToast } = useAppToast();
   const router = useRouter();
   const hasUnread = notifications?.some((notification) => !notification.isRead) ?? false;
@@ -49,9 +51,22 @@ export const NotificationsPage = ({ teamId }: NotificationsPageProps) => {
     });
   };
 
+  const handleReadAll = () => {
+    readAllNotifications(undefined, {
+      onError: () => {
+        const { text, variant } = notificationToastMessages.readAllFailure;
+        showToast(text, variant);
+      },
+    });
+  };
+
   return (
     <div className="flex h-dvh min-h-[844px] flex-col bg-white">
-      <NotificationsHeader teamId={teamId} isReadAllDisabled={!hasUnread} />
+      <NotificationsHeader
+        teamId={teamId}
+        isReadAllDisabled={!hasUnread}
+        onReadAllClick={handleReadAll}
+      />
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         {isPending ? (
           <NotificationsSkeleton />
