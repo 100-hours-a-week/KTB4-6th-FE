@@ -4,9 +4,14 @@ import { breakSentences, cn, formatRelativeTime } from '@/shared/lib';
 interface NotificationListItemProps {
   notification: NotificationData;
   onSelect: (notification: NotificationData) => void;
+  onDelete: (notification: NotificationData) => void;
 }
 
-export const NotificationListItem = ({ notification, onSelect }: NotificationListItemProps) => {
+export const NotificationListItem = ({
+  notification,
+  onSelect,
+  onDelete,
+}: NotificationListItemProps) => {
   const isUnread = !notification.isRead;
 
   return (
@@ -39,6 +44,7 @@ export const NotificationListItem = ({ notification, onSelect }: NotificationLis
       </button>
       <button
         type="button"
+        onClick={() => onDelete(notification)}
         className="shrink-0 rounded-lg px-2 py-1.5 text-sm text-cool-500 transition-colors hover:bg-cool-100 hover:text-cool-700"
       >
         삭제

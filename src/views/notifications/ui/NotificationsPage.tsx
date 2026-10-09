@@ -3,10 +3,13 @@
 import { useRouter } from 'next/navigation';
 import {
   getNotificationHref,
+  useDeleteNotification,
   useNotifications,
   useReadNotification,
   type NotificationData,
 } from '@/features/notification';
+import { useAppToast } from '@/shared/ui';
+import { notificationToastMessages } from '../model/toast-messages';
 import { NotificationListItem } from './NotificationListItem';
 import { NotificationsEmptyState } from './NotificationsEmptyState';
 import { NotificationsErrorState } from './NotificationsErrorState';
@@ -20,6 +23,8 @@ interface NotificationsPageProps {
 export const NotificationsPage = ({ teamId }: NotificationsPageProps) => {
   const { data: notifications, isPending, isError } = useNotifications(teamId);
   const { mutate: readNotification } = useReadNotification(teamId);
+  const { mutate: deleteNotification } = useDeleteNotification(teamId);
+  const { showToast } = useAppToast();
   const router = useRouter();
   const hasUnread = notifications?.some((notification) => !notification.isRead) ?? false;
 
@@ -33,6 +38,15 @@ export const NotificationsPage = ({ teamId }: NotificationsPageProps) => {
     if (href) {
       router.push(href);
     }
+  };
+
+  const handleDelete = (notification: NotificationData) => {
+    deleteNotification(notification.notificationId, {
+      onError: () => {
+        const { text, variant } = notificationToastMessages.deleteFailure;
+        showToast(text, variant);
+      },
+    });
   };
 
   return (
@@ -53,6 +67,7 @@ export const NotificationsPage = ({ teamId }: NotificationsPageProps) => {
                   key={notification.notificationId}
                   notification={notification}
                   onSelect={handleSelect}
+                  onDelete={handleDelete}
                 />
               ))}
             </ul>
