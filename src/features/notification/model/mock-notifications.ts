@@ -1,5 +1,6 @@
 import type { NotificationData } from './types';
 
+const MOCK_DELAY_MS = 300;
 const MINUTE_MS = 60 * 1000;
 const HOUR_MS = 60 * MINUTE_MS;
 const DAY_MS = 24 * HOUR_MS;
@@ -86,3 +87,6 @@ export const getMockNotifications = (teamId: number) => {
 
   return created;
 };
+
+export const waitForMockResponse = () =>
+  new Promise((resolve) => setTimeout(resolve, MOCK_DELAY_MS));
