@@ -1,5 +1,6 @@
 export type { NotificationData, NotificationReferenceType, NotificationType } from './model/types';
 
+export { getNotificationCategory } from './model/get-notification-category';
 export { getNotificationHref } from './model/get-notification-href';
 export { notificationKeys } from './model/query-keys';
 export { useDeleteNotification } from './model/useDeleteNotification';
