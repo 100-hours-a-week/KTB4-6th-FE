@@ -2,6 +2,7 @@
 
 import { Toast } from '@base-ui/react/toast';
 import { X } from 'lucide-react';
+import { useParams } from 'next/navigation';
 import { breakSentences, cn, useAppFrameElement } from '@/shared/lib';
 import { getNotificationCategory } from '../model/get-notification-category';
 import { notificationBannerManager } from '../model/notification-banner-manager';
@@ -11,11 +12,7 @@ import { NotificationTypeIcon } from './NotificationTypeIcon';
 
 const NOTIFICATION_BANNER_DURATION_MS = 3000;
 
-interface NotificationBannerHostProps {
-  teamId: number;
-}
-
-export const NotificationBannerHost = ({ teamId }: NotificationBannerHostProps) => {
+export const NotificationBannerHost = () => {
   const frame = useAppFrameElement();
 
   return (
@@ -25,16 +22,31 @@ export const NotificationBannerHost = ({ teamId }: NotificationBannerHostProps) 
     >
       <Toast.Portal container={frame}>
         <Toast.Viewport className="pointer-events-none fixed inset-x-0 top-3 z-[110] mx-auto flex w-full max-w-[390px] flex-col px-3">
-          <NotificationBannerList teamId={teamId} />
+          <NotificationBannerList />
         </Toast.Viewport>
       </Toast.Portal>
     </Toast.Provider>
   );
 };
 
-const NotificationBannerList = ({ teamId }: NotificationBannerHostProps) => {
-  const { toasts, close } = Toast.useToastManager<NotificationData>();
+const NotificationBannerList = () => {
+  const { teamId } = useParams<{ teamId?: string }>();
+
+  return teamId ? <TeamNotificationBanners teamId={Number(teamId)} /> : <NotificationBanners />;
+};
+
+const TeamNotificationBanners = ({ teamId }: { teamId: number }) => {
   const openNotification = useOpenNotification(teamId);
+
+  return <NotificationBanners onOpen={openNotification} />;
+};
+
+interface NotificationBannersProps {
+  onOpen?: (notification: NotificationData) => void;
+}
+
+const NotificationBanners = ({ onOpen }: NotificationBannersProps) => {
+  const { toasts, close } = Toast.useToastManager<NotificationData>();
 
   return toasts.map((toast) => {
     if (!toast.data) {
@@ -60,7 +72,7 @@ const NotificationBannerList = ({ teamId }: NotificationBannerHostProps) => {
           type="button"
           onClick={() => {
             close(toast.id);
-            openNotification(notification);
+            onOpen?.(notification);
           }}
           className="flex min-w-0 flex-1 items-center gap-3 rounded-xl text-left focus-visible:ring-3 focus-visible:ring-brand-300 focus-visible:outline-none"
         >
