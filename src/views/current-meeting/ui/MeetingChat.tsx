@@ -23,7 +23,11 @@ export const MeetingChat = () => {
         isLoading={chatMessages.isLoading}
         isError={chatMessages.isError}
         isRetrying={chatMessages.isRetrying}
+        hasOlderMessages={chatMessages.hasOlderMessages}
+        isLoadingOlderMessages={chatMessages.isLoadingOlderMessages}
+        hasLoadingOlderMessagesError={chatMessages.hasLoadingOlderMessagesError}
         onRetry={chatMessages.retry}
+        onLoadOlderMessages={chatMessages.loadOlderMessages}
       />
       {!chatMessages.isError && (
         <>
