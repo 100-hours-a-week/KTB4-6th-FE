@@ -3,22 +3,7 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, Menu } from 'lucide-react';
 import { cn } from '@/shared/lib';
-import type { CurrentMeetingViewModel } from '../model/preview-meeting';
-import type { CurrentMeetingConnectionStatus } from '../model/useCurrentMeetingConnection';
-
-interface CurrentMeetingHeaderProps {
-  meeting: CurrentMeetingViewModel;
-  /** 팀 전체 인원 수. 조회 전이면 null. */
-  teamMemberCount: number | null;
-  isMenuDisabled: boolean;
-  isWaiting: boolean;
-  isPaused: boolean;
-  isEnding: boolean;
-  connectionStatus: CurrentMeetingConnectionStatus;
-  isRecording: boolean;
-  isCompleted: boolean;
-  onMenuClick: () => void;
-}
+import { useCurrentMeetingContext } from '../model/current-meeting-context';
 
 const MEETING_INFO_PANEL_ID = 'current-meeting-info';
 
@@ -27,18 +12,10 @@ const formatElapsed = (seconds: number) =>
     .map((part) => String(part).padStart(2, '0'))
     .join(':');
 
-export const CurrentMeetingHeader = ({
-  meeting,
-  teamMemberCount,
-  isMenuDisabled,
-  isWaiting,
-  isPaused,
-  isEnding,
-  connectionStatus,
-  isRecording,
-  isCompleted,
-  onMenuClick,
-}: CurrentMeetingHeaderProps) => {
+export const CurrentMeetingHeader = () => {
+  const { team, teamMemberCount, recording, openSidebar } = useCurrentMeetingContext();
+  const { meeting, isWaiting, isPaused, isEnding, connectionStatus, isRecording, isCompleted } =
+    recording;
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const isDisconnected = connectionStatus === 'error';
   const isOvertime = meeting.elapsedSeconds > meeting.targetMinutes * 60;
@@ -66,8 +43,8 @@ export const CurrentMeetingHeader = ({
         <button
           type="button"
           aria-label="메뉴 열기"
-          disabled={isMenuDisabled}
-          onClick={onMenuClick}
+          disabled={!team}
+          onClick={openSidebar}
           className="flex size-9 shrink-0 items-center justify-center rounded-full text-cool-900 disabled:text-cool-400"
         >
           <Menu className="size-5" strokeWidth={2} />

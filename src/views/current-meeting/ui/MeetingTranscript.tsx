@@ -3,31 +3,23 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowDown } from 'lucide-react';
 import { cn } from '@/shared/lib';
+import { useCurrentMeetingContext } from '../model/current-meeting-context';
 import { useTranscriptAutoScroll } from '../model/useTranscriptAutoScroll';
-import type { TranscriptSegment } from '../model/preview-meeting';
-
-interface MeetingTranscriptProps {
-  segments: TranscriptSegment[];
-  isRecording: boolean;
-  isPaused: boolean;
-  /** 늦게 입장·새로고침해서 이전 녹취를 불러오는 중인지 */
-  isHistoryPending: boolean;
-  /** 이전 녹취 조회에 실패했는지. 실시간으로 받은 녹취는 그대로 보여준다 */
-  isHistoryError: boolean;
-}
 
 const formatTimestamp = (seconds: number) =>
   [Math.floor(seconds / 60), seconds % 60].map((part) => String(part).padStart(2, '0')).join(':');
 
 const HIGHLIGHT_DURATION_MS = 1200;
 
-export const MeetingTranscript = ({
-  segments,
-  isRecording,
-  isPaused,
-  isHistoryPending,
-  isHistoryError,
-}: MeetingTranscriptProps) => {
+export const MeetingTranscript = () => {
+  const { recording } = useCurrentMeetingContext();
+  const {
+    meeting: { transcripts: segments },
+    isRecording,
+    isPaused,
+    isTranscriptHistoryPending: isHistoryPending,
+    isTranscriptHistoryError: isHistoryError,
+  } = recording;
   const previousSegmentCount = useRef(segments.length);
   const [highlightedSegmentId, setHighlightedSegmentId] = useState<string | null>(null);
   const latestSegmentId = segments.at(-1)?.id;

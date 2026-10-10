@@ -1,6 +1,6 @@
 'use client';
 
-import type { RecordingBlockedReason } from '../model/blocked-action-toasts';
+import { useCurrentMeetingContext } from '../model/current-meeting-context';
 import { useCompleteRecordingDialog } from '../model/useCompleteRecordingDialog';
 import { useMeetingDelete } from '../model/useMeetingDelete';
 import { useMeetingLeave } from '../model/useMeetingLeave';
@@ -11,67 +11,45 @@ import { ParticipantStatusMessage } from './ParticipantStatusMessage';
 import { RecordingCompleteDialog } from './RecordingCompleteDialog';
 import { RecordingControlButtons } from './RecordingControlButtons';
 
-interface MeetingControlsProps {
-  teamId: string;
-  meetingId: string;
-  isPreview: boolean;
-  canDelete: boolean;
-  canEditInfo: boolean;
-  canCompleteRecording: boolean;
-  canStartRecording: boolean;
-  startBlockedReason: RecordingBlockedReason | null;
-  canPauseResumeRecording: boolean;
-  pauseResumeBlockedReason: RecordingBlockedReason | null;
-  isMeetingInProgress: boolean;
-  isCompleted: boolean;
-  isWaiting: boolean;
-  isRecorder: boolean;
-  isPaused: boolean;
-  isDisconnected: boolean;
-  isEnding: boolean;
-  isStartingRecording: boolean;
-  isUpdatingRecordingStatus: boolean;
-  onStartRecording: () => void;
-  onPauseResumeRecording: () => void;
-  onCompleteRecording: () => void;
-  onEditInfo: () => void;
-  recorderName: string;
-}
-
-export const MeetingControls = ({
-  teamId,
-  meetingId,
-  isPreview,
-  canDelete,
-  canEditInfo,
-  canCompleteRecording,
-  canStartRecording,
-  startBlockedReason,
-  canPauseResumeRecording,
-  pauseResumeBlockedReason,
-  isMeetingInProgress,
-  isCompleted,
-  isWaiting,
-  isRecorder,
-  isPaused,
-  isDisconnected,
-  isEnding,
-  isStartingRecording,
-  isUpdatingRecordingStatus,
-  onStartRecording,
-  onPauseResumeRecording,
-  onCompleteRecording,
-  onEditInfo,
-  recorderName,
-}: MeetingControlsProps) => {
-  const { isLeaving, handleLeave } = useMeetingLeave({ teamId, meetingId });
+export const MeetingControls = () => {
+  const { teamId, meetingId, isPreview, team, recording, meetingInfoEdit } =
+    useCurrentMeetingContext();
+  const {
+    meeting,
+    canCompleteRecording,
+    canStartRecording,
+    startBlockedReason,
+    canPauseResumeRecording,
+    pauseResumeBlockedReason,
+    isCompleted,
+    isWaiting,
+    isRecorder,
+    isPaused,
+    isDisconnected,
+    isEnding,
+    isStartingRecording,
+    isUpdatingRecordingStatus,
+    handleStartRecording,
+    handlePauseResumeRecording,
+    handleCompleteRecording,
+  } = recording;
+  const isMeetingInProgress = !isWaiting && !isCompleted;
+  const canDelete = !isPreview && team?.role === 'LEADER';
+  const canEditInfo =
+    isWaiting &&
+    !isPreview &&
+    (team?.role === 'LEADER' || team?.teamMemberId === meeting.createdByTeamMemberId);
+  const { isLeaving, handleLeave } = useMeetingLeave({
+    teamId,
+    meetingId: String(meetingId),
+  });
   const { isDeleting, isDeleteDialogOpen, setIsDeleteDialogOpen, handleDelete } = useMeetingDelete({
     teamId,
-    meetingId,
+    meetingId: String(meetingId),
     canDelete,
   });
   const { isCompleteDialogOpen, setIsCompleteDialogOpen, handleCompleteRequest, handleComplete } =
-    useCompleteRecordingDialog(onCompleteRecording);
+    useCompleteRecordingDialog(handleCompleteRecording);
 
   return (
     <footer className="grid shrink-0 grid-cols-[minmax(0,1fr)_36px] items-center gap-2 border-t border-cool-200 bg-white px-5 py-3">
@@ -91,8 +69,8 @@ export const MeetingControls = ({
           canPauseResumeRecording={canPauseResumeRecording}
           pauseResumeBlockedReason={pauseResumeBlockedReason}
           canCompleteRecording={canCompleteRecording}
-          onStartRecording={onStartRecording}
-          onPauseResumeRecording={onPauseResumeRecording}
+          onStartRecording={handleStartRecording}
+          onPauseResumeRecording={handlePauseResumeRecording}
           onCompleteRecording={handleCompleteRequest}
           onLeave={handleLeave}
         />
@@ -102,7 +80,7 @@ export const MeetingControls = ({
           isCompleted={isCompleted}
           isDisconnected={isDisconnected}
           isPaused={isPaused}
-          recorderName={recorderName}
+          recorderName={meeting.recorderName}
         />
       )}
 
@@ -116,7 +94,7 @@ export const MeetingControls = ({
           isDeleting={isDeleting}
           isRecorder={isRecorder}
           onDelete={() => setIsDeleteDialogOpen(true)}
-          onEditInfo={onEditInfo}
+          onEditInfo={meetingInfoEdit.handleEditInfo}
         />
       )}
       <MeetingDeleteDialog
