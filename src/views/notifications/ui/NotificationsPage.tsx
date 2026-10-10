@@ -21,7 +21,8 @@ interface NotificationsPageProps {
 }
 
 export const NotificationsPage = ({ teamId }: NotificationsPageProps) => {
-  const { data: notifications, isPending, isError } = useNotifications(teamId);
+  const { data, isPending, isError } = useNotifications(teamId);
+  const notifications = data?.pages.flatMap((page) => page.notifications) ?? [];
   const { mutate: deleteNotification } = useDeleteNotification(teamId);
   const { mutate: readAllNotifications } = useReadAllNotifications(teamId);
   const { showToast } = useAppToast();

@@ -1,9 +1,11 @@
-import type { QueryClient } from '@tanstack/react-query';
+import type { InfiniteData, QueryClient } from '@tanstack/react-query';
 import { notificationKeys } from './query-keys';
-import type { NotificationData } from './types';
+import type { NotificationData, NotificationListData } from './types';
+
+type NotificationListCache = InfiniteData<NotificationListData, number | undefined>;
 
 export interface NotificationListSnapshot {
-  previousNotifications: NotificationData[] | undefined;
+  previousList: NotificationListCache | undefined;
 }
 
 export const updateNotificationListOptimistically = async (
@@ -15,13 +17,21 @@ export const updateNotificationListOptimistically = async (
 
   await queryClient.cancelQueries({ queryKey: listKey });
 
-  const previousNotifications = queryClient.getQueryData<NotificationData[]>(listKey);
+  const previousList = queryClient.getQueryData<NotificationListCache>(listKey);
 
-  queryClient.setQueryData<NotificationData[]>(listKey, (notifications) =>
-    notifications ? update(notifications) : notifications,
+  queryClient.setQueryData<NotificationListCache>(listKey, (list) =>
+    list
+      ? {
+          ...list,
+          pages: list.pages.map((page) => ({
+            ...page,
+            notifications: update(page.notifications),
+          })),
+        }
+      : list,
   );
 
-  return { previousNotifications };
+  return { previousList };
 };
 
 export const restoreNotificationList = (
@@ -29,5 +39,5 @@ export const restoreNotificationList = (
   teamId: number,
   snapshot: NotificationListSnapshot | undefined,
 ) => {
-  queryClient.setQueryData(notificationKeys.list(teamId), snapshot?.previousNotifications);
+  queryClient.setQueryData(notificationKeys.list(teamId), snapshot?.previousList);
 };
