@@ -7,6 +7,7 @@ import {
   NOTIFICATION_SSE_EVENTS,
   notificationKeys,
   parseNotificationCreatedEvent,
+  prependNotificationToList,
   showNotificationBanner,
 } from '@/features/notification';
 import { refreshAuthTokensOnce } from './use-auth-retry-interceptor';
@@ -26,11 +27,18 @@ export const NotificationRealtimeConnection = () => {
   });
 
   const receiveNotification = useEffectEvent((data: string) => {
-    refreshNotifications();
-
     const notification = parseNotificationCreatedEvent(data);
 
-    if (notification && !NOTIFICATIONS_PAGE_PATTERN.test(pathname)) {
+    if (!notification) {
+      refreshNotifications();
+      return;
+    }
+
+    if (teamId) {
+      prependNotificationToList(queryClient, Number(teamId), notification);
+    }
+
+    if (!NOTIFICATIONS_PAGE_PATTERN.test(pathname)) {
       showNotificationBanner(notification);
     }
   });

@@ -55,3 +55,36 @@ export const restoreNotificationList = (
 ) => {
   queryClient.setQueryData(notificationKeys.list(teamId), snapshot?.previousList);
 };
+
+export const prependNotificationToList = (
+  queryClient: QueryClient,
+  teamId: number,
+  notification: NotificationData,
+) => {
+  queryClient.setQueryData<NotificationListCache>(notificationKeys.list(teamId), (list) => {
+    const [firstPage] = list?.pages ?? [];
+
+    if (!list || !firstPage) {
+      return list;
+    }
+
+    const isDuplicate = list.pages.some((page) =>
+      page.notifications.some((item) => item.notificationId === notification.notificationId),
+    );
+
+    if (isDuplicate) {
+      return list;
+    }
+
+    const unreadCount = firstPage.unreadCount + (notification.isRead ? 0 : 1);
+
+    return {
+      ...list,
+      pages: list.pages.map((page, index) => ({
+        ...page,
+        notifications: index === 0 ? [notification, ...page.notifications] : page.notifications,
+        unreadCount,
+      })),
+    };
+  });
+};
