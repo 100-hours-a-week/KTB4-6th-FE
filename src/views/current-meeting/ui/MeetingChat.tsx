@@ -42,7 +42,7 @@ const UserQuestion = ({ message }: { message: ChatMessageViewModel }) => (
 const MeetyAvatar = () => (
   <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-100">
     <Image
-      src="/brand/mascot/meety-08-thinking-transparent.png"
+      src="/brand/mascot/meety-05-glasses.png"
       alt=""
       width={40}
       height={40}
