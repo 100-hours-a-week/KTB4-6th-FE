@@ -8,7 +8,6 @@ import {
 } from '../model/blocked-action-toasts';
 
 interface RecordingControlButtonsProps {
-  isPreview: boolean;
   isWaiting: boolean;
   isPaused: boolean;
   isCompleted: boolean;
@@ -30,7 +29,6 @@ interface RecordingControlButtonsProps {
 
 /** 대기 중에는 녹음 시작·회의 나가기, 녹음 중에는 일시정지·재개·회의 종료 버튼을 보여준다. */
 export const RecordingControlButtons = ({
-  isPreview,
   isWaiting,
   isPaused,
   isCompleted,
@@ -94,7 +92,7 @@ export const RecordingControlButtons = ({
       </button>
       <button
         type="button"
-        disabled={isWaiting ? isPreview || isLeaving || isStartingRecording : !canCompleteRecording}
+        disabled={isWaiting ? isLeaving || isStartingRecording : !canCompleteRecording}
         onClick={isWaiting ? onLeave : onCompleteRecording}
         className={cn(
           'h-12 rounded-xl px-2 text-sm font-semibold',

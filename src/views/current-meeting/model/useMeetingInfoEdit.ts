@@ -10,7 +10,7 @@ import {
 } from '@/features/meeting';
 import { getCurrentMeetingQueryKey } from '@/features/meeting-sse';
 import { useAppToast } from '@/shared/ui';
-import type { CurrentMeetingViewModel } from './preview-meeting';
+import type { CurrentMeetingViewModel } from './current-meeting';
 
 interface UseMeetingInfoEditParams {
   meetingId: number;

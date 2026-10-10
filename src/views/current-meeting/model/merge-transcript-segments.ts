@@ -1,6 +1,6 @@
 import type { MeetingTranscriptSegmentData } from '@/features/meeting';
 import type { TranscriptCreatedEventData } from '@/features/meeting-sse';
-import type { TranscriptSegment } from './preview-meeting';
+import type { TranscriptSegment } from './current-meeting';
 
 const toTranscriptSegmentFromHistory = (
   segment: MeetingTranscriptSegmentData,

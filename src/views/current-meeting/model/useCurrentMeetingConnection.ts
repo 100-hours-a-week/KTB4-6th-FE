@@ -8,8 +8,6 @@ export type CurrentMeetingConnectionStatus = 'connecting' | 'connected' | 'error
 interface UseCurrentMeetingConnectionParams {
   meetingId: number;
   recordingSessionId: number | null;
-  isPreview: boolean;
-  previewConnectionStatus: 'connected' | 'disconnected';
   /** 사용자가 직접 일시정지해서 오디오 소켓을 일부러 끊어둔 상태인지 */
   isPausedByUser: boolean;
 }
@@ -18,14 +16,10 @@ interface UseCurrentMeetingConnectionParams {
 export const useCurrentMeetingConnection = ({
   meetingId,
   recordingSessionId,
-  isPreview,
-  previewConnectionStatus,
   isPausedByUser,
 }: UseCurrentMeetingConnectionParams): CurrentMeetingConnectionStatus => {
   const { statuses: sseStatuses } = useMeetingSse();
   const { statuses: socketStatuses } = useRecordingWebSocket();
-
-  if (isPreview) return previewConnectionStatus === 'disconnected' ? 'error' : 'connected';
 
   const sseStatus = sseStatuses[String(meetingId)];
   const socketStatus = recordingSessionId === null ? undefined : socketStatuses[recordingSessionId];

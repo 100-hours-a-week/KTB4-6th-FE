@@ -13,8 +13,6 @@ interface UseCurrentMeetingRecordingSessionParams {
   teamId: string;
   meetingId: number;
   isMeetingWaiting: boolean;
-  isPreview: boolean;
-  previewConnectionStatus: 'connected' | 'disconnected';
   isRecordingAcknowledged: boolean;
   /** 서버가 이 사용자를 녹음 시작자로 기억하고 있는지 */
   isRecorderByServer: boolean;
@@ -36,8 +34,6 @@ export const useCurrentMeetingRecordingSession = ({
   teamId,
   meetingId,
   isMeetingWaiting,
-  isPreview,
-  previewConnectionStatus,
   isRecordingAcknowledged,
   isRecorderByServer,
   serverRecordingSessionId,
@@ -55,25 +51,21 @@ export const useCurrentMeetingRecordingSession = ({
   const operation = useRecordingSessionStore((state) => state.operation);
   const isPausedByUser = useRecordingSessionStore((state) => state.isPausedByUser);
   // 이 브라우저가 아니어도, 같은 팀의 다른 회의가 이미 진행 중이면 새로 시작할 수 없다.
-  const { activeMeeting: teamActiveMeeting } = useActiveMeeting(Number(teamId), {
-    isEnabled: !isPreview,
-  });
+  const { activeMeeting: teamActiveMeeting } = useActiveMeeting(Number(teamId));
   const hasTeamActiveMeetingElsewhere =
-    !isPreview && teamActiveMeeting !== null && teamActiveMeeting.meetingId !== meetingId;
+    teamActiveMeeting !== null && teamActiveMeeting.meetingId !== meetingId;
 
   const localRecordingSessionId =
-    !isPreview && activeRecording?.meetingId === meetingId
-      ? activeRecording.recordingSessionId
-      : null;
+    activeRecording?.meetingId === meetingId ? activeRecording.recordingSessionId : null;
   // 새로고침 등으로 로컬 녹음 세션이 없어도, 서버가 이 사용자를 녹음 시작자로 기억하고
   // 있으면 서버 값으로 대체한다.
   const recordingSessionId =
-    localRecordingSessionId ?? (!isPreview && isRecorderByServer ? serverRecordingSessionId : null);
+    localRecordingSessionId ?? (isRecorderByServer ? serverRecordingSessionId : null);
 
   // RecordingSessionManager는 이 화면과 별개로 동작해서 서버 조회 결과를 직접 못 보기
   // 때문에, 복원한 recordingSessionId를 store에도 채워 넣어야 재생성·재연결을 시도할 수 있다.
   useEffect(() => {
-    if (isPreview || localRecordingSessionId !== null || !isRecorderByServer) return;
+    if (localRecordingSessionId !== null || !isRecorderByServer) return;
     if (serverRecordingSessionId === null) return;
 
     setActiveRecording({
@@ -89,7 +81,6 @@ export const useCurrentMeetingRecordingSession = ({
     // 마이크·웹소켓을 자동으로 다시 만들어 일시정지가 저절로 풀려버린다.
     if (isServerPaused) setIsPausedByUser(true);
   }, [
-    isPreview,
     localRecordingSessionId,
     isRecorderByServer,
     serverRecordingSessionId,
@@ -104,8 +95,6 @@ export const useCurrentMeetingRecordingSession = ({
   const connectionStatus = useCurrentMeetingConnection({
     meetingId,
     recordingSessionId,
-    isPreview,
-    previewConnectionStatus,
     isPausedByUser,
   });
   const isWaiting = isMeetingWaiting && recordingSessionId === null && !isCompleted;
@@ -113,7 +102,6 @@ export const useCurrentMeetingRecordingSession = ({
   const isUploadCompleted =
     pendingUpload?.recordingSessionId === recordingSessionId && pendingUpload.isCompleted;
   const availability = getRecordingAvailability({
-    isPreview,
     isWaiting,
     isCompleted,
     isStartingRecording,
@@ -133,7 +121,6 @@ export const useCurrentMeetingRecordingSession = ({
     teamId,
     meetingId,
     isWaiting,
-    isPreview,
     isRecordingAcknowledged,
     onRecordingStarted,
     onInsufficientCredit,
@@ -141,7 +128,6 @@ export const useCurrentMeetingRecordingSession = ({
   const handleCompleteRecording = useCompleteRecordingFlow({
     recordingSessionId,
     isCompleted,
-    isPreview,
     onCompleted: () => setIsCompleted(true),
   });
   const handlePauseResumeRecording = usePauseResumeRecordingFlow({

@@ -9,8 +9,6 @@ import { useRecordingStartDialog } from './useRecordingStartDialog';
 interface UseCurrentMeetingRecordingParams {
   teamId: string;
   meetingId: number;
-  previewState?: string;
-  previewRole: 'recorder' | 'participant';
   /** 지금 이 화면을 보는 사용자의 팀원 ID. 새로고침 후 녹음자 권한 복원에 쓴다 */
   myTeamMemberId: number | null;
 }
@@ -19,21 +17,15 @@ interface UseCurrentMeetingRecordingParams {
 export const useCurrentMeetingRecording = ({
   teamId,
   meetingId,
-  previewState,
-  previewRole,
   myTeamMemberId,
 }: UseCurrentMeetingRecordingParams) => {
-  const isPreview = previewState !== undefined;
   const {
     meeting,
     isMeetingPending,
     isServerCompleted,
     isTranscriptHistoryPending,
     isTranscriptHistoryError,
-  } = useCurrentMeetingData({
-    meetingId,
-    previewState,
-  });
+  } = useCurrentMeetingData(meetingId);
   const {
     isStartDialogOpen,
     isRecordingAcknowledged,
@@ -66,8 +58,6 @@ export const useCurrentMeetingRecording = ({
     teamId,
     meetingId,
     isMeetingWaiting: meeting?.recordingStatus === 'waiting',
-    isPreview,
-    previewConnectionStatus: meeting?.connectionStatus ?? 'connected',
     isRecordingAcknowledged,
     isRecorderByServer,
     serverRecordingSessionId: meeting?.recordingSessionId ?? null,
@@ -86,9 +76,6 @@ export const useCurrentMeetingRecording = ({
       serverRecordingStatus: meeting?.recordingStatus,
       hasRecordingSession: recordingSessionId !== null,
       hasCompleted,
-      isPreview,
-      isPreviewEnding: isPreview && previewState === 'ending',
-      previewRole,
       isBrowserRecording: recorderStatus === 'recording',
       // 일시정지 중엔 recorder 자체가 없어서 recorderStatus로는 구분이 안 된다.
       isBrowserPaused: isPausedByUser,

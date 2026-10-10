@@ -13,7 +13,6 @@ interface UseStartRecordingFlowParams {
   teamId: string;
   meetingId: number;
   isWaiting: boolean;
-  isPreview: boolean;
   isRecordingAcknowledged: boolean;
   onRecordingStarted: () => void;
   onInsufficientCredit: () => void;
@@ -27,7 +26,6 @@ export const useStartRecordingFlow = ({
   teamId,
   meetingId,
   isWaiting,
-  isPreview,
   isRecordingAcknowledged,
   onRecordingStarted,
   onInsufficientCredit,
@@ -45,8 +43,7 @@ export const useStartRecordingFlow = ({
       !isWaiting ||
       useRecordingSessionStore.getState().activeRecording !== null ||
       !isRecordingAcknowledged ||
-      useRecordingSessionStore.getState().operation !== 'idle' ||
-      isPreview
+      useRecordingSessionStore.getState().operation !== 'idle'
     ) {
       return;
     }
