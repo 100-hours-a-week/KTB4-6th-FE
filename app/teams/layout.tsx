@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { NotificationRealtimeConnection } from '@/app/providers';
+import { NotificationBannerHost } from '@/app/ui';
 
 interface TeamsLayoutProps {
   children: ReactNode;
@@ -11,5 +13,11 @@ export default async function TeamsLayout({ children }: TeamsLayoutProps) {
 
   if (!cookieStore.has('accessToken')) redirect('/?authRequired=1');
 
-  return children;
+  return (
+    <>
+      {children}
+      <NotificationBannerHost />
+      <NotificationRealtimeConnection />
+    </>
+  );
 }

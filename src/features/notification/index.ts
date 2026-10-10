@@ -3,6 +3,7 @@ export type { NotificationData, NotificationReferenceType, NotificationType } fr
 export { getNotificationCategory } from './model/get-notification-category';
 export { getNotificationHref } from './model/get-notification-href';
 export { showNotificationBanner } from './model/notification-banner-manager';
+export { NOTIFICATION_SSE_EVENTS, parseNotificationCreatedEvent } from './model/notification-event';
 export { notificationKeys } from './model/query-keys';
 export { useDeleteNotification } from './model/useDeleteNotification';
 export { useHasUnreadNotification } from './model/useHasUnreadNotification';

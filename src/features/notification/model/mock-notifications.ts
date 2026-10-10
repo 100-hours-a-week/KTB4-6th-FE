@@ -29,7 +29,7 @@ const createMockNotifications = (): NotificationData[] => [
   {
     notificationId: 5,
     type: 'CREDIT_EARNED',
-    referenceType: 'CREDIT_LEDGER',
+    referenceType: 'CREDIT',
     referenceId: null,
     body: '20 크레딧이 충전되었습니다',
     isRead: false,
