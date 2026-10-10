@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef } from 'react';
 import {
   useDeleteNotification,
   useHasUnreadNotification,
@@ -10,10 +11,12 @@ import {
 } from '@/features/notification';
 import { useAppToast } from '@/shared/ui';
 import { notificationToastMessages } from '../model/toast-messages';
+import type { NotificationsLoadMoreStatus } from '../model/types';
 import { NotificationListItem } from './NotificationListItem';
 import { NotificationsEmptyState } from './NotificationsEmptyState';
 import { NotificationsErrorState } from './NotificationsErrorState';
 import { NotificationsHeader } from './NotificationsHeader';
+import { NotificationsLoadMore } from './NotificationsLoadMore';
 import { NotificationsSkeleton } from './NotificationsSkeleton';
 
 interface NotificationsPageProps {
@@ -21,8 +24,22 @@ interface NotificationsPageProps {
 }
 
 export const NotificationsPage = ({ teamId }: NotificationsPageProps) => {
-  const { data, isPending, isError } = useNotifications(teamId);
+  const {
+    data,
+    isPending,
+    isError,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetchNextPageError,
+    fetchNextPage,
+  } = useNotifications(teamId);
   const notifications = data?.pages.flatMap((page) => page.notifications) ?? [];
+  const scrollRootRef = useRef<HTMLDivElement>(null);
+  const loadMoreStatus: NotificationsLoadMoreStatus = isFetchingNextPage
+    ? 'loading'
+    : isFetchNextPageError
+      ? 'error'
+      : 'idle';
   const { mutate: deleteNotification } = useDeleteNotification(teamId);
   const { mutate: readAllNotifications } = useReadAllNotifications(teamId);
   const { showToast } = useAppToast();
@@ -55,10 +72,10 @@ export const NotificationsPage = ({ teamId }: NotificationsPageProps) => {
         isReadAllDisabled={!hasUnread}
         onReadAllClick={handleReadAll}
       />
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+      <div ref={scrollRootRef} className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         {isPending ? (
           <NotificationsSkeleton />
-        ) : isError ? (
+        ) : isError && !data ? (
           <NotificationsErrorState />
         ) : notifications.length === 0 ? (
           <NotificationsEmptyState />
@@ -74,9 +91,12 @@ export const NotificationsPage = ({ teamId }: NotificationsPageProps) => {
                 />
               ))}
             </ul>
-            <p className="py-6 text-center text-[13px] text-cool-500">
-              알림은 30일이 지나면 자동으로 삭제됩니다
-            </p>
+            <NotificationsLoadMore
+              hasMore={hasNextPage}
+              status={loadMoreStatus}
+              onLoadMore={() => void fetchNextPage()}
+              scrollRootRef={scrollRootRef}
+            />
           </>
         )}
       </div>
