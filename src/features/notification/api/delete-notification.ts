@@ -1,14 +1,5 @@
-import { getMockNotifications, waitForMockResponse } from '../model/mock-notifications';
+import { apiClient } from '@/shared/api';
 
-export const deleteNotification = async (teamId: number, notificationId: number) => {
-  await waitForMockResponse();
-
-  const notifications = getMockNotifications(teamId);
-  const index = notifications.findIndex(
-    (notification) => notification.notificationId === notificationId,
-  );
-
-  if (index !== -1) {
-    notifications.splice(index, 1);
-  }
+export const deleteNotification = async (notificationId: number) => {
+  await apiClient.delete(`/api/v1/notifications/${notificationId}`);
 };

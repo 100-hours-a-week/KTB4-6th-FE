@@ -12,7 +12,7 @@ export const useReadNotification = (teamId: number) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (notificationId: number) => readNotification(teamId, notificationId),
+    mutationFn: (notificationId: number) => readNotification(notificationId),
     onMutate: (notificationId) =>
       updateNotificationListOptimistically(queryClient, teamId, (notifications) =>
         notifications.map((notification) =>

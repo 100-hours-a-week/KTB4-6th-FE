@@ -19,3 +19,25 @@ export interface NotificationData {
   isRead: boolean;
   createdAt: string;
 }
+
+interface ApiErrorPayload {
+  code: string;
+  message: string;
+}
+
+export interface NotificationApiResponse<T> {
+  success: boolean;
+  data: T | null;
+  error: ApiErrorPayload | null;
+}
+
+export interface NotificationReadData {
+  notificationId: number;
+  isRead: boolean;
+  unreadCount: number;
+}
+
+export interface NotificationsReadData {
+  readCount: number;
+  unreadCount: number;
+}
