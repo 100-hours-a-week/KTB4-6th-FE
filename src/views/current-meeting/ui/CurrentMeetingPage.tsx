@@ -15,6 +15,8 @@ import { useRecordingStatusSync } from '../model/useRecordingStatusSync';
 import { CurrentMeetingDialogs } from './CurrentMeetingDialogs';
 import { CurrentMeetingHeader } from './CurrentMeetingHeader';
 import { CurrentMeetingLoadingState } from './CurrentMeetingLoadingState';
+import { CurrentMeetingTabs, type CurrentMeetingTab } from './CurrentMeetingTabs';
+import { MeetingChat } from './MeetingChat';
 import { MeetingControls } from './MeetingControls';
 import { MeetingEndingOverlay } from './MeetingEndingOverlay';
 import { MeetingTranscript } from './MeetingTranscript';
@@ -38,6 +40,7 @@ export const CurrentMeetingPage = ({
   completedView,
 }: CurrentMeetingPageProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<CurrentMeetingTab>('transcript');
   const numericTeamId = Number(teamId);
   const isPreview = previewState !== undefined;
   const { data: team } = useTeamDetail(numericTeamId, {
@@ -154,8 +157,12 @@ export const CurrentMeetingPage = ({
         onMenuClick={() => setIsSidebarOpen(true)}
       />
 
+      {!isWaiting && <CurrentMeetingTabs activeTab={activeTab} onTabChange={setActiveTab} />}
+
       {isWaiting ? (
         <WaitingForRecordingNotice />
+      ) : activeTab === 'chat' ? (
+        <MeetingChat />
       ) : (
         <MeetingTranscript
           segments={meeting.transcripts}
@@ -166,36 +173,38 @@ export const CurrentMeetingPage = ({
         />
       )}
 
-      <MeetingControls
-        teamId={teamId}
-        meetingId={String(meetingId)}
-        isPreview={isPreview}
-        canDelete={!isPreview && team?.role === 'LEADER'}
-        canEditInfo={
-          isWaiting &&
-          !isPreview &&
-          (team?.role === 'LEADER' || team?.teamMemberId === meeting.createdByTeamMemberId)
-        }
-        onEditInfo={handleEditInfo}
-        isWaiting={isWaiting}
-        isRecorder={isRecorder}
-        isPaused={isPaused}
-        isDisconnected={isDisconnected}
-        isEnding={isEnding}
-        isStartingRecording={isStartingRecording}
-        isUpdatingRecordingStatus={isUpdatingRecordingStatus}
-        canStartRecording={canStartRecording}
-        startBlockedReason={startBlockedReason}
-        onStartRecording={handleStartRecording}
-        canPauseResumeRecording={canPauseResumeRecording}
-        pauseResumeBlockedReason={pauseResumeBlockedReason}
-        isMeetingInProgress={!isWaiting && !isCompleted}
-        onPauseResumeRecording={handlePauseResumeRecording}
-        canCompleteRecording={canCompleteRecording}
-        isCompleted={isCompleted}
-        onCompleteRecording={handleCompleteRecording}
-        recorderName={meeting.recorderName}
-      />
+      {(isWaiting || activeTab === 'transcript') && (
+        <MeetingControls
+          teamId={teamId}
+          meetingId={String(meetingId)}
+          isPreview={isPreview}
+          canDelete={!isPreview && team?.role === 'LEADER'}
+          canEditInfo={
+            isWaiting &&
+            !isPreview &&
+            (team?.role === 'LEADER' || team?.teamMemberId === meeting.createdByTeamMemberId)
+          }
+          onEditInfo={handleEditInfo}
+          isWaiting={isWaiting}
+          isRecorder={isRecorder}
+          isPaused={isPaused}
+          isDisconnected={isDisconnected}
+          isEnding={isEnding}
+          isStartingRecording={isStartingRecording}
+          isUpdatingRecordingStatus={isUpdatingRecordingStatus}
+          canStartRecording={canStartRecording}
+          startBlockedReason={startBlockedReason}
+          onStartRecording={handleStartRecording}
+          canPauseResumeRecording={canPauseResumeRecording}
+          pauseResumeBlockedReason={pauseResumeBlockedReason}
+          isMeetingInProgress={!isWaiting && !isCompleted}
+          onPauseResumeRecording={handlePauseResumeRecording}
+          canCompleteRecording={canCompleteRecording}
+          isCompleted={isCompleted}
+          onCompleteRecording={handleCompleteRecording}
+          recorderName={meeting.recorderName}
+        />
+      )}
 
       <CurrentMeetingDialogs
         isRecordingAcknowledged={isRecordingAcknowledged}
