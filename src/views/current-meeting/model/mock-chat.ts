@@ -11,15 +11,21 @@ export interface ChatMessageViewModel {
 
 export interface ChatViewModel {
   status: 'ready' | 'loading' | 'error';
+  currentUserDisplayName: string;
+  creditBalance: number;
+  hasAskedQuestion: boolean;
   messages: ChatMessageViewModel[];
 }
 
 export const mockChat: ChatViewModel = {
   status: 'ready',
+  currentUserDisplayName: '김민수 (나)',
+  creditBalance: 12,
+  hasAskedQuestion: false,
   messages: [
     {
       id: 'chat-message-1',
-      askerDisplayName: '김민수 (나)',
+      askerDisplayName: '김철수',
       createdAtLabel: '14:05',
       question: '지금까지 나온 출시 일정 관련 의견을 정리해줘',
       status: 'COMPLETED',
@@ -34,14 +40,6 @@ export const mockChat: ChatViewModel = {
       status: 'COMPLETED',
       answer:
         '결제 모듈 QA 담당자는 **박지민 님**입니다.\n\n- 핵심 결제 흐름 테스트\n- 환불 시나리오 확인\n- **이번 주 금요일**까지 QA 결과 공유',
-    },
-    {
-      id: 'chat-message-processing',
-      askerDisplayName: '김민수 (나)',
-      createdAtLabel: '14:13',
-      question: '지금까지 결정된 사항만 알려줘',
-      status: 'PROCESSING',
-      answer: null,
     },
     {
       id: 'chat-message-failed',

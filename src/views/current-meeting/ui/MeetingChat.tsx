@@ -1,7 +1,21 @@
+'use client';
+
+import { useState } from 'react';
 import Image from 'next/image';
 import { CircleAlert, MessageCircle } from 'lucide-react';
 import { mockChat, type ChatMessageViewModel } from '../model/mock-chat';
+import { ChatComposer } from './ChatComposer';
+import { ChatCreditNoticeDialog } from './ChatCreditNoticeDialog';
 import { ChatMarkdown } from './ChatMarkdown';
+
+const CHAT_CREDIT_COST = 1;
+
+const formatCurrentTime = () =>
+  new Intl.DateTimeFormat('ko-KR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(new Date());
 
 const getInitial = (displayName: string) => displayName.trim().charAt(0) || '?';
 
@@ -133,30 +147,85 @@ const ChatErrorState = () => (
 );
 
 export const MeetingChat = () => {
+  const [messages, setMessages] = useState(mockChat.messages);
+  const [question, setQuestion] = useState('');
+  const [creditBalance, setCreditBalance] = useState(mockChat.creditBalance);
+  const [hasAskedQuestion, setHasAskedQuestion] = useState(mockChat.hasAskedQuestion);
+  const [isCreditNoticeOpen, setIsCreditNoticeOpen] = useState(false);
+  const isProcessing = messages.some((message) => message.status === 'PROCESSING');
+
+  const sendLocalQuestion = () => {
+    const normalizedQuestion = question.trim();
+    if (!normalizedQuestion || isProcessing || creditBalance < CHAT_CREDIT_COST) return;
+
+    const message: ChatMessageViewModel = {
+      id: `local-chat-message-${Date.now()}`,
+      askerDisplayName: mockChat.currentUserDisplayName,
+      createdAtLabel: formatCurrentTime(),
+      question: normalizedQuestion,
+      status: 'PROCESSING',
+      answer: null,
+    };
+
+    setMessages((currentMessages) => [...currentMessages, message]);
+    setCreditBalance((currentCredit) => currentCredit - CHAT_CREDIT_COST);
+    setQuestion('');
+    setHasAskedQuestion(true);
+    setIsCreditNoticeOpen(false);
+  };
+
+  const handleSubmit = () => {
+    if (hasAskedQuestion) {
+      sendLocalQuestion();
+      return;
+    }
+
+    setIsCreditNoticeOpen(true);
+  };
+
   if (mockChat.status === 'error') return <ChatErrorState />;
 
-  if (mockChat.status === 'ready' && mockChat.messages.length === 0) return <ChatEmptyState />;
-
   return (
-    <main
-      data-clarity-mask="true"
-      className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-white px-5 py-4"
-    >
-      <p className="mb-5 text-center text-xs text-cool-500">
-        질문과 답변은 회의 참여자 모두에게 보여요
-      </p>
-      {mockChat.status === 'loading' ? (
-        <ChatLoadingState />
-      ) : (
-        <ol className="flex flex-col gap-7">
-          {mockChat.messages.map((message) => (
-            <li key={message.id} className="flex flex-col gap-4">
-              <UserQuestion message={message} />
-              <MeetyAnswer message={message} />
-            </li>
-          ))}
-        </ol>
-      )}
-    </main>
+    <div className="flex min-h-0 flex-1 flex-col bg-white">
+      <main
+        data-clarity-mask="true"
+        className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-4"
+      >
+        <p className="mb-5 text-center text-xs text-cool-500">
+          질문과 답변은 회의 참여자 모두에게 보여요
+        </p>
+        {mockChat.status === 'loading' ? (
+          <ChatLoadingState />
+        ) : messages.length === 0 ? (
+          <ChatEmptyState />
+        ) : (
+          <ol className="flex flex-col gap-7">
+            {messages.map((message) => (
+              <li key={message.id} className="flex flex-col gap-4">
+                <UserQuestion message={message} />
+                <MeetyAnswer message={message} />
+              </li>
+            ))}
+          </ol>
+        )}
+      </main>
+
+      <ChatComposer
+        creditBalance={creditBalance}
+        creditCost={CHAT_CREDIT_COST}
+        isProcessing={isProcessing}
+        question={question}
+        onQuestionChange={setQuestion}
+        onSubmit={handleSubmit}
+      />
+      <ChatCreditNoticeDialog
+        isOpen={isCreditNoticeOpen}
+        currentCredit={creditBalance}
+        creditCost={CHAT_CREDIT_COST}
+        onCancel={() => setIsCreditNoticeOpen(false)}
+        onConfirm={sendLocalQuestion}
+        onOpenChange={setIsCreditNoticeOpen}
+      />
+    </div>
   );
 };
