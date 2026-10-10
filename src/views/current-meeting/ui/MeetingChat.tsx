@@ -1,21 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Image from 'next/image';
 import { CircleAlert, MessageCircle } from 'lucide-react';
-import { mockChat, type ChatMessageViewModel } from '../model/mock-chat';
+import { useMeetingChatList } from '@/features/meeting-chat';
+import { useCurrentMeetingContext } from '../model/current-meeting-context';
+import {
+  formatChatMessageTime,
+  mergeMeetingChatPages,
+  type ChatMessageViewModel,
+} from '../model/meeting-chat-messages';
+import { mockChatComposer } from '../model/mock-chat-composer';
 import { ChatComposer } from './ChatComposer';
 import { ChatCreditNoticeDialog } from './ChatCreditNoticeDialog';
 import { ChatMarkdown } from './ChatMarkdown';
 
 const CHAT_CREDIT_COST = 1;
-
-const formatCurrentTime = () =>
-  new Intl.DateTimeFormat('ko-KR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(new Date());
 
 const getInitial = (displayName: string) => displayName.trim().charAt(0) || '?';
 
@@ -131,7 +131,12 @@ const ChatEmptyState = () => (
   </div>
 );
 
-const ChatErrorState = () => (
+interface ChatErrorStateProps {
+  isRetrying: boolean;
+  onRetry: () => void;
+}
+
+const ChatErrorState = ({ isRetrying, onRetry }: ChatErrorStateProps) => (
   <div
     className="flex flex-1 flex-col items-center justify-center px-5 pb-16 text-center"
     role="alert"
@@ -143,47 +148,65 @@ const ChatErrorState = () => (
       채팅을 불러오지 못했어요
     </h2>
     <p className="mt-1.5 text-sm leading-6 text-cool-600">잠시 후 다시 시도해주세요.</p>
+    <button
+      type="button"
+      disabled={isRetrying}
+      onClick={onRetry}
+      className="mt-4 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-cool-200 disabled:text-cool-400"
+    >
+      {isRetrying ? '불러오는 중' : '다시 시도'}
+    </button>
   </div>
 );
 
 export const MeetingChat = () => {
-  const [messages, setMessages] = useState(mockChat.messages);
+  const { meetingId } = useCurrentMeetingContext();
+  const { data, isPending, isError, isFetching, refetch } = useMeetingChatList(meetingId);
+  const serverMessages = useMemo(() => mergeMeetingChatPages(data?.pages ?? []), [data?.pages]);
+  const [localMessages, setLocalMessages] = useState<ChatMessageViewModel[]>([]);
   const [question, setQuestion] = useState('');
-  const [creditBalance, setCreditBalance] = useState(mockChat.creditBalance);
-  const [hasAskedQuestion, setHasAskedQuestion] = useState(mockChat.hasAskedQuestion);
+  const [creditBalance, setCreditBalance] = useState(mockChatComposer.creditBalance);
+  const [hasAskedLocally, setHasAskedLocally] = useState(false);
   const [isCreditNoticeOpen, setIsCreditNoticeOpen] = useState(false);
+  const messages = [...serverMessages, ...localMessages];
+  const hasAskedQuestion = (data?.pages[0]?.hasAskedQuestion ?? false) || hasAskedLocally;
   const isProcessing = messages.some((message) => message.status === 'PROCESSING');
 
-  const sendLocalQuestion = () => {
+  const sendQuestion = () => {
     const normalizedQuestion = question.trim();
     if (!normalizedQuestion || isProcessing || creditBalance < CHAT_CREDIT_COST) return;
 
     const message: ChatMessageViewModel = {
       id: `local-chat-message-${Date.now()}`,
-      askerDisplayName: mockChat.currentUserDisplayName,
-      createdAtLabel: formatCurrentTime(),
+      messageId: null,
+      askerTeamMemberId: null,
+      askerDisplayName: mockChatComposer.currentUserDisplayName,
+      createdAtLabel: formatChatMessageTime(new Date()),
       question: normalizedQuestion,
       status: 'PROCESSING',
       answer: null,
+      citations: null,
     };
 
-    setMessages((currentMessages) => [...currentMessages, message]);
+    setLocalMessages((currentMessages) => [...currentMessages, message]);
     setCreditBalance((currentCredit) => currentCredit - CHAT_CREDIT_COST);
     setQuestion('');
-    setHasAskedQuestion(true);
+    setHasAskedLocally(true);
     setIsCreditNoticeOpen(false);
   };
 
   const handleSubmit = () => {
     if (hasAskedQuestion) {
-      sendLocalQuestion();
+      sendQuestion();
       return;
     }
 
     setIsCreditNoticeOpen(true);
   };
 
-  if (mockChat.status === 'error') return <ChatErrorState />;
+  if (isError && !data) {
+    return <ChatErrorState isRetrying={isFetching} onRetry={() => void refetch()} />;
+  }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-white">
@@ -194,7 +217,7 @@ export const MeetingChat = () => {
         <p className="mb-5 text-center text-xs text-cool-500">
           질문과 답변은 회의 참여자 모두에게 보여요
         </p>
-        {mockChat.status === 'loading' ? (
+        {isPending ? (
           <ChatLoadingState />
         ) : messages.length === 0 ? (
           <ChatEmptyState />
@@ -213,6 +236,7 @@ export const MeetingChat = () => {
       <ChatComposer
         creditBalance={creditBalance}
         creditCost={CHAT_CREDIT_COST}
+        isLoading={isPending}
         isProcessing={isProcessing}
         question={question}
         onQuestionChange={setQuestion}
@@ -223,7 +247,7 @@ export const MeetingChat = () => {
         currentCredit={creditBalance}
         creditCost={CHAT_CREDIT_COST}
         onCancel={() => setIsCreditNoticeOpen(false)}
-        onConfirm={sendLocalQuestion}
+        onConfirm={sendQuestion}
         onOpenChange={setIsCreditNoticeOpen}
       />
     </div>

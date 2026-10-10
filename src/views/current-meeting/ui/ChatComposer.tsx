@@ -9,6 +9,7 @@ export const CHAT_QUESTION_MAX_LENGTH = 1000;
 interface ChatComposerProps {
   creditBalance: number;
   creditCost: number;
+  isLoading: boolean;
   isProcessing: boolean;
   question: string;
   onQuestionChange: (question: string) => void;
@@ -18,6 +19,7 @@ interface ChatComposerProps {
 export const ChatComposer = ({
   creditBalance,
   creditCost,
+  isLoading,
   isProcessing,
   question,
   onQuestionChange,
@@ -25,16 +27,18 @@ export const ChatComposer = ({
 }: ChatComposerProps) => {
   const isCreditInsufficient = creditBalance < creditCost;
   const normalizedQuestion = question.trim();
-  const isInputDisabled = isProcessing || isCreditInsufficient;
+  const isInputDisabled = isLoading || isProcessing || isCreditInsufficient;
   const canSubmit =
     !isInputDisabled &&
     normalizedQuestion.length > 0 &&
     normalizedQuestion.length <= CHAT_QUESTION_MAX_LENGTH;
-  const placeholder = isProcessing
-    ? '답변을 생성하고 있어요'
-    : isCreditInsufficient
-      ? '크레딧이 부족합니다'
-      : '회의 내용에 대해 질문해보세요';
+  const placeholder = isLoading
+    ? '채팅을 불러오고 있어요'
+    : isProcessing
+      ? '답변을 생성하고 있어요'
+      : isCreditInsufficient
+        ? '크레딧이 부족합니다'
+        : '회의 내용에 대해 질문해보세요';
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
