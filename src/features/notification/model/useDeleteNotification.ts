@@ -12,7 +12,7 @@ export const useDeleteNotification = (teamId: number) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (notificationId: number) => deleteNotification(teamId, notificationId),
+    mutationFn: (notificationId: number) => deleteNotification(notificationId),
     onMutate: (notificationId) =>
       updateNotificationListOptimistically(queryClient, teamId, (notifications) =>
         notifications.filter((notification) => notification.notificationId !== notificationId),
