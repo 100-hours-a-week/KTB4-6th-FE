@@ -14,8 +14,11 @@ export const useReadAllNotifications = (teamId: number) => {
   return useMutation({
     mutationFn: () => readAllNotifications(),
     onMutate: () =>
-      updateNotificationListOptimistically(queryClient, teamId, (notifications) =>
-        notifications.map((notification) => ({ ...notification, isRead: true })),
+      updateNotificationListOptimistically(
+        queryClient,
+        teamId,
+        (notifications) => notifications.map((notification) => ({ ...notification, isRead: true })),
+        { unreadCount: 0 },
       ),
     onError: (_error, _variables, snapshot) =>
       restoreNotificationList(queryClient, teamId, snapshot),
