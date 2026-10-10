@@ -12,7 +12,6 @@ import { useAppToast } from '@/shared/ui';
 interface UseCompleteRecordingFlowParams {
   recordingSessionId: number | null;
   isCompleted: boolean;
-  isPreview: boolean;
   onCompleted: () => void;
 }
 
@@ -20,7 +19,6 @@ interface UseCompleteRecordingFlowParams {
 export const useCompleteRecordingFlow = ({
   recordingSessionId,
   isCompleted,
-  isPreview,
   onCompleted,
 }: UseCompleteRecordingFlowParams) => {
   const completeRecording = useCompleteRecording();
@@ -37,8 +35,7 @@ export const useCompleteRecordingFlow = ({
     if (
       recordingSessionId === null ||
       isCompleted ||
-      useRecordingSessionStore.getState().operation !== 'idle' ||
-      isPreview
+      useRecordingSessionStore.getState().operation !== 'idle'
     ) {
       return;
     }

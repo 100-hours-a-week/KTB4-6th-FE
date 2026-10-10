@@ -2,7 +2,7 @@
 
 import { createContext, useContext, type ReactNode } from 'react';
 import type { TeamDetailData } from '@/features/team-management';
-import type { CurrentMeetingViewModel } from './preview-meeting';
+import type { CurrentMeetingViewModel } from './current-meeting';
 import type { useCurrentMeetingRecording } from './useCurrentMeetingRecording';
 import type { useMeetingEndedNotice } from './useMeetingEndedNotice';
 import type { useMeetingInfoEdit } from './useMeetingInfoEdit';
@@ -15,7 +15,6 @@ type LoadedRecordingState = Omit<ReturnType<typeof useCurrentMeetingRecording>, 
 export interface CurrentMeetingContextValue {
   teamId: string;
   meetingId: number;
-  isPreview: boolean;
   team: TeamDetailData | null;
   teamMemberCount: number | null;
   recording: LoadedRecordingState;

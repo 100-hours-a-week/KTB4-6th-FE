@@ -30,58 +30,48 @@ import { WaitingForRecordingNotice } from './WaitingForRecordingNotice';
 interface CurrentMeetingPageProps {
   teamId: string;
   meetingId: number;
-  previewState?: string;
-  previewRole?: 'recorder' | 'participant';
   completedView?: ReactNode;
 }
 
 export const CurrentMeetingPage = ({
   teamId,
   meetingId,
-  previewState,
-  previewRole = 'recorder',
   completedView,
 }: CurrentMeetingPageProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<CurrentMeetingTab>('transcript');
   const numericTeamId = Number(teamId);
-  const isPreview = previewState !== undefined;
+  const isValidTeamId = Number.isSafeInteger(numericTeamId) && numericTeamId > 0;
   const { data: team } = useTeamDetail(numericTeamId, {
-    isEnabled: !isPreview && Number.isSafeInteger(numericTeamId) && numericTeamId > 0,
+    isEnabled: isValidTeamId,
   });
   const { data: teamMembers } = useTeamMembers(numericTeamId, {
-    isEnabled: !isPreview && Number.isSafeInteger(numericTeamId) && numericTeamId > 0,
+    isEnabled: isValidTeamId,
   });
   const recording = useCurrentMeetingRecording({
     teamId,
     meetingId,
-    previewState,
-    previewRole,
     myTeamMemberId: team?.teamMemberId ?? null,
   });
-  useRecordingStatusSync({ meetingId, isPreview });
+  useRecordingStatusSync(meetingId);
   const meetingEndedNotice = useMeetingEndedNotice({
     teamId,
     meetingId,
-    isPreview,
     isMeetingLoaded: recording.meeting !== null,
     hasCompleted: recording.isCompleted,
   });
   const redirectAfterMeetingDeleted = useMeetingDeletedRedirect(teamId);
-  const recordingStartedNotice = useRecordingStartedNotice({ meetingId, isPreview });
+  const recordingStartedNotice = useRecordingStartedNotice(meetingId);
   const meetingInfoEdit = useMeetingInfoEdit({ meetingId, meeting: recording.meeting });
   const { isOpen: isRecordingObjectLostNoticeOpen, isResuming: isResumingRecording } =
     useRecordingObjectLostAutoEnd({
-      isPreview,
       isRecorder: recording.isRecorder,
       isActivelyRecording: recording.isRecording || recording.isPaused,
       isCompleted: recording.isCompleted,
       isPausedByUser: recording.isPausedByUser,
     });
-  useWakeLock(!isPreview && recording.isRecorder && (recording.isRecording || recording.isPaused));
-  useBeforeUnloadWarning(
-    !isPreview && recording.isRecorder && (recording.isRecording || recording.isPaused),
-  );
+  useWakeLock(recording.isRecorder && (recording.isRecording || recording.isPaused));
+  useBeforeUnloadWarning(recording.isRecorder && (recording.isRecording || recording.isPaused));
 
   if (
     recording.isServerCompleted &&
@@ -90,7 +80,6 @@ export const CurrentMeetingPage = ({
   ) {
     return completedView;
   }
-
   if (!recording.meeting) {
     return (
       <CurrentMeetingLoadingState
@@ -103,7 +92,6 @@ export const CurrentMeetingPage = ({
   const contextValue: CurrentMeetingContextValue = {
     teamId,
     meetingId,
-    isPreview,
     team: team ?? null,
     teamMemberCount: teamMembers?.length ?? null,
     recording: { ...recording, meeting: recording.meeting },
@@ -116,7 +104,7 @@ export const CurrentMeetingPage = ({
   return (
     <CurrentMeetingProvider value={contextValue}>
       <div className="relative flex h-dvh min-h-[844px] flex-col bg-cool-50">
-        {!isPreview && !recording.isCompleted && (
+        {!recording.isCompleted && (
           <MeetingSseConnection
             meetingId={String(meetingId)}
             onMeetingDeleted={redirectAfterMeetingDeleted}

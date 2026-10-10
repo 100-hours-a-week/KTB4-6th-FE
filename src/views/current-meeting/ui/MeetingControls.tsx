@@ -12,8 +12,7 @@ import { RecordingCompleteDialog } from './RecordingCompleteDialog';
 import { RecordingControlButtons } from './RecordingControlButtons';
 
 export const MeetingControls = () => {
-  const { teamId, meetingId, isPreview, team, recording, meetingInfoEdit } =
-    useCurrentMeetingContext();
+  const { teamId, meetingId, team, recording, meetingInfoEdit } = useCurrentMeetingContext();
   const {
     meeting,
     canCompleteRecording,
@@ -34,11 +33,9 @@ export const MeetingControls = () => {
     handleCompleteRecording,
   } = recording;
   const isMeetingInProgress = !isWaiting && !isCompleted;
-  const canDelete = !isPreview && team?.role === 'LEADER';
+  const canDelete = team?.role === 'LEADER';
   const canEditInfo =
-    isWaiting &&
-    !isPreview &&
-    (team?.role === 'LEADER' || team?.teamMemberId === meeting.createdByTeamMemberId);
+    isWaiting && (team?.role === 'LEADER' || team?.teamMemberId === meeting.createdByTeamMemberId);
   const { isLeaving, handleLeave } = useMeetingLeave({
     teamId,
     meetingId: String(meetingId),
@@ -55,7 +52,6 @@ export const MeetingControls = () => {
     <footer className="grid shrink-0 grid-cols-[minmax(0,1fr)_36px] items-center gap-2 border-t border-cool-200 bg-white px-5 py-3">
       {isWaiting || isRecorder ? (
         <RecordingControlButtons
-          isPreview={isPreview}
           isWaiting={isWaiting}
           isPaused={isPaused}
           isCompleted={isCompleted}

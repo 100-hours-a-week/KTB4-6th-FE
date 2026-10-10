@@ -12,7 +12,6 @@ const COMPLETED_MEETING_TAB = 'summary';
 interface UseMeetingEndedNoticeParams {
   teamId: string;
   meetingId: number;
-  isPreview: boolean;
   isMeetingLoaded: boolean;
   hasCompleted: boolean;
 }
@@ -26,7 +25,6 @@ interface UseMeetingEndedNoticeParams {
 export const useMeetingEndedNotice = ({
   teamId,
   meetingId,
-  isPreview,
   isMeetingLoaded,
   hasCompleted,
 }: UseMeetingEndedNoticeParams) => {
@@ -36,7 +34,7 @@ export const useMeetingEndedNotice = ({
   const [isConfirmed, setIsConfirmed] = useState(false);
 
   // 이 화면에서 진행 중인 회의를 본 적이 있어야 종료 안내 대상이다.
-  if (!isPreview && isMeetingLoaded && !hasCompleted && !wasLive) setWasLive(true);
+  if (isMeetingLoaded && !hasCompleted && !wasLive) setWasLive(true);
 
   const isMeetingEndedNoticeOpen = wasLive && hasCompleted && !isConfirmed;
 

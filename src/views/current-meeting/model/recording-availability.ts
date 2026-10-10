@@ -2,7 +2,6 @@ import type { RecordingBlockedReason } from './blocked-action-toasts';
 import type { CurrentMeetingConnectionStatus } from './useCurrentMeetingConnection';
 
 interface RecordingAvailabilityInput {
-  isPreview: boolean;
   isWaiting: boolean;
   isCompleted: boolean;
   isStartingRecording: boolean;
@@ -23,7 +22,6 @@ interface RecordingAvailabilityInput {
  * 버튼은 막혀 있어도 눌렀을 때 사유를 토스트로 알려야 해서 사유를 함께 반환한다.
  */
 export const getRecordingAvailability = ({
-  isPreview,
   isWaiting,
   isCompleted,
   isStartingRecording,
@@ -43,7 +41,7 @@ export const getRecordingAvailability = ({
         ? 'connecting'
         : null;
   const startBlockedReason: RecordingBlockedReason | null =
-    !isWaiting || isPreview || isStartingRecording
+    !isWaiting || isStartingRecording
       ? null
       : (connectionBlockedReason ??
         (hasActiveRecording
@@ -54,21 +52,14 @@ export const getRecordingAvailability = ({
   // 일시정지 중엔 오디오 소켓을 일부러 끊어둬서 connectionStatus가 'connected'가 아니다 —
   // 재개 버튼을 누르는 게 곧 재연결을 시작하는 행위라, 연결 여부로 막으면 안 된다.
   const pauseResumeBlockedReason: RecordingBlockedReason | null =
-    !isPreview &&
-    hasRecordingSession &&
-    !isCompleted &&
-    !isUploadCompleted &&
-    isOperationIdle &&
-    !isPausedByUser
+    hasRecordingSession && !isCompleted && !isUploadCompleted && isOperationIdle && !isPausedByUser
       ? connectionBlockedReason
       : null;
 
   return {
-    canStartRecording:
-      isWaiting && !isPreview && !isStartingRecording && startBlockedReason === null,
+    canStartRecording: isWaiting && !isStartingRecording && startBlockedReason === null,
     startBlockedReason,
     canPauseResumeRecording:
-      !isPreview &&
       hasRecordingSession &&
       (isPausedByUser || connectionStatus === 'connected') &&
       isBrowserRecorderActive &&
@@ -76,6 +67,6 @@ export const getRecordingAvailability = ({
       !isUploadCompleted &&
       isOperationIdle,
     pauseResumeBlockedReason,
-    canCompleteRecording: hasRecordingSession && !isCompleted && isOperationIdle && !isPreview,
+    canCompleteRecording: hasRecordingSession && !isCompleted && isOperationIdle,
   };
 };
