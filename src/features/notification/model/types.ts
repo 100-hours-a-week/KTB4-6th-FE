@@ -20,6 +20,13 @@ export interface NotificationData {
   createdAt: string;
 }
 
+export interface NotificationListData {
+  notifications: NotificationData[];
+  unreadCount: number;
+  nextCursor: number | null;
+  hasNext: boolean;
+}
+
 interface ApiErrorPayload {
   code: string;
   message: string;
