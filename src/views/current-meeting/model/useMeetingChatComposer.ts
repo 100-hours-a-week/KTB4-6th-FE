@@ -20,7 +20,6 @@ interface UseMeetingChatComposerOptions {
   serverHasAskedQuestion: boolean;
   creditBalance: number | null;
   isUnavailable: boolean;
-  onCreditBalanceChange: (creditBalance: number) => void;
   onCreditBalanceRefresh: () => Promise<unknown>;
 }
 
@@ -30,7 +29,6 @@ export const useMeetingChatComposer = ({
   serverHasAskedQuestion,
   creditBalance,
   isUnavailable,
-  onCreditBalanceChange,
   onCreditBalanceRefresh,
 }: UseMeetingChatComposerOptions) => {
   const queryClient = useQueryClient();
@@ -41,16 +39,12 @@ export const useMeetingChatComposer = ({
   const [isCreditNoticeOpen, setIsCreditNoticeOpen] = useState(false);
   const hasAskedQuestion = serverHasAskedQuestion || hasAskedLocally;
 
-  const handleQuestionAccepted = useCallback(
-    (data: MeetingChatQuestionRequestData) => {
-      onCreditBalanceChange(data.creditBalance);
-      setQuestion('');
-      setHasAskedLocally(true);
-      setAwaitingMessageId(data.messageId);
-      setIsCreditNoticeOpen(false);
-    },
-    [onCreditBalanceChange],
-  );
+  const handleQuestionAccepted = useCallback((data: MeetingChatQuestionRequestData) => {
+    setQuestion('');
+    setHasAskedLocally(true);
+    setAwaitingMessageId(data.messageId);
+    setIsCreditNoticeOpen(false);
+  }, []);
   const handleQuestionError = useCallback(
     async (error: MeetingChatApiError) => {
       const feedback = getMeetingChatQuestionErrorFeedback(error);

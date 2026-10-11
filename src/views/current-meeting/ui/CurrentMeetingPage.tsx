@@ -12,6 +12,7 @@ import {
 } from '../model/current-meeting-context';
 import { useCurrentMeetingRecording } from '../model/useCurrentMeetingRecording';
 import { useMeetingEndedNotice } from '../model/useMeetingEndedNotice';
+import { useMeetingChatEventSync } from '../model/useMeetingChatEventSync';
 import { useMeetingInfoEdit } from '../model/useMeetingInfoEdit';
 import { useRecordingObjectLostAutoEnd } from '../model/useRecordingObjectLostAutoEnd';
 import { useRecordingStartedNotice } from '../model/useRecordingStartedNotice';
@@ -52,6 +53,12 @@ export const CurrentMeetingPage = ({
     teamId,
     meetingId,
     myTeamMemberId: team?.teamMemberId ?? null,
+  });
+  useMeetingChatEventSync({
+    meetingId,
+    teamId: numericTeamId,
+    currentTeamMemberId: team?.teamMemberId ?? null,
+    isEnabled: isValidTeamId && !recording.isCompleted,
   });
   useRecordingStatusSync(meetingId);
   const meetingEndedNotice = useMeetingEndedNotice({
