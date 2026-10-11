@@ -1,9 +1,9 @@
 import axios from 'axios';
-import type { MeetingChatListErrorCode } from './types';
+import type { MeetingChatErrorCode } from './types';
 
 export class MeetingChatApiError extends Error {
   constructor(
-    readonly code: MeetingChatListErrorCode | 'UNKNOWN_ERROR',
+    readonly code: MeetingChatErrorCode | 'UNKNOWN_ERROR',
     message: string,
     readonly status?: number,
   ) {
@@ -20,7 +20,7 @@ export const toMeetingChatApiError = (
 
   if (
     axios.isAxiosError<{
-      error?: { code: MeetingChatListErrorCode; message: string };
+      error?: { code: MeetingChatErrorCode; message: string };
     }>(error)
   ) {
     const apiError = error.response?.data?.error;
