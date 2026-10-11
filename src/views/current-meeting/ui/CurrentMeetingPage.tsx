@@ -41,6 +41,7 @@ export const CurrentMeetingPage = ({
 }: CurrentMeetingPageProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<CurrentMeetingTab>('transcript');
+  const [targetTranscriptSegmentId, setTargetTranscriptSegmentId] = useState<string | null>(null);
   const numericTeamId = Number(teamId);
   const isValidTeamId = Number.isSafeInteger(numericTeamId) && numericTeamId > 0;
   const { data: team } = useTeamDetail(numericTeamId, {
@@ -80,6 +81,18 @@ export const CurrentMeetingPage = ({
   useWakeLock(recording.isRecorder && (recording.isRecording || recording.isPaused));
   useBeforeUnloadWarning(recording.isRecorder && (recording.isRecording || recording.isPaused));
 
+  const handleTabChange = (tab: CurrentMeetingTab) => {
+    setTargetTranscriptSegmentId(null);
+    setActiveTab(tab);
+  };
+
+  const navigateToTranscriptSegment = (segmentId: number) => {
+    if (!Number.isSafeInteger(segmentId) || segmentId <= 0) return;
+
+    setTargetTranscriptSegmentId(String(segmentId));
+    setActiveTab('transcript');
+  };
+
   if (
     recording.isServerCompleted &&
     completedView &&
@@ -101,10 +114,12 @@ export const CurrentMeetingPage = ({
     meetingId,
     team: team ?? null,
     teamMemberCount: teamMembers?.length ?? null,
+    targetTranscriptSegmentId,
     recording: { ...recording, meeting: recording.meeting },
     meetingEndedNotice,
     meetingInfoEdit,
     recordingStartedNotice,
+    navigateToTranscriptSegment,
     openSidebar: () => setIsSidebarOpen(true),
   };
 
@@ -120,7 +135,7 @@ export const CurrentMeetingPage = ({
         <CurrentMeetingHeader />
 
         {!recording.isWaiting && (
-          <CurrentMeetingTabs activeTab={activeTab} onTabChange={setActiveTab} />
+          <CurrentMeetingTabs activeTab={activeTab} onTabChange={handleTabChange} />
         )}
 
         {recording.isWaiting ? (
