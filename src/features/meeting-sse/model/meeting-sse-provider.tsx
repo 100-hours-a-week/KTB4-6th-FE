@@ -123,9 +123,11 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
           sources.current.set(meetingId, source);
 
           let opened = false;
+          let hasReportedCurrentError = false;
 
           source.onopen = () => {
             opened = true;
+            hasReportedCurrentError = false;
             setStatuses((current) => ({ ...current, [meetingId]: 'connected' }));
           };
 
@@ -158,10 +160,11 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
           });
 
           source.onerror = () => {
-            source.close();
-            sources.current.delete(meetingId);
+            if (sources.current.get(meetingId) !== source) return;
             setStatuses((current) => ({ ...current, [meetingId]: 'error' }));
 
+            if (hasReportedCurrentError) return;
+            hasReportedCurrentError = true;
             Sentry.captureMessage('회의 SSE 연결 끊김', {
               level: 'error',
               tags: {

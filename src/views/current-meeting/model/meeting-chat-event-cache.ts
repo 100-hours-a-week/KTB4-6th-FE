@@ -17,14 +17,15 @@ const createProcessingMessage = (event: ChatRequestedEventData): MeetingChatMess
   answeredAt: null,
 });
 
+export const hasMeetingChatMessage = (current: MeetingChatInfiniteData, messageId: number) =>
+  current.pages.some((page) => page.messages.some((message) => message.messageId === messageId));
+
 export const mergeMeetingChatEvent = (
   current: MeetingChatInfiniteData,
   event: ChatSseEventData,
   currentTeamMemberId: number | null,
 ): MeetingChatInfiniteData => {
-  const hasMessage = current.pages.some((page) =>
-    page.messages.some((message) => message.messageId === event.messageId),
-  );
+  const hasMessage = hasMeetingChatMessage(current, event.messageId);
 
   if (event.type === 'CHAT_REQUESTED') {
     const hasCurrentUserAsked = event.askerTeamMemberId === currentTeamMemberId;
