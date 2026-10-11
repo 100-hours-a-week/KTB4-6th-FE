@@ -17,10 +17,12 @@ export interface CurrentMeetingContextValue {
   meetingId: number;
   team: TeamDetailData | null;
   teamMemberCount: number | null;
+  targetTranscriptSegmentId: string | null;
   recording: LoadedRecordingState;
   meetingEndedNotice: ReturnType<typeof useMeetingEndedNotice>;
   meetingInfoEdit: ReturnType<typeof useMeetingInfoEdit>;
   recordingStartedNotice: ReturnType<typeof useRecordingStartedNotice>;
+  navigateToTranscriptSegment: (segmentId: number) => void;
   openSidebar: () => void;
 }
 

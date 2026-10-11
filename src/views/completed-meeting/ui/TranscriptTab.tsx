@@ -14,6 +14,7 @@ interface TranscriptTabProps {
   isPreview: boolean;
   /** 현재 재생 위치에 해당해 강조할 발화의 ID */
   activeEntryId: string | null;
+  highlightedEntryId: string | null;
 }
 
 export const TranscriptTab = ({
@@ -21,6 +22,7 @@ export const TranscriptTab = ({
   entries,
   isPreview,
   activeEntryId,
+  highlightedEntryId,
 }: TranscriptTabProps) => {
   const {
     searchInput,
@@ -104,6 +106,7 @@ export const TranscriptTab = ({
               isPreview={isPreview}
               isActive={entry.id === activeEntryId}
               isSearchMatch={entry.id === currentMatchId}
+              isDeepLinkTarget={entry.id === highlightedEntryId}
             />
           ))}
         </ul>

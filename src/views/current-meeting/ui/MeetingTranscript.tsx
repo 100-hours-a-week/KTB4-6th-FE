@@ -5,6 +5,7 @@ import { ArrowDown } from 'lucide-react';
 import { cn } from '@/shared/lib';
 import { useCurrentMeetingContext } from '../model/current-meeting-context';
 import { useTranscriptAutoScroll } from '../model/useTranscriptAutoScroll';
+import { useTranscriptCitationNavigation } from '../model/useTranscriptCitationNavigation';
 
 const formatTimestamp = (seconds: number) =>
   [Math.floor(seconds / 60), seconds % 60].map((part) => String(part).padStart(2, '0')).join(':');
@@ -12,7 +13,7 @@ const formatTimestamp = (seconds: number) =>
 const HIGHLIGHT_DURATION_MS = 1200;
 
 export const MeetingTranscript = () => {
-  const { recording } = useCurrentMeetingContext();
+  const { recording, targetTranscriptSegmentId } = useCurrentMeetingContext();
   const {
     meeting: { transcripts: segments },
     isRecording,
@@ -21,11 +22,16 @@ export const MeetingTranscript = () => {
     isTranscriptHistoryError: isHistoryError,
   } = recording;
   const previousSegmentCount = useRef(segments.length);
-  const [highlightedSegmentId, setHighlightedSegmentId] = useState<string | null>(null);
+  const [latestHighlightedSegmentId, setLatestHighlightedSegmentId] = useState<string | null>(null);
   const latestSegmentId = segments.at(-1)?.id;
   const { containerRef, unseenCount, handleScroll, scrollToLatest } = useTranscriptAutoScroll(
     segments.length,
   );
+  const citationHighlightedSegmentId = useTranscriptCitationNavigation({
+    containerRef,
+    segments,
+    targetSegmentId: targetTranscriptSegmentId,
+  });
 
   useEffect(() => {
     const hasNewSegment = segments.length > previousSegmentCount.current;
@@ -35,8 +41,11 @@ export const MeetingTranscript = () => {
 
     let timeoutId: number | undefined;
     const frameId = window.requestAnimationFrame(() => {
-      setHighlightedSegmentId(latestSegmentId);
-      timeoutId = window.setTimeout(() => setHighlightedSegmentId(null), HIGHLIGHT_DURATION_MS);
+      setLatestHighlightedSegmentId(latestSegmentId);
+      timeoutId = window.setTimeout(
+        () => setLatestHighlightedSegmentId(null),
+        HIGHLIGHT_DURATION_MS,
+      );
     });
 
     return () => {
@@ -81,9 +90,12 @@ export const MeetingTranscript = () => {
           {segments.map((segment) => (
             <li
               key={segment.id}
+              data-transcript-segment-id={segment.id}
               className={cn(
                 'grid grid-cols-[76px_minmax(0,1fr)] gap-2 rounded-xl border border-transparent bg-white p-3 transition-colors duration-700',
-                highlightedSegmentId === segment.id && 'border-brand-200 bg-brand-50',
+                latestHighlightedSegmentId === segment.id && 'border-brand-200 bg-brand-50',
+                citationHighlightedSegmentId === segment.id &&
+                  'border-brand-400 bg-brand-100 ring-1 ring-brand-400',
               )}
             >
               <div className="min-w-0">
