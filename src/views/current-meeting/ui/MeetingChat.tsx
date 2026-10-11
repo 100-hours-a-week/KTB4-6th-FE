@@ -20,6 +20,7 @@ export const MeetingChat = () => {
     isUnavailable:
       chatMessages.isLoading || chatMessages.isError || chatCredits.creditBalance === null,
     onCreditBalanceChange: chatCredits.updateCreditBalance,
+    onCreditBalanceRefresh: chatCredits.refreshCreditBalance,
   });
 
   return (

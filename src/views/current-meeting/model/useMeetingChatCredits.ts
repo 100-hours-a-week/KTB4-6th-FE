@@ -21,6 +21,7 @@ export const useMeetingChatCredits = (teamId: number) => {
     creditBalance: creditsQuery.data?.balance ?? null,
     isLoading: creditsQuery.isPending,
     isError: creditsQuery.isError && !creditsQuery.data,
+    refreshCreditBalance: creditsQuery.refetch,
     updateCreditBalance,
   };
 };

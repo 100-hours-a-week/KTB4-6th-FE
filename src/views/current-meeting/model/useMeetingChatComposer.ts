@@ -1,11 +1,16 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
+  meetingChatKeys,
+  type MeetingChatApiError,
   type MeetingChatQuestionRequestData,
   useRequestMeetingChatQuestion,
 } from '@/features/meeting-chat';
+import { useAppToast } from '@/shared/ui';
 import type { ChatMessageViewModel } from './meeting-chat-messages';
+import { getMeetingChatQuestionErrorFeedback } from './meeting-chat-question-error';
 
 const CHAT_CREDIT_COST = 1;
 
@@ -16,6 +21,7 @@ interface UseMeetingChatComposerOptions {
   creditBalance: number | null;
   isUnavailable: boolean;
   onCreditBalanceChange: (creditBalance: number) => void;
+  onCreditBalanceRefresh: () => Promise<unknown>;
 }
 
 export const useMeetingChatComposer = ({
@@ -25,7 +31,10 @@ export const useMeetingChatComposer = ({
   creditBalance,
   isUnavailable,
   onCreditBalanceChange,
+  onCreditBalanceRefresh,
 }: UseMeetingChatComposerOptions) => {
+  const queryClient = useQueryClient();
+  const { showToast } = useAppToast();
   const [question, setQuestion] = useState('');
   const [hasAskedLocally, setHasAskedLocally] = useState(false);
   const [awaitingMessageId, setAwaitingMessageId] = useState<number | null>(null);
@@ -42,8 +51,23 @@ export const useMeetingChatComposer = ({
     },
     [onCreditBalanceChange],
   );
+  const handleQuestionError = useCallback(
+    async (error: MeetingChatApiError) => {
+      const feedback = getMeetingChatQuestionErrorFeedback(error);
+      showToast(feedback.message, 'danger');
+
+      if (feedback.recovery === 'credits') {
+        await onCreditBalanceRefresh();
+      }
+      if (feedback.recovery === 'messages') {
+        await queryClient.invalidateQueries({ queryKey: meetingChatKeys.list(meetingId) });
+      }
+    },
+    [meetingId, onCreditBalanceRefresh, queryClient, showToast],
+  );
   const questionRequest = useRequestMeetingChatQuestion(meetingId, {
     onSuccess: handleQuestionAccepted,
+    onError: handleQuestionError,
   });
   const isAwaitingChatEvent =
     awaitingMessageId !== null &&

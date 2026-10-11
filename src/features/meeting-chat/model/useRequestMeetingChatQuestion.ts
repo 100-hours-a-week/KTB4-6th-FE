@@ -13,11 +13,15 @@ interface UseRequestMeetingChatQuestionOptions {
     data: MeetingChatQuestionRequestData,
     request: RequestMeetingChatQuestionParams,
   ) => void;
+  onError?: (
+    error: MeetingChatApiError,
+    request: RequestMeetingChatQuestionParams,
+  ) => void | Promise<void>;
 }
 
 export const useRequestMeetingChatQuestion = (
   meetingId: number,
-  { onSuccess }: UseRequestMeetingChatQuestionOptions = {},
+  { onSuccess, onError }: UseRequestMeetingChatQuestionOptions = {},
 ) => {
   const pendingRequestRef = useRef<RequestMeetingChatQuestionParams | null>(null);
   const isRequestPendingRef = useRef(false);
@@ -34,10 +38,11 @@ export const useRequestMeetingChatQuestion = (
       pendingRequestRef.current = null;
       onSuccess?.(data, request);
     },
-    onError: (error) => {
+    onError: async (error, request) => {
       if (!isRetryableMeetingChatQuestionError(error)) {
         pendingRequestRef.current = null;
       }
+      await onError?.(error, request);
     },
     onSettled: () => {
       isRequestPendingRef.current = false;
