@@ -1,10 +1,15 @@
 import { notFound } from 'next/navigation';
-import { CompletedMeetingPage, parseCompletedMeetingTab } from '@/views/completed-meeting';
+import {
+  CompletedMeetingPage,
+  parseCompletedMeetingSegmentId,
+  parseCompletedMeetingTab,
+} from '@/views/completed-meeting';
 import { CurrentMeetingPage } from '@/views/current-meeting';
 
 interface MeetingRouteProps {
   params: Promise<{ teamId: string; meetingId: string }>;
   searchParams: Promise<{
+    segmentId?: string | string[];
     tab?: string | string[];
   }>;
 }
@@ -16,7 +21,7 @@ export default async function MeetingRoute({ params, searchParams }: MeetingRout
     notFound();
   }
 
-  const { tab } = await searchParams;
+  const { segmentId, tab } = await searchParams;
 
   return (
     <CurrentMeetingPage
@@ -27,6 +32,7 @@ export default async function MeetingRoute({ params, searchParams }: MeetingRout
           teamId={teamId}
           meetingId={Number(meetingId)}
           tab={parseCompletedMeetingTab(tab)}
+          segmentId={parseCompletedMeetingSegmentId(segmentId)}
         />
       }
     />

@@ -17,9 +17,15 @@ interface CompletedMeetingPageProps {
   teamId: string;
   meetingId: number;
   tab: CompletedMeetingTab;
+  segmentId: string | null;
 }
 
-export const CompletedMeetingPage = ({ teamId, meetingId, tab }: CompletedMeetingPageProps) => {
+export const CompletedMeetingPage = ({
+  teamId,
+  meetingId,
+  tab,
+  segmentId,
+}: CompletedMeetingPageProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const numericTeamId = Number(teamId);
   const { data: team } = useQuery({
@@ -74,7 +80,12 @@ export const CompletedMeetingPage = ({ teamId, meetingId, tab }: CompletedMeetin
           transcriptHref={getTabHref('transcript')}
         />
       ) : (
-        <TranscriptScreen meetingId={meetingId} audio={audio} onAudioFileRetry={retryAudioFile} />
+        <TranscriptScreen
+          meetingId={meetingId}
+          targetEntryId={segmentId}
+          audio={audio}
+          onAudioFileRetry={retryAudioFile}
+        />
       )}
 
       {team && (
