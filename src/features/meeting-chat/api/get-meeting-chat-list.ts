@@ -8,11 +8,12 @@ const MEETING_CHAT_LIST_ERROR_MESSAGE = 'AI 채팅 목록을 조회하지 못했
 export const getMeetingChatList = async (
   meetingId: number,
   cursor?: number,
+  signal?: AbortSignal,
 ): Promise<MeetingChatListData> => {
   try {
     const response = await apiClient.get<MeetingChatListResponse>(
       `/api/v1/meetings/${meetingId}/chats`,
-      { params: { cursor, size: MEETING_CHAT_PAGE_SIZE } },
+      { params: { cursor, size: MEETING_CHAT_PAGE_SIZE }, signal },
     );
     const result = response.data;
 

@@ -7,5 +7,5 @@ import { teamKeys } from './query-keys';
 export const useTeamCredits = (teamId: number) =>
   useQuery({
     queryKey: teamKeys.credits(teamId),
-    queryFn: () => getTeamCredits(teamId),
+    queryFn: ({ signal }) => getTeamCredits(teamId, signal),
   });
