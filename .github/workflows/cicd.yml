@@ -237,6 +237,245 @@ jobs:
             exit 1
           }
 
+  build-v2-staging:
+    name: FE V2 staging 이미지 빌드 및 게시
+    # V1 빌드와 별개로 V2 주소를 넣어 빌드한다. 저장소 변수로 켜고 끈다.
+    if: ${{ github.ref_name == 'dev' && vars.V2_STAGING_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+
+    environment:
+      name: v2-staging
+      deployment: false
+
+    outputs:
+      image_digest: ${{ steps.build.outputs.digest }}
+
+    env:
+      # 공개 주소는 workflow에 둔다. 카카오 키와 GA ID는 V1과 같은 저장소 시크릿을 쓴다.
+      NEXT_PUBLIC_KAKAO_REST_API_KEY: ${{ secrets.NEXT_PUBLIC_KAKAO_REST_API_KEY }}
+      NEXT_PUBLIC_KAKAO_REDIRECT_URI: https://staging.meety.io.kr/api/auth/kakao/callback
+      NEXT_PUBLIC_API_BASE_URL: https://api-staging.meety.io.kr
+      NEXT_PUBLIC_GA_ID: ${{ secrets.NEXT_PUBLIC_GA_ID }}
+      NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
+      NEXT_PUBLIC_SENTRY_ENVIRONMENT: v2-staging
+      NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE: ${{ vars.SENTRY_TRACES_SAMPLE_RATE || '0.1' }}
+      SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+      SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
+      SENTRY_RELEASE: ${{ github.sha }}
+
+    steps:
+      - name: 소스 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: 빌드 환경 확인
+        run: |
+          echo "::notice::FE V2 staging 빌드: api=${NEXT_PUBLIC_API_BASE_URL}"
+          [ -n "$NEXT_PUBLIC_KAKAO_REST_API_KEY" ] || { echo "::error::NEXT_PUBLIC_KAKAO_REST_API_KEY 누락"; exit 1; }
+
+      - name: Docker Buildx 설정
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker Hub 로그인
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # V1 이미지(전체 SHA 태그)와 섞이지 않도록 v2-staging- 접두사를 붙인다. 배포는 digest로 고정한다.
+      - name: FE V2 이미지 빌드 및 게시
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64
+          tags: ${{ env.IMAGE_NAME }}:v2-staging-${{ github.sha }}
+          build-args: |
+            NEXT_PUBLIC_KAKAO_REST_API_KEY=${{ env.NEXT_PUBLIC_KAKAO_REST_API_KEY }}
+            NEXT_PUBLIC_KAKAO_REDIRECT_URI=${{ env.NEXT_PUBLIC_KAKAO_REDIRECT_URI }}
+            NEXT_PUBLIC_API_BASE_URL=${{ env.NEXT_PUBLIC_API_BASE_URL }}
+            NEXT_PUBLIC_GA_ID=${{ env.NEXT_PUBLIC_GA_ID }}
+            NEXT_PUBLIC_SENTRY_DSN=${{ env.NEXT_PUBLIC_SENTRY_DSN }}
+            NEXT_PUBLIC_SENTRY_ENVIRONMENT=${{ env.NEXT_PUBLIC_SENTRY_ENVIRONMENT }}
+            NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE=${{ env.NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE }}
+            SENTRY_ORG=${{ env.SENTRY_ORG }}
+            SENTRY_PROJECT=${{ env.SENTRY_PROJECT }}
+            SENTRY_RELEASE=${{ env.SENTRY_RELEASE }}
+            API_BASE_URL=${{ env.NEXT_PUBLIC_API_BASE_URL }}
+          secrets: |
+            "sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN }}"
+          cache-from: type=gha,scope=v2-staging
+          cache-to: type=gha,mode=max,scope=v2-staging
+
+  deploy-v2-staging:
+    name: FE V2 staging 무중단 배포
+    needs: build-v2-staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    environment:
+      name: v2-staging
+
+    permissions:
+      id-token: write
+      contents: read
+
+    concurrency:
+      group: deploy-frontend-v2-staging
+      cancel-in-progress: false
+
+    env:
+      AWS_REGION: ap-northeast-2
+      INSTANCE_ID: ${{ secrets.APP_INSTANCE_ID }}
+      TARGET_GROUP_NAME: meety-v2-staging-fe-tg
+      # 새 컨테이너는 사용 중이지 않은 포트에 띄운다. 두 포트를 번갈아 쓴다.
+      PORTS: "3000 3001"
+      IMAGE: ${{ vars.DOCKERHUB_USERNAME }}/meety-fe@${{ needs.build-v2-staging.outputs.image_digest }}
+      API_BASE_URL: https://api-staging.meety.io.kr
+      AUTH_COOKIE_DOMAIN: meety.io.kr
+      SITE_HEALTH_URL: https://staging.meety.io.kr/api/health
+
+    steps:
+      - name: 배포 설정 확인
+        env:
+          AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+        run: |
+          echo "::notice::FE V2 staging 배포 대상: image=${IMAGE}"
+          [ -n "$AWS_ROLE_ARN" ] || { echo "::error::AWS_ROLE_ARN 누락"; exit 1; }
+          [ -n "$INSTANCE_ID" ] || { echo "::error::APP_INSTANCE_ID 누락"; exit 1; }
+
+      - name: AWS 인증
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: gha-fe-v2-deploy-${{ github.run_id }}
+          role-skip-session-tagging: true
+
+      - name: 배포 도구 준비
+        run: |
+          # FE 인스턴스에서 셸 명령을 실행하고 결과를 출력한다. 실패하면 0이 아닌 값으로 끝난다.
+          cat > "$RUNNER_TEMP/run-remote.sh" <<'EOF'
+          #!/bin/bash
+          set -euo pipefail
+          COMMAND_ID=$(aws ssm send-command --instance-ids "$INSTANCE_ID" --document-name AWS-RunShellScript \
+            --comment "deploy v2 frontend (run ${GITHUB_RUN_ID})" --timeout-seconds 60 \
+            --parameters "$(jq -Rs '{commands: split("\n"), executionTimeout: ["600"]}' "$1")" \
+            --query Command.CommandId --output text)
+          STATUS=Pending
+          for i in $(seq 1 120); do
+            STATUS=$(aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" \
+              --query Status --output text 2>/dev/null || echo Pending)
+            case "$STATUS" in Pending|InProgress|Delayed) sleep 5 ;; *) break ;; esac
+          done
+          aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" \
+            --query StandardOutputContent --output text || true
+          aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" \
+            --query StandardErrorContent --output text >&2 || true
+          [ "$STATUS" = "Success" ] || { echo "::error::FE 인스턴스 명령 실패 (status=$STATUS)"; exit 1; }
+          EOF
+          chmod +x "$RUNNER_TEMP/run-remote.sh"
+
+          TG_ARN=$(aws elbv2 describe-target-groups --names "$TARGET_GROUP_NAME" \
+            --query 'TargetGroups[0].TargetGroupArn' --output text)
+          echo "TG_ARN=$TG_ARN" >> "$GITHUB_ENV"
+
+      - name: 사용 중인 포트 확인
+        id: ports
+        run: |
+          # 대상 그룹에 등록된 FE 포트가 지금 트래픽을 받는 컨테이너다.
+          ACTIVE=$(aws elbv2 describe-target-health --target-group-arn "$TG_ARN" \
+            --query "TargetHealthDescriptions[?Target.Id=='${INSTANCE_ID}' && TargetHealth.State!='draining'].Target.Port" \
+            --output text | tr '\t' '\n' | sed '/^$/d')
+          [ "$(echo "$ACTIVE" | wc -l)" -le 1 ] || { echo "::error::등록된 포트가 둘 이상입니다: $ACTIVE"; exit 1; }
+          NEW=""
+          for port in $PORTS; do [ "$port" != "$ACTIVE" ] && { NEW=$port; break; }; done
+          echo "사용 중: ${ACTIVE:-없음}, 새 컨테이너: $NEW"
+          echo "active=$ACTIVE" >> "$GITHUB_OUTPUT"
+          echo "new=$NEW" >> "$GITHUB_OUTPUT"
+
+      # 기존 컨테이너는 그대로 두고 새 컨테이너만 띄운다. FE 인스턴스는 NAT를 겸하므로 Docker와 인스턴스는 재시작하지 않는다.
+      - name: 새 컨테이너 실행
+        env:
+          NEW: ${{ steps.ports.outputs.new }}
+        run: |
+          cat > start.sh <<EOF
+          #!/bin/bash
+          set -euo pipefail
+          NAME=meety-fe-${NEW}
+          docker pull "${IMAGE}"
+          docker rm -f "\$NAME" 2>/dev/null || true
+          docker run -d --name "\$NAME" --restart unless-stopped -p ${NEW}:3000 \
+            --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \
+            -e NODE_ENV=production -e API_BASE_URL=${API_BASE_URL} \
+            -e AUTH_COOKIE_DOMAIN=${AUTH_COOKIE_DOMAIN} -e TZ=Asia/Seoul \
+            "${IMAGE}"
+          for i in \$(seq 1 60); do
+            if curl -fsS -o /dev/null "http://127.0.0.1:${NEW}/api/health"; then
+              echo "새 컨테이너 정상: \$NAME"; exit 0
+            fi
+            sleep 2
+          done
+          echo "새 컨테이너가 응답하지 않아 제거한다"
+          docker logs --tail 50 "\$NAME" || true
+          docker rm -f "\$NAME"
+          exit 1
+          EOF
+          "$RUNNER_TEMP/run-remote.sh" start.sh
+
+      # 새 포트를 등록해 healthy가 된 뒤 이전 포트를 뺀다. 이전 포트의 진행 중인 요청은 해제 대기 시간(30초) 동안 마친다.
+      - name: 트래픽 전환
+        env:
+          NEW: ${{ steps.ports.outputs.new }}
+          ACTIVE: ${{ steps.ports.outputs.active }}
+        run: |
+          aws elbv2 register-targets --target-group-arn "$TG_ARN" --targets "Id=${INSTANCE_ID},Port=${NEW}"
+          if ! aws elbv2 wait target-in-service --target-group-arn "$TG_ARN" --targets "Id=${INSTANCE_ID},Port=${NEW}"; then
+            echo "::error::새 컨테이너가 ALB health check를 통과하지 못함. 새 포트 등록을 취소한다"
+            aws elbv2 deregister-targets --target-group-arn "$TG_ARN" --targets "Id=${INSTANCE_ID},Port=${NEW}"
+            printf '#!/bin/bash\ndocker rm -f meety-fe-%s\n' "$NEW" > rollback.sh
+            "$RUNNER_TEMP/run-remote.sh" rollback.sh || true
+            exit 1
+          fi
+          echo "새 포트 ${NEW} 트래픽 수신 시작"
+          if [ -n "$ACTIVE" ]; then
+            aws elbv2 deregister-targets --target-group-arn "$TG_ARN" --targets "Id=${INSTANCE_ID},Port=${ACTIVE}"
+            aws elbv2 wait target-deregistered --target-group-arn "$TG_ARN" --targets "Id=${INSTANCE_ID},Port=${ACTIVE}"
+            echo "이전 포트 ${ACTIVE} 해제 완료"
+          fi
+
+      - name: 이전 컨테이너 정리
+        if: ${{ steps.ports.outputs.active != '' }}
+        env:
+          ACTIVE: ${{ steps.ports.outputs.active }}
+        run: |
+          # 이전 포트를 쓰던 컨테이너를 이름과 관계없이 찾아 지운다 (처음 수동으로 띄운 컨테이너 포함).
+          cat > cleanup.sh <<EOF
+          #!/bin/bash
+          set -euo pipefail
+          OLD=\$(docker ps -aq --filter publish=${ACTIVE})
+          [ -z "\$OLD" ] || docker rm -f \$OLD
+          docker image prune -f
+          EOF
+          "$RUNNER_TEMP/run-remote.sh" cleanup.sh
+
+      - name: 배포 결과 확인
+        run: |
+          CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$SITE_HEALTH_URL")
+          echo "staging FE health: $CODE"
+          [ "$CODE" = "200" ] || { echo "::error::staging FE health 실패 ($CODE)"; exit 1; }
+
+      - name: Discord 실패 알림
+        if: failure()
+        env:
+          WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -n "$WEBHOOK_URL" ] || exit 0
+          jq -n --arg repo "$GITHUB_REPOSITORY" --arg branch "$GITHUB_REF_NAME" --arg url "$RUN_URL" \
+            '{content: ("❌ [FE V2 staging 배포 실패] " + $repo + "\nBranch: " + $branch + "\n" + $url)}' \
+            | curl --fail --silent --show-error -H "Content-Type: application/json" --data-binary @- "$WEBHOOK_URL"
+
   notify-failure:
     name: FE 실패 알림
     needs: [build-and-push, deploy]
