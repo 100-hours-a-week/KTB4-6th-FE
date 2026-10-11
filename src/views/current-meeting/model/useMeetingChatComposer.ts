@@ -3,12 +3,9 @@
 import { useCallback, useState } from 'react';
 import {
   type MeetingChatQuestionRequestData,
-  type RequestMeetingChatQuestionParams,
   useRequestMeetingChatQuestion,
 } from '@/features/meeting-chat';
 import type { ChatMessageViewModel } from './meeting-chat-messages';
-import { formatChatMessageTime } from './meeting-chat-messages';
-import { mockChatComposer } from './mock-chat-composer';
 
 const CHAT_CREDIT_COST = 1;
 
@@ -29,31 +26,18 @@ export const useMeetingChatComposer = ({
   isUnavailable,
   onCreditBalanceChange,
 }: UseMeetingChatComposerOptions) => {
-  const [localMessages, setLocalMessages] = useState<ChatMessageViewModel[]>([]);
   const [question, setQuestion] = useState('');
   const [hasAskedLocally, setHasAskedLocally] = useState(false);
+  const [awaitingMessageId, setAwaitingMessageId] = useState<number | null>(null);
   const [isCreditNoticeOpen, setIsCreditNoticeOpen] = useState(false);
-  const messages = [...serverMessages, ...localMessages];
   const hasAskedQuestion = serverHasAskedQuestion || hasAskedLocally;
 
   const handleQuestionAccepted = useCallback(
-    (data: MeetingChatQuestionRequestData, request: RequestMeetingChatQuestionParams) => {
-      const message: ChatMessageViewModel = {
-        id: `chat-message-${data.messageId}`,
-        messageId: data.messageId,
-        askerTeamMemberId: null,
-        askerDisplayName: mockChatComposer.currentUserDisplayName,
-        createdAtLabel: formatChatMessageTime(new Date()),
-        question: request.question,
-        status: 'PROCESSING',
-        answer: null,
-        citations: null,
-      };
-
-      setLocalMessages((currentMessages) => [...currentMessages, message]);
+    (data: MeetingChatQuestionRequestData) => {
       onCreditBalanceChange(data.creditBalance);
       setQuestion('');
       setHasAskedLocally(true);
+      setAwaitingMessageId(data.messageId);
       setIsCreditNoticeOpen(false);
     },
     [onCreditBalanceChange],
@@ -61,8 +45,13 @@ export const useMeetingChatComposer = ({
   const questionRequest = useRequestMeetingChatQuestion(meetingId, {
     onSuccess: handleQuestionAccepted,
   });
+  const isAwaitingChatEvent =
+    awaitingMessageId !== null &&
+    !serverMessages.some((message) => message.messageId === awaitingMessageId);
   const isProcessing =
-    questionRequest.isPending || messages.some((message) => message.status === 'PROCESSING');
+    questionRequest.isPending ||
+    isAwaitingChatEvent ||
+    serverMessages.some((message) => message.status === 'PROCESSING');
 
   const sendQuestion = () => {
     const normalizedQuestion = question.trim();
@@ -94,7 +83,6 @@ export const useMeetingChatComposer = ({
   };
 
   return {
-    messages,
     question,
     setQuestion: updateQuestion,
     creditBalance,
