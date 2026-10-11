@@ -1,6 +1,6 @@
 export { getMeetingChatList } from './api/get-meeting-chat-list';
 export { requestMeetingChatQuestion } from './api/request-meeting-chat-question';
-export { MeetingChatApiError } from './model/errors';
+export { isRetryableMeetingChatQuestionError, MeetingChatApiError } from './model/errors';
 export { meetingChatKeys } from './model/query-keys';
 export type {
   MeetingChatCitation,
@@ -20,3 +20,4 @@ export type {
   RequestMeetingChatQuestionRequest,
 } from './model/types';
 export { useMeetingChatList } from './model/useMeetingChatList';
+export { useRequestMeetingChatQuestion } from './model/useRequestMeetingChatQuestion';

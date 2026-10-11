@@ -36,3 +36,6 @@ export const toMeetingChatApiError = (
 
   return new MeetingChatApiError('UNKNOWN_ERROR', fallbackMessage);
 };
+
+export const isRetryableMeetingChatQuestionError = (error: unknown) =>
+  error instanceof MeetingChatApiError && (error.status === undefined || error.status >= 500);
