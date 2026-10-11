@@ -1,5 +1,16 @@
 export { MeetingSseProvider, useMeetingSse } from './model/meeting-sse-provider';
 export type { MeetingSseStatus } from './model/meeting-sse-provider';
+export { CHAT_SSE_EVENT_TYPES, parseChatSseEvent } from './model/chat-event';
+export type {
+  ChatCitation,
+  ChatCompletedEventData,
+  ChatFailedEventData,
+  ChatRequestedEventData,
+  ChatSseEventData,
+  ChatSseEventType,
+  ChatSummaryCitation,
+  ChatTranscriptCitation,
+} from './model/chat-event';
 export { getCurrentMeetingQueryKey } from './model/current-meeting-query-key';
 export { deleteMeeting } from './api/delete-meeting';
 export { getCurrentMeetingState } from './api/get-current-meeting';
