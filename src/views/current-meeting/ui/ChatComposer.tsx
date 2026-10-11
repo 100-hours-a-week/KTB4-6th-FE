@@ -7,8 +7,11 @@ import { cn } from '@/shared/lib';
 export const CHAT_QUESTION_MAX_LENGTH = 1000;
 
 interface ChatComposerProps {
-  creditBalance: number;
+  creditBalance: number | null;
   creditCost: number;
+  isLoading: boolean;
+  isCreditLoading: boolean;
+  isCreditError: boolean;
   isProcessing: boolean;
   question: string;
   onQuestionChange: (question: string) => void;
@@ -18,23 +21,33 @@ interface ChatComposerProps {
 export const ChatComposer = ({
   creditBalance,
   creditCost,
+  isLoading,
+  isCreditLoading,
+  isCreditError,
   isProcessing,
   question,
   onQuestionChange,
   onSubmit,
 }: ChatComposerProps) => {
-  const isCreditInsufficient = creditBalance < creditCost;
+  const isCreditInsufficient = creditBalance !== null && creditBalance < creditCost;
   const normalizedQuestion = question.trim();
-  const isInputDisabled = isProcessing || isCreditInsufficient;
+  const isCreditUnavailable = creditBalance === null;
+  const isInputDisabled = isLoading || isCreditUnavailable || isProcessing || isCreditInsufficient;
   const canSubmit =
     !isInputDisabled &&
     normalizedQuestion.length > 0 &&
     normalizedQuestion.length <= CHAT_QUESTION_MAX_LENGTH;
-  const placeholder = isProcessing
-    ? '답변을 생성하고 있어요'
-    : isCreditInsufficient
-      ? '크레딧이 부족합니다'
-      : '회의 내용에 대해 질문해보세요';
+  const placeholder = isLoading
+    ? '채팅을 불러오고 있어요'
+    : isCreditLoading
+      ? '크레딧을 불러오고 있어요'
+      : isCreditError
+        ? '크레딧 정보를 확인할 수 없어요'
+        : isProcessing
+          ? '답변을 생성하고 있어요'
+          : isCreditInsufficient
+            ? '크레딧이 부족합니다'
+            : '회의 내용에 대해 질문해보세요';
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -57,13 +70,17 @@ export const ChatComposer = ({
         )}
       >
         <CircleDollarSign aria-hidden="true" className="size-3.5" strokeWidth={2} />
-        {isCreditInsufficient ? (
+        {isCreditLoading ? (
+          <span>팀 크레딧을 불러오고 있어요.</span>
+        ) : isCreditError ? (
+          <span>팀 크레딧 정보를 확인할 수 없어요.</span>
+        ) : isCreditInsufficient ? (
           <span>팀 크레딧이 부족해 질문할 수 없어요.</span>
-        ) : (
+        ) : creditBalance !== null ? (
           <span>
             팀 크레딧 {creditBalance} · 질문 1회당 {creditCost} 크레딧
           </span>
-        )}
+        ) : null}
       </div>
 
       <form onSubmit={handleSubmit} className="flex items-end gap-2">

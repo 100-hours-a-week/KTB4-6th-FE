@@ -3,9 +3,14 @@ import { apiClient } from '@/shared/api';
 import { toTeamManagementApiError } from '../model/errors';
 import type { TeamCreditsData, TeamCreditsResponse } from '../model/types';
 
-export const getTeamCredits = async (teamId: number): Promise<TeamCreditsData> => {
+export const getTeamCredits = async (
+  teamId: number,
+  signal?: AbortSignal,
+): Promise<TeamCreditsData> => {
   try {
-    const response = await apiClient.get<TeamCreditsResponse>(`/api/v1/teams/${teamId}/credits`);
+    const response = await apiClient.get<TeamCreditsResponse>(`/api/v1/teams/${teamId}/credits`, {
+      signal,
+    });
     const result = response.data;
 
     if (!result.success || !result.data) {
