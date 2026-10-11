@@ -1,55 +1,95 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  meetingChatKeys,
+  type MeetingChatApiError,
+  type MeetingChatQuestionRequestData,
+  useRequestMeetingChatQuestion,
+} from '@/features/meeting-chat';
+import { useAppToast } from '@/shared/ui';
 import type { ChatMessageViewModel } from './meeting-chat-messages';
-import { formatChatMessageTime } from './meeting-chat-messages';
-import { mockChatComposer } from './mock-chat-composer';
+import { getMeetingChatQuestionErrorFeedback } from './meeting-chat-question-error';
 
 const CHAT_CREDIT_COST = 1;
 
 interface UseMeetingChatComposerOptions {
+  meetingId: number;
   serverMessages: ChatMessageViewModel[];
   serverHasAskedQuestion: boolean;
+  creditBalance: number | null;
   isUnavailable: boolean;
+  onCreditBalanceChange: (creditBalance: number) => void;
+  onCreditBalanceRefresh: () => Promise<unknown>;
 }
 
 export const useMeetingChatComposer = ({
+  meetingId,
   serverMessages,
   serverHasAskedQuestion,
+  creditBalance,
   isUnavailable,
+  onCreditBalanceChange,
+  onCreditBalanceRefresh,
 }: UseMeetingChatComposerOptions) => {
-  const [localMessages, setLocalMessages] = useState<ChatMessageViewModel[]>([]);
+  const queryClient = useQueryClient();
+  const { showToast } = useAppToast();
   const [question, setQuestion] = useState('');
-  const [creditBalance, setCreditBalance] = useState(mockChatComposer.creditBalance);
   const [hasAskedLocally, setHasAskedLocally] = useState(false);
+  const [awaitingMessageId, setAwaitingMessageId] = useState<number | null>(null);
   const [isCreditNoticeOpen, setIsCreditNoticeOpen] = useState(false);
-  const messages = [...serverMessages, ...localMessages];
   const hasAskedQuestion = serverHasAskedQuestion || hasAskedLocally;
-  const isProcessing = messages.some((message) => message.status === 'PROCESSING');
+
+  const handleQuestionAccepted = useCallback(
+    (data: MeetingChatQuestionRequestData) => {
+      onCreditBalanceChange(data.creditBalance);
+      setQuestion('');
+      setHasAskedLocally(true);
+      setAwaitingMessageId(data.messageId);
+      setIsCreditNoticeOpen(false);
+    },
+    [onCreditBalanceChange],
+  );
+  const handleQuestionError = useCallback(
+    async (error: MeetingChatApiError) => {
+      const feedback = getMeetingChatQuestionErrorFeedback(error);
+      showToast(feedback.message, 'danger');
+
+      if (feedback.recovery === 'credits') {
+        await onCreditBalanceRefresh();
+      }
+      if (feedback.recovery === 'messages') {
+        await queryClient.invalidateQueries({ queryKey: meetingChatKeys.list(meetingId) });
+      }
+    },
+    [meetingId, onCreditBalanceRefresh, queryClient, showToast],
+  );
+  const questionRequest = useRequestMeetingChatQuestion(meetingId, {
+    onSuccess: handleQuestionAccepted,
+    onError: handleQuestionError,
+  });
+  const isAwaitingChatEvent =
+    awaitingMessageId !== null &&
+    !serverMessages.some((message) => message.messageId === awaitingMessageId);
+  const isProcessing =
+    questionRequest.isPending ||
+    isAwaitingChatEvent ||
+    serverMessages.some((message) => message.status === 'PROCESSING');
 
   const sendQuestion = () => {
     const normalizedQuestion = question.trim();
-    if (isUnavailable || !normalizedQuestion || isProcessing || creditBalance < CHAT_CREDIT_COST) {
+    if (
+      isUnavailable ||
+      !normalizedQuestion ||
+      isProcessing ||
+      creditBalance === null ||
+      creditBalance < CHAT_CREDIT_COST
+    ) {
       return;
     }
 
-    const message: ChatMessageViewModel = {
-      id: `local-chat-message-${Date.now()}`,
-      messageId: null,
-      askerTeamMemberId: null,
-      askerDisplayName: mockChatComposer.currentUserDisplayName,
-      createdAtLabel: formatChatMessageTime(new Date()),
-      question: normalizedQuestion,
-      status: 'PROCESSING',
-      answer: null,
-      citations: null,
-    };
-
-    setLocalMessages((currentMessages) => [...currentMessages, message]);
-    setCreditBalance((currentCredit) => currentCredit - CHAT_CREDIT_COST);
-    setQuestion('');
-    setHasAskedLocally(true);
-    setIsCreditNoticeOpen(false);
+    questionRequest.requestQuestion(normalizedQuestion);
   };
 
   const submitQuestion = () => {
@@ -61,10 +101,14 @@ export const useMeetingChatComposer = ({
     setIsCreditNoticeOpen(true);
   };
 
+  const updateQuestion = (nextQuestion: string) => {
+    questionRequest.resetQuestionRequest();
+    setQuestion(nextQuestion);
+  };
+
   return {
-    messages,
     question,
-    setQuestion,
+    setQuestion: updateQuestion,
     creditBalance,
     creditCost: CHAT_CREDIT_COST,
     isProcessing,

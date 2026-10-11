@@ -51,18 +51,18 @@ const AppToastList = () => {
         key={toast.id}
         toast={toast}
         className={cn(
-          'pointer-events-auto w-fit max-w-[85%] rounded-full bg-cool-900 px-4 py-2.5 shadow-[0_8px_24px_rgba(20,34,56,0.24)]',
+          'pointer-events-auto w-fit max-w-[calc(100%-2rem)] rounded-2xl bg-cool-900 px-4 py-2.5 shadow-[0_8px_24px_rgba(20,34,56,0.24)]',
           'data-ending-style:opacity-0 data-starting-style:translate-y-2 data-starting-style:opacity-0',
           'transition-all duration-200',
         )}
       >
-        <Toast.Content className="flex items-center justify-center gap-2">
+        <Toast.Content className="flex min-w-0 items-center justify-center gap-2">
           {variant !== 'neutral' ? (
             <span
               className={cn('size-1.5 shrink-0 rounded-full', TOAST_DOT_CLASS_NAMES[variant])}
             />
           ) : null}
-          <Toast.Description className="text-sm leading-5 font-medium whitespace-pre-line text-white" />
+          <Toast.Description className="min-w-0 text-center text-sm leading-5 font-medium break-words whitespace-pre-line text-white [word-break:keep-all]" />
         </Toast.Content>
       </Toast.Root>
     );
