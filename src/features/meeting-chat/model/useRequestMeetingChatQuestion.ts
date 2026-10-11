@@ -8,7 +8,17 @@ import type { MeetingChatQuestionRequestData, RequestMeetingChatQuestionParams }
 
 const MEETING_CHAT_QUESTION_RETRY_COUNT = 2;
 
-export const useRequestMeetingChatQuestion = (meetingId: number) => {
+interface UseRequestMeetingChatQuestionOptions {
+  onSuccess?: (
+    data: MeetingChatQuestionRequestData,
+    request: RequestMeetingChatQuestionParams,
+  ) => void;
+}
+
+export const useRequestMeetingChatQuestion = (
+  meetingId: number,
+  { onSuccess }: UseRequestMeetingChatQuestionOptions = {},
+) => {
   const pendingRequestRef = useRef<RequestMeetingChatQuestionParams | null>(null);
   const isRequestPendingRef = useRef(false);
   const mutation = useMutation<
@@ -20,8 +30,9 @@ export const useRequestMeetingChatQuestion = (meetingId: number) => {
     retry: (failureCount, error) =>
       failureCount < MEETING_CHAT_QUESTION_RETRY_COUNT &&
       isRetryableMeetingChatQuestionError(error),
-    onSuccess: () => {
+    onSuccess: (data, request) => {
       pendingRequestRef.current = null;
+      onSuccess?.(data, request);
     },
     onError: (error) => {
       if (!isRetryableMeetingChatQuestionError(error)) {

@@ -8,6 +8,7 @@ interface ChatCreditNoticeDialogProps {
   isOpen: boolean;
   currentCredit: number;
   creditCost: number;
+  isConfirmDisabled: boolean;
   onCancel: () => void;
   onConfirm: () => void;
   onOpenChange: (open: boolean) => void;
@@ -17,6 +18,7 @@ export const ChatCreditNoticeDialog = ({
   isOpen,
   currentCredit,
   creditCost,
+  isConfirmDisabled,
   onCancel,
   onConfirm,
   onOpenChange,
@@ -56,8 +58,9 @@ export const ChatCreditNoticeDialog = ({
             </AlertDialog.Close>
             <button
               type="button"
+              disabled={isConfirmDisabled}
               onClick={onConfirm}
-              className="h-12 rounded-xl bg-brand-600 text-sm font-semibold text-white transition-colors hover:bg-brand-700"
+              className="h-12 rounded-xl bg-brand-600 text-sm font-semibold text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-cool-200 disabled:text-cool-400"
             >
               보내기
             </button>
