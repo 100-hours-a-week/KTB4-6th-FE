@@ -1,8 +1,9 @@
-import type {
-  MeetingChatCitation,
-  MeetingChatListData,
-  MeetingChatMessageData,
-  MeetingChatMessageStatus,
+import {
+  getMeetingChatAnswerState,
+  type MeetingChatAnswerState,
+  type MeetingChatCitation,
+  type MeetingChatListData,
+  type MeetingChatMessageData,
 } from '@/features/meeting-chat';
 
 const chatTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
@@ -18,7 +19,7 @@ export interface ChatMessageViewModel {
   askerDisplayName: string;
   createdAtLabel: string;
   question: string;
-  status: MeetingChatMessageStatus;
+  answerState: MeetingChatAnswerState;
   answer: string | null;
   citations: MeetingChatCitation[] | null;
 }
@@ -26,19 +27,22 @@ export interface ChatMessageViewModel {
 export const formatChatMessageTime = (createdAt: string | Date) =>
   chatTimeFormatter.format(new Date(createdAt));
 
-const toChatMessageViewModel = (message: MeetingChatMessageData): ChatMessageViewModel => ({
+const toChatMessageViewModel = (
+  message: MeetingChatMessageData,
+  now: number,
+): ChatMessageViewModel => ({
   id: `chat-message-${message.messageId}`,
   messageId: message.messageId,
   askerTeamMemberId: message.askerTeamMemberId,
   askerDisplayName: message.askerDisplayName,
   createdAtLabel: formatChatMessageTime(message.createdAt),
   question: message.question,
-  status: message.status,
+  answerState: getMeetingChatAnswerState(message, now),
   answer: message.answer,
   citations: message.citations,
 });
 
-export const mergeMeetingChatPages = (pages: MeetingChatListData[]) => {
+export const collectMeetingChatMessages = (pages: MeetingChatListData[]) => {
   const messagesById = new Map<number, MeetingChatMessageData>();
 
   pages
@@ -50,7 +54,8 @@ export const mergeMeetingChatPages = (pages: MeetingChatListData[]) => {
       });
     });
 
-  return Array.from(messagesById.values())
-    .sort((left, right) => left.messageId - right.messageId)
-    .map(toChatMessageViewModel);
+  return Array.from(messagesById.values()).sort((left, right) => left.messageId - right.messageId);
 };
+
+export const toChatMessageViewModels = (messages: MeetingChatMessageData[], now: number) =>
+  messages.map((message) => toChatMessageViewModel(message, now));

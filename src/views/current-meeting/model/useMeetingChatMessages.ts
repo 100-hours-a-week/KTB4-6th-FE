@@ -1,8 +1,22 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
-import { useMeetingChatList } from '@/features/meeting-chat';
-import { mergeMeetingChatPages } from './meeting-chat-messages';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { getMeetingChatAnswerDeadline, useMeetingChatList } from '@/features/meeting-chat';
+import { collectMeetingChatMessages, toChatMessageViewModels } from './meeting-chat-messages';
+
+const useNextAnswerDeadlineTick = (deadlines: number[]) => {
+  const [now, setNow] = useState(() => Date.now());
+  const nextDeadline = deadlines.filter((deadline) => deadline > now).sort((a, b) => a - b)[0];
+
+  useEffect(() => {
+    if (nextDeadline === undefined) return;
+
+    const timeoutId = window.setTimeout(() => setNow(Date.now()), nextDeadline - Date.now());
+    return () => window.clearTimeout(timeoutId);
+  }, [nextDeadline]);
+
+  return now;
+};
 
 export const useMeetingChatMessages = (meetingId: number) => {
   const {
@@ -16,7 +30,22 @@ export const useMeetingChatMessages = (meetingId: number) => {
     fetchNextPage,
     refetch,
   } = useMeetingChatList(meetingId);
-  const messages = useMemo(() => mergeMeetingChatPages(data?.pages ?? []), [data?.pages]);
+  const serverMessages = useMemo(
+    () => collectMeetingChatMessages(data?.pages ?? []),
+    [data?.pages],
+  );
+  const answerDeadlines = useMemo(
+    () =>
+      serverMessages
+        .map(getMeetingChatAnswerDeadline)
+        .filter((deadline): deadline is number => deadline !== null),
+    [serverMessages],
+  );
+  const now = useNextAnswerDeadlineTick(answerDeadlines);
+  const messages = useMemo(
+    () => toChatMessageViewModels(serverMessages, now),
+    [now, serverMessages],
+  );
   const loadOlderMessages = useCallback(async () => {
     await fetchNextPage();
   }, [fetchNextPage]);

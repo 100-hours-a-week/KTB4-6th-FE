@@ -72,23 +72,21 @@ const MeetyAnswer = ({ message }: { message: ChatMessageViewModel }) => (
     <div className="min-w-0 flex-1">
       <div className="flex items-baseline gap-2">
         <h3 className="text-sm font-bold text-brand-700">Meety</h3>
-        {message.status === 'COMPLETED' && (
+        {message.answerState === 'completed' && (
           <time className="text-xs text-cool-500">{message.createdAtLabel}</time>
         )}
       </div>
-      {message.status === 'PROCESSING' ? (
+      {message.answerState === 'pending' ? (
         <ProcessingAnswer />
-      ) : message.status === 'FAILED' ? (
+      ) : message.answerState === 'failed' || !message.answer ? (
         <FailedAnswer />
       ) : (
-        message.answer && (
-          <>
-            <div className="mt-1.5 rounded-2xl rounded-tl-md border border-brand-200 bg-brand-50 px-4 py-3 text-sm leading-6 break-words text-cool-900">
-              <ChatMarkdown>{message.answer}</ChatMarkdown>
-            </div>
-            <ChatCitationList citations={message.citations ?? []} />
-          </>
-        )
+        <>
+          <div className="mt-1.5 rounded-2xl rounded-tl-md border border-brand-200 bg-brand-50 px-4 py-3 text-sm leading-6 break-words text-cool-900">
+            <ChatMarkdown>{message.answer}</ChatMarkdown>
+          </div>
+          <ChatCitationList citations={message.citations ?? []} />
+        </>
       )}
     </div>
   </section>

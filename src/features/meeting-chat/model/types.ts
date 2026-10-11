@@ -1,6 +1,6 @@
 export type MeetingChatInputType = 'TEXT' | 'VOICE';
 
-export type MeetingChatMessageStatus = 'PROCESSING' | 'COMPLETED' | 'FAILED';
+export type MeetingChatMessageStatus = 'ACCEPTED' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
 
 interface MeetingChatCitationBase {
   meetingId: number;

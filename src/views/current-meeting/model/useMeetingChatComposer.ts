@@ -69,7 +69,7 @@ export const useMeetingChatComposer = ({
   const isProcessing =
     questionRequest.isPending ||
     isAwaitingChatEvent ||
-    serverMessages.some((message) => message.status === 'PROCESSING');
+    serverMessages.some((message) => message.answerState === 'pending');
 
   const sendQuestion = () => {
     const normalizedQuestion = question.trim();

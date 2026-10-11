@@ -1,5 +1,7 @@
 export { getMeetingChatList } from './api/get-meeting-chat-list';
 export { requestMeetingChatQuestion } from './api/request-meeting-chat-question';
+export { getMeetingChatAnswerDeadline, getMeetingChatAnswerState } from './model/answer-state';
+export type { MeetingChatAnswerState } from './model/answer-state';
 export { isRetryableMeetingChatQuestionError, MeetingChatApiError } from './model/errors';
 export { meetingChatKeys } from './model/query-keys';
 export type {
