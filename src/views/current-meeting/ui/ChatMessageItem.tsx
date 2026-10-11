@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import type { ChatMessageViewModel } from '../model/meeting-chat-messages';
+import { ChatCitationList } from './ChatCitationList';
 import { ChatMarkdown } from './ChatMarkdown';
 
 const getInitial = (displayName: string) => displayName.trim().charAt(0) || '?';
@@ -81,9 +82,12 @@ const MeetyAnswer = ({ message }: { message: ChatMessageViewModel }) => (
         <FailedAnswer />
       ) : (
         message.answer && (
-          <div className="mt-1.5 rounded-2xl rounded-tl-md border border-brand-200 bg-brand-50 px-4 py-3 text-sm leading-6 break-words text-cool-900">
-            <ChatMarkdown>{message.answer}</ChatMarkdown>
-          </div>
+          <>
+            <div className="mt-1.5 rounded-2xl rounded-tl-md border border-brand-200 bg-brand-50 px-4 py-3 text-sm leading-6 break-words text-cool-900">
+              <ChatMarkdown>{message.answer}</ChatMarkdown>
+            </div>
+            <ChatCitationList citations={message.citations ?? []} />
+          </>
         )
       )}
     </div>
