@@ -64,7 +64,7 @@ export const CreditBalanceCard = ({ balance, maxBalance }: CreditBalanceCardProp
         <p className="mt-2.5 text-[13px] leading-5 text-brand-100">
           {isFull
             ? '사용한 만큼만 채워집니다'
-            : `다음 적립 ${formatNextGrantAt(nextGrantAt)} · +${nextGrantAmount.toLocaleString('ko-KR')}`}
+            : `${formatNextGrantAt(nextGrantAt)}에 ${nextGrantAmount.toLocaleString('ko-KR')} 크레딧이 적립돼요`}
         </p>
       </div>
     </section>
