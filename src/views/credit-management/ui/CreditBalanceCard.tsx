@@ -1,4 +1,5 @@
 import { getCreditBalancePolicy } from '@/features/credit-management';
+import { CreditPolicyPopover } from './CreditPolicyPopover';
 
 interface CreditBalanceCardProps {
   balance: number;
@@ -30,7 +31,10 @@ export const CreditBalanceCard = ({ balance, maxBalance }: CreditBalanceCardProp
   return (
     <section className="rounded-2xl bg-brand-600 px-5 py-6 text-white shadow-[0_8px_20px_rgba(47,76,116,0.22)]">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-brand-100">팀 크레딧</h2>
+        <div className="flex items-center gap-0.5">
+          <h2 className="text-sm font-semibold text-brand-100">팀 크레딧</h2>
+          <CreditPolicyPopover maxBalance={maxBalance} />
+        </div>
         {isFull && (
           <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-brand-600">
             최대 보유
