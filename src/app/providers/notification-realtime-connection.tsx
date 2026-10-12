@@ -10,6 +10,7 @@ import {
   prependNotificationToList,
   showNotificationBanner,
 } from '@/features/notification';
+import { teamKeys } from '@/features/team-management';
 import { refreshAuthTokensOnce } from './use-auth-retry-interceptor';
 
 const NOTIFICATION_EVENTS_PATH = '/api/v1/notifications/events';
@@ -35,7 +36,15 @@ export const NotificationRealtimeConnection = () => {
     }
 
     if (teamId) {
-      prependNotificationToList(queryClient, Number(teamId), notification);
+      const numericTeamId = Number(teamId);
+      prependNotificationToList(queryClient, numericTeamId, notification);
+
+      if (notification.type === 'CREDIT_EARNED') {
+        void queryClient.invalidateQueries({
+          queryKey: teamKeys.credits(numericTeamId),
+          exact: true,
+        });
+      }
     }
 
     if (!NOTIFICATIONS_PAGE_PATTERN.test(pathname)) {
