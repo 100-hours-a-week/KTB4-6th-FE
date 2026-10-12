@@ -1,5 +1,6 @@
-/** AI 요약을 재생성할 때 소모되는 크레딧 */
-export const SUMMARY_REGENERATE_CREDIT_COST = 3;
+import { SUMMARY_REGENERATE_CREDIT_COST } from '@/features/credit-management';
+
+export { SUMMARY_REGENERATE_CREDIT_COST };
 
 export const canRegenerateSummary = (currentCredits: number) =>
   currentCredits >= SUMMARY_REGENERATE_CREDIT_COST;
