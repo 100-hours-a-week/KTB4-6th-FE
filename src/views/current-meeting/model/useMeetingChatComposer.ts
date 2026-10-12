@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { CHAT_CREDIT_COST } from '@/features/credit-management';
 import {
   meetingChatKeys,
   type MeetingChatApiError,
@@ -11,8 +12,6 @@ import {
 import { useAppToast } from '@/shared/ui';
 import type { ChatMessageViewModel } from './meeting-chat-messages';
 import { getMeetingChatQuestionErrorFeedback } from './meeting-chat-question-error';
-
-const CHAT_CREDIT_COST = 1;
 
 interface UseMeetingChatComposerOptions {
   meetingId: number;

@@ -2,9 +2,8 @@
 
 import { AlertDialog } from '@base-ui/react/alert-dialog';
 import { CircleDollarSign, X } from 'lucide-react';
+import { RECORDING_CREDIT_COST } from '@/features/credit-management';
 import { useAppFrameElement } from '@/shared/lib';
-
-const RECORDING_CREDIT_COST = 20;
 
 interface InsufficientCreditDialogProps {
   isOpen: boolean;
