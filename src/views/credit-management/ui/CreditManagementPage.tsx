@@ -1,15 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useCreditLedgers } from '@/features/credit-management';
 import { useTeamCredits, useTeamDetail } from '@/features/team-management';
 import { NavigationSidebar } from '@/widgets/navigation-sidebar';
+import { toCreditLedgerViewModels } from '../model/credit-ledger-view';
 import { CreditBalanceCard } from './CreditBalanceCard';
+import { CreditLedgerList } from './CreditLedgerList';
 import { CreditManagementHeader } from './CreditManagementHeader';
-import {
-  CreditHistoryPreparingState,
-  CreditManagementErrorState,
-  CreditManagementLoadingState,
-} from './CreditManagementStates';
+import { CreditManagementErrorState, CreditManagementLoadingState } from './CreditManagementStates';
 
 interface CreditManagementPageProps {
   teamId: number;
@@ -25,6 +24,8 @@ export const CreditManagementPage = ({ teamId }: CreditManagementPageProps) => {
     isFetching: isCreditsFetching,
     refetch: refetchCredits,
   } = useTeamCredits(teamId);
+  const { data: creditLedgerPages } = useCreditLedgers(teamId);
+  const creditLedgers = toCreditLedgerViewModels(creditLedgerPages?.pages ?? []);
 
   return (
     <div className="flex h-dvh min-h-[844px] flex-col bg-cool-50">
@@ -43,7 +44,7 @@ export const CreditManagementPage = ({ teamId }: CreditManagementPageProps) => {
             <div className="border-b border-cool-200 p-5">
               <CreditBalanceCard balance={credits.balance} maxBalance={credits.maxBalance} />
             </div>
-            <CreditHistoryPreparingState />
+            <CreditLedgerList ledgers={creditLedgers} />
           </>
         )}
       </div>

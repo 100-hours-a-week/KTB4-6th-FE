@@ -1,4 +1,4 @@
-import { CircleAlert, LoaderCircle, ReceiptText } from 'lucide-react';
+import { CircleAlert, LoaderCircle } from 'lucide-react';
 
 export const CreditManagementLoadingState = () => (
   <div role="status" aria-label="크레딧 정보를 불러오는 중" className="motion-safe:animate-pulse">
@@ -48,17 +48,5 @@ export const CreditManagementErrorState = ({
       {isRetrying && <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />}
       {isRetrying ? '불러오는 중' : '다시 시도'}
     </button>
-  </div>
-);
-
-export const CreditHistoryPreparingState = () => (
-  <div className="flex flex-1 flex-col items-center justify-center px-5 py-16 text-center">
-    <span className="flex size-17 items-center justify-center rounded-full bg-brand-100 text-brand-600">
-      <ReceiptText aria-hidden="true" className="size-7" strokeWidth={1.75} />
-    </span>
-    <h2 className="mt-4 text-[17px] font-bold tracking-tight text-cool-900">준비 중이에요</h2>
-    <p className="mt-1.5 text-sm leading-6 text-cool-600">
-      크레딧 내역은 곧 이곳에서 확인할 수 있어요
-    </p>
   </div>
 );
