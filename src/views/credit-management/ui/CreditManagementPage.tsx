@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useCreditLedgers } from '@/features/credit-management';
 import { useTeamCredits, useTeamDetail } from '@/features/team-management';
 import { NavigationSidebar } from '@/widgets/navigation-sidebar';
@@ -16,7 +16,9 @@ interface CreditManagementPageProps {
 
 export const CreditManagementPage = ({ teamId }: CreditManagementPageProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isCompactBalanceVisible, setIsCompactBalanceVisible] = useState(false);
   const scrollRootRef = useRef<HTMLDivElement>(null);
+  const creditBalanceSectionRef = useRef<HTMLDivElement>(null);
   const { data: team } = useTeamDetail(teamId);
   const {
     data: credits,
@@ -38,6 +40,21 @@ export const CreditManagementPage = ({ teamId }: CreditManagementPageProps) => {
   const creditLedgers = toCreditLedgerViewModels(creditLedgerPages?.pages ?? []);
   const loadMoreStatus = isFetchingNextPage ? 'loading' : isFetchNextPageError ? 'error' : 'idle';
 
+  useEffect(() => {
+    const scrollRoot = scrollRootRef.current;
+    const creditBalanceSection = creditBalanceSectionRef.current;
+    if (!scrollRoot || !creditBalanceSection) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsCompactBalanceVisible(!entry.isIntersecting),
+      { root: scrollRoot, threshold: 0 },
+    );
+
+    observer.observe(creditBalanceSection);
+
+    return () => observer.disconnect();
+  }, []);
+
   const handleLoadMore = () => {
     if (!hasNextPage || isFetchingNextPage) return;
     void fetchNextPage();
@@ -47,8 +64,11 @@ export const CreditManagementPage = ({ teamId }: CreditManagementPageProps) => {
     <div className="flex h-dvh min-h-[844px] flex-col bg-cool-50">
       <CreditManagementHeader isMenuDisabled={!team} onMenuClick={() => setIsSidebarOpen(true)} />
 
-      <div ref={scrollRootRef} className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-        <div className="border-b border-cool-200 p-5">
+      <div ref={scrollRootRef} className="min-h-0 flex-1 overflow-y-auto">
+        <div
+          ref={creditBalanceSectionRef}
+          className="border-b border-cool-200 bg-cool-50 px-[22px] pt-4 pb-3.5"
+        >
           {credits ? (
             <CreditBalanceCard balance={credits.balance} maxBalance={credits.maxBalance} />
           ) : isCreditsPending ? (
@@ -62,6 +82,8 @@ export const CreditManagementPage = ({ teamId }: CreditManagementPageProps) => {
         </div>
 
         <CreditLedgerSection
+          compactBalance={credits?.balance}
+          isCompactBalanceVisible={isCompactBalanceVisible}
           ledgers={creditLedgers}
           isPending={isCreditLedgersPending}
           isError={isCreditLedgersError && !creditLedgerPages}

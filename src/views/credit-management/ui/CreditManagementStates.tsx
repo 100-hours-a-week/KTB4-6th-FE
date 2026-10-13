@@ -47,14 +47,19 @@ export const CreditBalanceErrorState = ({ isRetrying, onRetry }: RetryStateProps
 );
 
 export const CreditLedgerLoadingState = () => (
-  <div role="status" aria-label="크레딧 내역을 불러오는 중" className="motion-safe:animate-pulse">
+  <div
+    role="status"
+    aria-label="크레딧 내역을 불러오는 중"
+    className="overflow-hidden rounded-[14px] border border-cool-200 bg-white motion-safe:animate-pulse"
+  >
     {[0, 1, 2].map((index) => (
       <div
         key={index}
         aria-hidden="true"
-        className="flex items-center justify-between gap-4 border-b border-cool-200 px-5 py-4"
+        className="flex items-center gap-3 px-4 py-3.5 [&:not(:first-child)]:border-t [&:not(:first-child)]:border-cool-100"
       >
-        <div>
+        <div className="size-[34px] shrink-0 rounded-[10px] bg-cool-200" />
+        <div className="min-w-0 flex-1">
           <div className="h-5 w-28 rounded-md bg-cool-200" />
           <div className="mt-1.5 h-4 w-36 rounded-md bg-cool-100" />
         </div>

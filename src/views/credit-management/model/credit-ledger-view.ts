@@ -2,39 +2,34 @@ import type {
   CreditLedgerData,
   CreditLedgerListData,
   CreditLedgerSourceType,
-  CreditLedgerType,
 } from '@/features/credit-management';
 
-const CREDIT_LEDGER_TYPE_LABELS: Record<CreditLedgerType, string> = {
-  EARN: '적립',
-  USE: '사용',
-  RESTORE: '복구',
-};
-
 const CREDIT_LEDGER_SOURCE_LABELS: Record<CreditLedgerSourceType, string> = {
-  AI_CHAT: 'AI 채팅',
-  AI_SUMMARY: 'AI 요약',
-  AI_REPORT: 'AI 리포트',
-  RECORDING: '회의 녹음',
-  SCHEDULE: '정기 크레딧',
+  AI_CHAT: 'AI 채팅 질의응답',
+  AI_SUMMARY: 'AI 요약 재생성',
+  AI_REPORT: 'AI 리포트 생성',
+  RECORDING: '회의 진행',
+  SCHEDULE: '주간 적립',
 };
-
-const creditLedgerDateFormatter = new Intl.DateTimeFormat('ko-KR', {
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit',
-  hour12: false,
-});
 
 const formatCreditAmount = (amount: number) => {
   const sign = amount > 0 ? '+' : '';
   return `${sign}${amount.toLocaleString('ko-KR')}`;
 };
 
+const formatCreditLedgerDate = (createdAt: string) => {
+  const date = new Date(createdAt);
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hour = String(date.getHours()).padStart(2, '0');
+  const minute = String(date.getMinutes()).padStart(2, '0');
+
+  return `${month}.${day} ${hour}:${minute}`;
+};
+
 export interface CreditLedgerViewModel {
   id: number;
+  sourceType: CreditLedgerSourceType;
   title: string;
   amountLabel: string;
   balanceAfterLabel: string;
@@ -45,11 +40,12 @@ export interface CreditLedgerViewModel {
 
 const toCreditLedgerViewModel = (ledger: CreditLedgerData): CreditLedgerViewModel => ({
   id: ledger.ledgerId,
-  title: `${CREDIT_LEDGER_SOURCE_LABELS[ledger.sourceType]} ${CREDIT_LEDGER_TYPE_LABELS[ledger.type]}`,
+  sourceType: ledger.sourceType,
+  title: `${CREDIT_LEDGER_SOURCE_LABELS[ledger.sourceType]}${ledger.type === 'RESTORE' ? ' 복구' : ''}`,
   amountLabel: formatCreditAmount(ledger.amount),
   balanceAfterLabel: ledger.balanceAfter.toLocaleString('ko-KR'),
   createdAt: ledger.createdAt,
-  createdAtLabel: creditLedgerDateFormatter.format(new Date(ledger.createdAt)),
+  createdAtLabel: formatCreditLedgerDate(ledger.createdAt),
   isIncrease: ledger.amount > 0,
 });
 
