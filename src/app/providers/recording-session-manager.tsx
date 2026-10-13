@@ -6,17 +6,19 @@ import { useRecordingAckSync } from './use-recording-ack-sync';
 import { useRecordingConnectionRecovery } from './use-recording-connection-recovery';
 import { useRecordingStreamStart } from './use-recording-stream-start';
 
-/** 앱 전역에서 녹음 소켓 연결·복구·녹음 시작과 로컬 chunk 관리를 맡는다. */
 export function RecordingSessionManager() {
-  const recordingSessionId = useRecordingSessionStore(
-    (state) => state.activeRecording?.recordingSessionId,
-  );
+  const activeRecording = useRecordingSessionStore((state) => state.activeRecording);
+  const recordingSessionId = activeRecording?.recordingSessionId;
   const { statuses } = useRecordingWebSocket();
   const socketStatus = recordingSessionId === undefined ? undefined : statuses[recordingSessionId];
 
   useRecordingChunkBuffer();
   useRecordingAckSync();
-  const { resetAttempts } = useRecordingConnectionRecovery({ recordingSessionId, socketStatus });
+  const { resetAttempts } = useRecordingConnectionRecovery({
+    meetingId: activeRecording?.meetingId,
+    recordingSessionId,
+    socketStatus,
+  });
   useRecordingStreamStart({ recordingSessionId, socketStatus, onStarted: resetAttempts });
 
   return null;
