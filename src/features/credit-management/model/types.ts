@@ -1,7 +1,7 @@
 export type CreditLedgerType = 'EARN' | 'USE' | 'RESTORE';
 
 export type CreditLedgerSourceType =
-  'AI_CHAT' | 'AI_SUMMARY' | 'AI_REPORT' | 'RECORDING' | 'SCHEDULE';
+  'AI_CHAT' | 'AI_SUMMARY' | 'AI_REPORT' | 'RECORDING' | 'SCHEDULE' | 'TEAM_CREATE';
 
 export interface CreditLedgerData {
   ledgerId: number;

@@ -4,6 +4,7 @@ import {
   FileText,
   MessageSquare,
   Mic,
+  UsersRound,
   type LucideIcon,
 } from 'lucide-react';
 import type { CreditLedgerSourceType } from '@/features/credit-management';
@@ -19,6 +20,7 @@ const CREDIT_LEDGER_SOURCE_ICONS: Record<
   AI_REPORT: { icon: ChartNoAxesColumn, className: 'bg-warning-bg text-warning' },
   RECORDING: { icon: Mic, className: 'bg-danger-bg text-danger' },
   SCHEDULE: { icon: CirclePlus, className: 'bg-brand-100 text-brand-600' },
+  TEAM_CREATE: { icon: UsersRound, className: 'bg-brand-100 text-brand-600' },
 };
 
 interface CreditLedgerListProps {

@@ -10,6 +10,7 @@ const CREDIT_LEDGER_SOURCE_LABELS: Record<CreditLedgerSourceType, string> = {
   AI_REPORT: 'AI 리포트 생성',
   RECORDING: '회의 진행',
   SCHEDULE: '주간 적립',
+  TEAM_CREATE: '팀 생성 적립',
 };
 
 const formatCreditAmount = (amount: number) => {
