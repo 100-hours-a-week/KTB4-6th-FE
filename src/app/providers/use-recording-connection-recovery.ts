@@ -14,6 +14,7 @@ import {
   type RecordingWebSocketStatus,
 } from '@/features/recording-websocket';
 import { useAppToast } from '@/shared/ui';
+import { ensureFreshAuthTokens } from './auth-token-refresh';
 
 const RECOVERY_MAX_ATTEMPTS = 2;
 const RECOVERY_RETRY_DELAY_MS = 2000;
@@ -120,6 +121,8 @@ export const useRecordingConnectionRecovery = ({
         void (async () => {
           try {
             const audioFormat = await prepareMicrophone();
+            if (cancelled) return;
+            await ensureFreshAuthTokens().catch(() => {});
             if (cancelled) return;
             connect(recordingSessionId, audioFormat);
           } catch {}
