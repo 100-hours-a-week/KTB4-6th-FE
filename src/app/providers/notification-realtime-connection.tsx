@@ -11,7 +11,7 @@ import {
   showNotificationBanner,
 } from '@/features/notification';
 import { teamKeys } from '@/features/team-management';
-import { refreshAuthTokensOnce } from './use-auth-retry-interceptor';
+import { refreshAuthTokensOnce } from './auth-token-refresh';
 
 const NOTIFICATION_EVENTS_PATH = '/api/v1/notifications/events';
 const NOTIFICATIONS_PAGE_PATTERN = /^\/teams\/[^/]+\/notifications$/;

@@ -10,15 +10,23 @@ interface AuthCookieTokens {
 export const setAuthCookies = (response: NextResponse, tokens: AuthCookieTokens) => {
   const isProduction = process.env.NODE_ENV === 'production';
   const cookieDomain = process.env.AUTH_COOKIE_DOMAIN;
-
-  response.cookies.set('accessToken', tokens.accessToken, {
-    httpOnly: true,
+  const accessTokenCookieOptions = {
     secure: isProduction,
     sameSite: 'lax',
     path: '/',
     maxAge: tokens.accessTokenExpiresIn,
     ...(isProduction && cookieDomain ? { domain: cookieDomain } : {}),
+  } as const;
+
+  response.cookies.set('accessToken', tokens.accessToken, {
+    ...accessTokenCookieOptions,
+    httpOnly: true,
   });
+  response.cookies.set(
+    'accessTokenExpiresAt',
+    String(Date.now() + tokens.accessTokenExpiresIn * 1000),
+    { ...accessTokenCookieOptions, httpOnly: false },
+  );
   response.cookies.set('refreshToken', tokens.refreshToken, {
     httpOnly: true,
     secure: isProduction,

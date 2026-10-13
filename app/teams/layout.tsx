@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { NotificationRealtimeConnection } from '@/app/providers';
+import { AuthTokenKeeper, NotificationRealtimeConnection } from '@/app/providers';
 import { NotificationBannerHost } from '@/app/ui';
 
 interface TeamsLayoutProps {
@@ -17,6 +17,7 @@ export default async function TeamsLayout({ children }: TeamsLayoutProps) {
     <>
       {children}
       <NotificationBannerHost />
+      <AuthTokenKeeper />
       <NotificationRealtimeConnection />
     </>
   );

@@ -53,6 +53,8 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
   const queryClient = useQueryClient();
   const sources = useRef(new Map<string, EventSource>());
   const joining = useRef(new Map<string, { cancelled: boolean }>());
+  const reconnectedAfterClose = useRef(new Set<string>());
+  const reconnect = useRef<(meetingId: string) => void>(() => {});
   const [deletedListeners] = useState(() => createListenerRegistry());
   const [recordingListeners] = useState(() => createListenerRegistry<[RecordingSseEventType]>());
   const [statuses, setStatuses] = useState<Record<string, MeetingSseStatus>>({});
@@ -66,6 +68,7 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
       pendingJoin.cancelled = true;
       joining.current.delete(meetingId);
     }
+    reconnectedAfterClose.current.delete(meetingId);
 
     const source = sources.current.get(meetingId);
     if (source) {
@@ -128,6 +131,7 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
           source.onopen = () => {
             opened = true;
             hasReportedCurrentError = false;
+            reconnectedAfterClose.current.delete(meetingId);
             setStatuses((current) => ({ ...current, [meetingId]: 'connected' }));
           };
 
@@ -161,6 +165,20 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
 
           source.onerror = () => {
             if (sources.current.get(meetingId) !== source) return;
+
+            if (
+              source.readyState === EventSource.CLOSED &&
+              !reconnectedAfterClose.current.has(meetingId)
+            ) {
+              reconnectedAfterClose.current.add(meetingId);
+              source.onopen = null;
+              source.onerror = null;
+              source.close();
+              sources.current.delete(meetingId);
+              reconnect.current(meetingId);
+              return;
+            }
+
             setStatuses((current) => ({ ...current, [meetingId]: 'error' }));
 
             if (hasReportedCurrentError) return;
@@ -195,6 +213,10 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
       recordingListeners,
     ],
   );
+
+  useEffect(() => {
+    reconnect.current = connect;
+  }, [connect]);
 
   useEffect(() => {
     const activeSources = sources.current;

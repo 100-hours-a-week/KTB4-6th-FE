@@ -1,23 +1,14 @@
 import axios, { type InternalAxiosRequestConfig } from 'axios';
-import { requestTokenRefresh } from '@/features/auth';
 import { apiClient } from '@/shared/api';
+import {
+  isRedirectingToLogin,
+  redirectToLoginIfRefreshRejected,
+  refreshAuthTokensOnce,
+} from './auth-token-refresh';
 
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _authRetry?: boolean;
 }
-
-let refreshPromise: Promise<void> | null = null;
-let isRedirecting = false;
-
-export const refreshAuthTokensOnce = () => {
-  if (!refreshPromise) {
-    refreshPromise = requestTokenRefresh().finally(() => {
-      refreshPromise = null;
-    });
-  }
-
-  return refreshPromise;
-};
 
 if (typeof window !== 'undefined') {
   apiClient.interceptors.response.use(undefined, async (error: unknown) => {
@@ -27,7 +18,7 @@ if (typeof window !== 'undefined') {
 
     const originalRequest = error.config as RetryableRequestConfig | undefined;
 
-    if (!originalRequest || originalRequest._authRetry || isRedirecting) {
+    if (!originalRequest || originalRequest._authRetry || isRedirectingToLogin()) {
       return Promise.reject(error);
     }
 
@@ -37,15 +28,7 @@ if (typeof window !== 'undefined') {
       await refreshAuthTokensOnce();
       return apiClient(originalRequest);
     } catch (refreshError) {
-      if (
-        axios.isAxiosError(refreshError) &&
-        refreshError.response?.status === 401 &&
-        !isRedirecting
-      ) {
-        isRedirecting = true;
-        window.location.replace('/');
-      }
-
+      redirectToLoginIfRefreshRejected(refreshError);
       return Promise.reject(refreshError);
     }
   });
