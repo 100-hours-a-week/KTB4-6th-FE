@@ -3,11 +3,26 @@ export interface ApiErrorPayload {
   message: string;
 }
 
-export interface CreateMeetingRequest {
+export interface MeetingInfoRequest {
   title: string;
   purpose: string;
   note: string;
   targetDurationMinutes: number;
+}
+
+export interface MeetingAttendeesRequest {
+  attendeeTeamMemberIds: number[];
+  customAttendeeNames: string[];
+}
+
+export type CreateMeetingRequest = MeetingInfoRequest & MeetingAttendeesRequest;
+
+export type MeetingAttendeeType = 'TEAM_MEMBER' | 'CUSTOM';
+
+export interface MeetingAttendeeData {
+  teamMemberId: number | null;
+  name: string;
+  type: MeetingAttendeeType;
 }
 
 export interface CreateMeetingData {
@@ -20,6 +35,7 @@ export interface CreateMeetingData {
   scheduledAt: string;
   targetDurationMinutes: number;
   status: 'WAITING' | 'IN_PROGRESS' | 'COMPLETED';
+  attendees: MeetingAttendeeData[];
   createdAt: string;
 }
 
@@ -68,6 +84,7 @@ export interface MeetingDetailData {
   startedAt: string | null;
   /** 종료 시각. 끝나지 않았으면 null */
   endedAt: string | null;
+  attendees: MeetingAttendeeData[];
   createdAt: string;
   updatedAt: string;
 }

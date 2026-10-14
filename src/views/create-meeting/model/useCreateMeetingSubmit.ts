@@ -5,18 +5,22 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { homeKeys } from '@/features/home';
 import { useCreateMeeting, type CreateMeetingFormValues } from '@/features/meeting';
+import { useTeamDetail } from '@/features/team-management';
 
 export const useCreateMeetingSubmit = (teamId: number) => {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { data: team } = useTeamDetail(teamId);
   const { isCreating, createError, createMeeting } = useCreateMeeting(teamId);
-  // 생성 성공 후 화면이 넘어가기 전까지 다시 제출되어 회의가 중복 생성되지 않게 막는다.
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   const submit = async (values: CreateMeetingFormValues) => {
-    if (isRedirecting) return;
+    if (isRedirecting || !team) return;
 
-    const meeting = await createMeeting(values);
+    const meeting = await createMeeting(values, {
+      attendeeTeamMemberIds: [team.teamMemberId],
+      customAttendeeNames: [],
+    });
 
     if (!meeting) return;
 
