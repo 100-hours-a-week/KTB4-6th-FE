@@ -1,4 +1,4 @@
-import type { CreateMeetingRequest } from './types';
+import type { MeetingInfoRequest } from './types';
 
 export interface CreateMeetingFormValues {
   title: string;
@@ -72,7 +72,7 @@ export const isCreateMeetingFormValid = (values: CreateMeetingFormValues) =>
   !getCreateMeetingPurposeError(values.purpose) &&
   !getCreateMeetingNoteError(values.note);
 
-export const toCreateMeetingRequest = (values: CreateMeetingFormValues): CreateMeetingRequest => ({
+export const toMeetingInfoRequest = (values: CreateMeetingFormValues): MeetingInfoRequest => ({
   title: values.title.trim(),
   purpose: values.purpose.trim(),
   note: values.note.trim(),
