@@ -6,7 +6,7 @@ interface DashboardHeaderProps {
 }
 
 export const DashboardHeader = ({ isMenuDisabled, onMenuClick }: DashboardHeaderProps) => (
-  <header className="flex shrink-0 items-center border-b border-cool-200 bg-white px-5 py-4">
+  <header className="flex shrink-0 items-center bg-white px-5 py-4">
     <button
       type="button"
       aria-label="메뉴 열기"
