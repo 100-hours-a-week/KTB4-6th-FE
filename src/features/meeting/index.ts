@@ -17,6 +17,7 @@ export {
   CUSTOM_ATTENDEE_MAX_COUNT,
   CUSTOM_NAME_MAX_LENGTH,
   getCustomAttendeeNameError,
+  isInvalidMeetingAttendeeError,
   MEETING_ATTENDEE_MAX_COUNT,
 } from './model/meeting-attendee';
 export { isAudioFileExpiredError, isAudioFileNotAvailableError } from './model/audio-file-errors';

@@ -16,8 +16,10 @@ export interface AttendeeMember {
 }
 
 export const useAttendeeSelection = (teamId: number) => {
-  const { data: team } = useTeamDetail(teamId);
-  const { data: teamMembers } = useTeamMembers(teamId);
+  const teamQuery = useTeamDetail(teamId);
+  const membersQuery = useTeamMembers(teamId);
+  const team = teamQuery.data;
+  const teamMembers = membersQuery.data;
   const [otherMemberIds, setOtherMemberIds] = useState<number[]>([]);
   const [customNames, setCustomNames] = useState<string[]>([]);
 
@@ -31,8 +33,24 @@ export const useAttendeeSelection = (teamId: number) => {
     }))
     .sort((a, b) => Number(b.isMe) - Number(a.isMe));
 
+  const activeOtherMemberIds = teamMembers
+    ? otherMemberIds.filter((id) => members.some((member) => member.teamMemberId === id))
+    : otherMemberIds;
   const selectedTeamMemberIds =
-    myTeamMemberId === null ? otherMemberIds : [myTeamMemberId, ...otherMemberIds];
+    myTeamMemberId === null ? activeOtherMemberIds : [myTeamMemberId, ...activeOtherMemberIds];
+
+  const status =
+    team && teamMembers
+      ? 'success'
+      : teamQuery.isError || membersQuery.isError
+        ? 'error'
+        : 'loading';
+  const isRetrying = teamQuery.isFetching || membersQuery.isFetching;
+
+  const retry = () => {
+    if (teamQuery.isError) void teamQuery.refetch();
+    if (membersQuery.isError) void membersQuery.refetch();
+  };
   const selectedCount = selectedTeamMemberIds.length + customNames.length;
   const isFull = selectedCount >= MEETING_ATTENDEE_MAX_COUNT;
   const canAddCustomName = !isFull && customNames.length < CUSTOM_ATTENDEE_MAX_COUNT;
@@ -63,6 +81,9 @@ export const useAttendeeSelection = (teamId: number) => {
   };
 
   return {
+    status,
+    isRetrying,
+    retry,
     members,
     selectedTeamMemberIds,
     selectedCount,

@@ -10,10 +10,15 @@ interface CreateMeetingVariables {
   attendees: MeetingAttendeesRequest;
 }
 
-export const useCreateMeeting = (teamId: number) => {
+interface UseCreateMeetingOptions {
+  onError?: (error: Error) => void;
+}
+
+export const useCreateMeeting = (teamId: number, { onError }: UseCreateMeetingOptions = {}) => {
   const mutation = useMutation({
     mutationFn: ({ values, attendees }: CreateMeetingVariables) =>
       createMeeting(teamId, { ...toMeetingInfoRequest(values), ...attendees }),
+    onError,
   });
 
   const createMeetingWithValues = async (
@@ -31,7 +36,7 @@ export const useCreateMeeting = (teamId: number) => {
 
   return {
     isCreating: mutation.isPending,
-    createError: mutation.error?.message ?? null,
+    createError: mutation.error,
     createMeeting: createMeetingWithValues,
   };
 };

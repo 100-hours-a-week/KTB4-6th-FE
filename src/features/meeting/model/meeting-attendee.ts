@@ -1,3 +1,5 @@
+import { MeetingApiError } from './errors';
+
 export const CUSTOM_NAME_MAX_LENGTH = 8;
 export const MEETING_ATTENDEE_MAX_COUNT = 10;
 export const CUSTOM_ATTENDEE_MAX_COUNT = 2;
@@ -12,3 +14,6 @@ export const getCustomAttendeeNameError = (name: string, addedNames: string[]) =
   if (addedNames.includes(trimmedName)) return '이미 추가한 이름이에요.';
   return '';
 };
+
+export const isInvalidMeetingAttendeeError = (error: unknown) =>
+  error instanceof MeetingApiError && error.code === 'INVALID_MEETING_ATTENDEE';

@@ -5,6 +5,7 @@ import { Dialog } from '@base-ui/react/dialog';
 import { Check, X } from 'lucide-react';
 import { cn, useAppFrameElement } from '@/shared/lib';
 import type { AttendeeMember, useAttendeeSelection } from '../model/useAttendeeSelection';
+import { AttendeeMembersErrorState, AttendeeMembersLoadingState } from './AttendeeMemberStates';
 import { CustomAttendeeInput } from './CustomAttendeeInput';
 
 type AttendeeSelection = ReturnType<typeof useAttendeeSelection>;
@@ -27,6 +28,9 @@ export const AttendeeSelectDialog = ({
 }: AttendeeSelectDialogProps) => {
   const frame = useAppFrameElement();
   const {
+    status,
+    isRetrying,
+    retry,
     members,
     selectedTeamMemberIds,
     selectedCount,
@@ -123,55 +127,63 @@ export const AttendeeSelectDialog = ({
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-            <p className="text-[13px] text-cool-500">팀원 {members.length}명</p>
-            <ul className="mt-3 grid grid-cols-4 gap-x-2 gap-y-3">
-              {members.map((member) => {
-                const isSelected = selectedTeamMemberIds.includes(member.teamMemberId);
-                const isDisabled = member.isMe || (isFull && !isSelected);
-                const caption = getMemberCaption(member);
+            {status === 'loading' && <AttendeeMembersLoadingState />}
+            {status === 'error' && (
+              <AttendeeMembersErrorState isRetrying={isRetrying} onRetry={retry} />
+            )}
+            {status === 'success' && (
+              <>
+                <p className="text-[13px] text-cool-500">팀원 {members.length}명</p>
+                <ul className="mt-3 grid grid-cols-4 gap-x-2 gap-y-3">
+                  {members.map((member) => {
+                    const isSelected = selectedTeamMemberIds.includes(member.teamMemberId);
+                    const isDisabled = member.isMe || (isFull && !isSelected);
+                    const caption = getMemberCaption(member);
 
-                return (
-                  <li key={member.teamMemberId}>
-                    <button
-                      type="button"
-                      aria-pressed={isSelected}
-                      disabled={isDisabled}
-                      onClick={() => toggleMember(member.teamMemberId)}
-                      className={cn(
-                        'flex w-full flex-col items-center gap-1.5 rounded-xl py-1 focus-visible:ring-2 focus-visible:ring-brand-300 focus-visible:outline-none',
-                        isDisabled && !isSelected && 'opacity-40',
-                      )}
-                    >
-                      <span
-                        aria-hidden="true"
-                        className={cn(
-                          'relative flex size-12 items-center justify-center rounded-full text-base font-semibold',
-                          isSelected ? 'bg-brand-500 text-white' : 'bg-cool-100 text-brand-700',
-                        )}
-                      >
-                        {member.name.charAt(0)}
-                        {isSelected && (
-                          <span className="absolute -right-1 -bottom-1 flex size-5 items-center justify-center rounded-full border-2 border-white bg-brand-500">
-                            <Check className="size-3 text-white" strokeWidth={3} />
-                          </span>
-                        )}
-                      </span>
-                      <span className="flex max-w-full flex-col items-center">
-                        <span
+                    return (
+                      <li key={member.teamMemberId}>
+                        <button
+                          type="button"
+                          aria-pressed={isSelected}
+                          disabled={isDisabled}
+                          onClick={() => toggleMember(member.teamMemberId)}
                           className={cn(
-                            'max-w-full truncate text-sm',
-                            isSelected ? 'font-semibold text-cool-900' : 'text-cool-700',
+                            'flex w-full flex-col items-center gap-1.5 rounded-xl py-1 focus-visible:ring-2 focus-visible:ring-brand-300 focus-visible:outline-none',
+                            isDisabled && !isSelected && 'opacity-40',
                           )}
                         >
-                          {member.name}
-                        </span>
-                        {caption && <span className="text-xs text-brand-600">{caption}</span>}
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
+                          <span
+                            aria-hidden="true"
+                            className={cn(
+                              'relative flex size-12 items-center justify-center rounded-full text-base font-semibold',
+                              isSelected ? 'bg-brand-500 text-white' : 'bg-cool-100 text-brand-700',
+                            )}
+                          >
+                            {member.name.charAt(0)}
+                            {isSelected && (
+                              <span className="absolute -right-1 -bottom-1 flex size-5 items-center justify-center rounded-full border-2 border-white bg-brand-500">
+                                <Check className="size-3 text-white" strokeWidth={3} />
+                              </span>
+                            )}
+                          </span>
+                          <span className="flex max-w-full flex-col items-center">
+                            <span
+                              className={cn(
+                                'max-w-full truncate text-sm',
+                                isSelected ? 'font-semibold text-cool-900' : 'text-cool-700',
+                              )}
+                            >
+                              {member.name}
+                            </span>
+                            {caption && <span className="text-xs text-brand-600">{caption}</span>}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </>
+            )}
 
             <CustomAttendeeInput
               customNames={customNames}
@@ -192,7 +204,7 @@ export const AttendeeSelectDialog = ({
             <button
               type="button"
               onClick={onNext}
-              disabled={selectedCount === 0}
+              disabled={status !== 'success'}
               className="h-14 flex-1 rounded-xl bg-brand-600 text-base font-semibold text-white transition-colors hover:bg-brand-700 disabled:bg-cool-200 disabled:text-cool-400"
             >
               다음
