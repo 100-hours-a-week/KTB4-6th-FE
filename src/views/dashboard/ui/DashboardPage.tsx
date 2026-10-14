@@ -4,10 +4,11 @@ import { useState } from 'react';
 import { DEFAULT_DASHBOARD_PERIOD_DAYS, type DashboardPeriodDays } from '@/features/dashboard';
 import { useTeamDetail } from '@/features/team-management';
 import { NavigationSidebar } from '@/widgets/navigation-sidebar';
-import { DASHBOARD_PREVIEW_SUMMARY } from '../model/dashboard-preview';
+import { DASHBOARD_PREVIEW_SUMMARY, DASHBOARD_PREVIEW_TOPICS } from '../model/dashboard-preview';
 import { DashboardHeader } from './DashboardHeader';
 import { DashboardPeriodTabs } from './DashboardPeriodTabs';
 import { DashboardSummaryCard } from './DashboardSummaryCard';
+import { DashboardTopicsCard } from './DashboardTopicsCard';
 
 interface DashboardPageProps {
   teamId: number;
@@ -32,6 +33,7 @@ export const DashboardPage = ({ teamId }: DashboardPageProps) => {
           overtimeRate={summary.overtimeDurationRate}
           contextOutSeconds={summary.totalContextOutSeconds}
         />
+        <DashboardTopicsCard topics={DASHBOARD_PREVIEW_TOPICS} />
       </div>
 
       {team && (
