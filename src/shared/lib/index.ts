@@ -11,3 +11,10 @@ export { downloadFile, downloadTextFile } from './download-file';
 export { isOpfsSupported, listOpfsFileNames, readOpfsFile, removeOpfsFile } from './opfs';
 export { useBeforeUnloadWarning } from './use-before-unload-warning';
 export { useWakeLock } from './use-wake-lock';
+export {
+  captureException,
+  captureMessage,
+  captureRouterTransitionStart,
+  startSentry,
+  withScope,
+} from './sentry';

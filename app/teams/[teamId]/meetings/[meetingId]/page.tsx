@@ -1,40 +1,16 @@
 import { notFound } from 'next/navigation';
-import {
-  CompletedMeetingPage,
-  parseCompletedMeetingSegmentId,
-  parseCompletedMeetingTab,
-} from '@/views/completed-meeting';
-import { CurrentMeetingPage } from '@/views/current-meeting';
+import { MeetingRouteSwitch } from '@/app/meeting-route';
 
 interface MeetingRouteProps {
   params: Promise<{ teamId: string; meetingId: string }>;
-  searchParams: Promise<{
-    segmentId?: string | string[];
-    tab?: string | string[];
-  }>;
 }
 
-export default async function MeetingRoute({ params, searchParams }: MeetingRouteProps) {
+export default async function MeetingRoute({ params }: MeetingRouteProps) {
   const { teamId, meetingId } = await params;
 
   if (!Number.isSafeInteger(Number(meetingId)) || Number(meetingId) <= 0) {
     notFound();
   }
 
-  const { segmentId, tab } = await searchParams;
-
-  return (
-    <CurrentMeetingPage
-      teamId={teamId}
-      meetingId={Number(meetingId)}
-      completedView={
-        <CompletedMeetingPage
-          teamId={teamId}
-          meetingId={Number(meetingId)}
-          tab={parseCompletedMeetingTab(tab)}
-          segmentId={parseCompletedMeetingSegmentId(segmentId)}
-        />
-      }
-    />
-  );
+  return <MeetingRouteSwitch teamId={teamId} meetingId={Number(meetingId)} />;
 }

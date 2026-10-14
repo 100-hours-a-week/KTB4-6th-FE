@@ -11,7 +11,7 @@ import {
 } from 'react';
 import type { ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import * as Sentry from '@sentry/nextjs';
+import { captureException, captureMessage } from '@/shared/lib';
 import { joinMeeting } from '../api/join-meeting';
 import { CHAT_SSE_EVENT_TYPES, type ChatSseEventData } from './chat-event';
 import { getCurrentMeetingQueryKey } from './current-meeting-query-key';
@@ -102,7 +102,7 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
       try {
         url = new URL(`/api/v1/meetings/${encodeURIComponent(meetingId)}/events`, baseUrl);
       } catch (error) {
-        Sentry.captureException(error, {
+        captureException(error, {
           tags: { feature: 'meeting-sse', 'meeting.id': meetingId },
         });
         setStatuses((current) => ({ ...current, [meetingId]: 'error' }));
@@ -183,7 +183,7 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
 
             if (hasReportedCurrentError) return;
             hasReportedCurrentError = true;
-            Sentry.captureMessage('회의 SSE 연결 끊김', {
+            captureMessage('회의 SSE 연결 끊김', {
               level: 'error',
               tags: {
                 feature: 'meeting-sse',

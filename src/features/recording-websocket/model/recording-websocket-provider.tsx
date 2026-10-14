@@ -10,7 +10,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import * as Sentry from '@sentry/nextjs';
+import { captureException } from '@/shared/lib';
 import type { AudioFormat } from '@/entities/recording';
 import {
   CLOSE_CODE_COMPLETED,
@@ -103,7 +103,7 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
       // 브라우저가 전송 가능한 쿠키를 핸드셰이크에 자동으로 포함한다.
       socket = new WebSocket(url);
     } catch (error) {
-      Sentry.captureException(error, {
+      captureException(error, {
         tags: { feature: 'recording-websocket', 'recording.session_id': recordingSessionId },
       });
       setStatuses((current) => ({ ...current, [recordingSessionId]: 'error' }));

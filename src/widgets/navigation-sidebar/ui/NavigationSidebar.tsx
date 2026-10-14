@@ -19,8 +19,6 @@ interface NavigationSidebarProps {
   teamName: string;
 }
 
-// 트리거(햄버거 버튼)가 HomeHeader라는 다른 컴포넌트에 있어서 컨트롤드로 연다/닫는다.
-// isOpen/onOpenChange는 부모(HomePage)가 들고 있는 상태를 그대로 받는다.
 export const NavigationSidebar = ({
   isOpen,
   onOpenChange,

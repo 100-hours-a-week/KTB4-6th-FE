@@ -113,7 +113,6 @@ export const CompletedMeetingMoreMenu = ({
 
     deleteAudio(audio.audioFileId, {
       onSuccess: () => {
-        // 삭제는 비동기로 처리되므로, 다시 조회해 상태(삭제 중/만료)를 반영한다.
         void queryClient.invalidateQueries({ queryKey: meetingKeys.audioFile(meetingId) });
         showToast('음성 파일 삭제를 요청했습니다', 'success');
       },
