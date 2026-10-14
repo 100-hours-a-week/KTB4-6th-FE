@@ -13,7 +13,7 @@ export {
   isCreateMeetingFormValid,
   toMeetingInfoRequest,
 } from './model/create-meeting-form';
-export { CUSTOM_NAME_MAX_LENGTH } from './model/meeting-attendee';
+export { CUSTOM_NAME_MAX_LENGTH, MEETING_ATTENDEE_MAX_COUNT } from './model/meeting-attendee';
 export { isAudioFileExpiredError, isAudioFileNotAvailableError } from './model/audio-file-errors';
 export { MeetingApiError } from './model/errors';
 export { getMeetingSummaryPhase } from './model/meeting-summary-phase';

@@ -1,1 +1,2 @@
 export const CUSTOM_NAME_MAX_LENGTH = 8;
+export const MEETING_ATTENDEE_MAX_COUNT = 10;
