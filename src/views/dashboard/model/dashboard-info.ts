@@ -19,7 +19,7 @@ export const DASHBOARD_INFO = {
     label: '목표 대비 회의 시간',
     descriptionLines: [
       '점선이 목표 시간이에요.',
-      '회의가 목표보다 길어지면 막대가 위로,일찍 끝나면 아래로 표시돼요.',
+      '회의가 목표보다 길어지면 막대가 위로, 일찍 끝나면 아래로 표시돼요.',
     ],
   },
   topTopics: {
