@@ -1,7 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { CUSTOM_ATTENDEE_MAX_COUNT, MEETING_ATTENDEE_MAX_COUNT } from '@/features/meeting';
+import {
+  CUSTOM_ATTENDEE_MAX_COUNT,
+  MEETING_ATTENDEE_MAX_COUNT,
+  type MeetingAttendeesRequest,
+} from '@/features/meeting';
 import { useTeamDetail, useTeamMembers } from '@/features/team-management';
 
 export interface AttendeeMember {
@@ -53,6 +57,11 @@ export const useAttendeeSelection = (teamId: number) => {
     setCustomNames((current) => current.filter((customName) => customName !== name));
   };
 
+  const attendeesRequest: MeetingAttendeesRequest = {
+    attendeeTeamMemberIds: selectedTeamMemberIds,
+    customAttendeeNames: customNames,
+  };
+
   return {
     members,
     selectedTeamMemberIds,
@@ -65,5 +74,6 @@ export const useAttendeeSelection = (teamId: number) => {
     canAddCustomName,
     addCustomName,
     removeCustomName,
+    attendeesRequest,
   };
 };

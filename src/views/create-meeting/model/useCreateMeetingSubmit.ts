@@ -4,23 +4,22 @@ import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { homeKeys } from '@/features/home';
-import { useCreateMeeting, type CreateMeetingFormValues } from '@/features/meeting';
-import { useTeamDetail } from '@/features/team-management';
+import {
+  useCreateMeeting,
+  type CreateMeetingFormValues,
+  type MeetingAttendeesRequest,
+} from '@/features/meeting';
 
-export const useCreateMeetingSubmit = (teamId: number) => {
+export const useCreateMeetingSubmit = (teamId: number, attendees: MeetingAttendeesRequest) => {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { data: team } = useTeamDetail(teamId);
   const { isCreating, createError, createMeeting } = useCreateMeeting(teamId);
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   const submit = async (values: CreateMeetingFormValues) => {
-    if (isRedirecting || !team) return;
+    if (isRedirecting) return;
 
-    const meeting = await createMeeting(values, {
-      attendeeTeamMemberIds: [team.teamMemberId],
-      customAttendeeNames: [],
-    });
+    const meeting = await createMeeting(values, attendees);
 
     if (!meeting) return;
 
