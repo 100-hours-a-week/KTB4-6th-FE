@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import * as Sentry from '@sentry/nextjs';
+import { captureException } from '@/shared/lib';
 import {
   deleteStaleRecordingChunks,
   getNextRecordingChunkPosition,
@@ -32,7 +32,7 @@ const reportChunkSaveFailure = (recordingSessionId: number, error: unknown) => {
   if (reportedFailureSessionId === recordingSessionId) return;
   reportedFailureSessionId = recordingSessionId;
 
-  Sentry.captureException(error, {
+  captureException(error, {
     tags: {
       feature: 'recording-storage',
       'recording.session_id': recordingSessionId,

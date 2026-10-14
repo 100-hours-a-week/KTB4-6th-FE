@@ -1,7 +1,6 @@
 'use client';
 
-import * as Sentry from '@sentry/nextjs';
-import { isOpfsSupported } from '@/shared/lib';
+import { captureException, isOpfsSupported } from '@/shared/lib';
 import { flushRecordingChunks } from './useRecordingChunkBuffer';
 import { readOpfsPartFilesInOrder, removeOpfsPartFiles } from './opfs-recording-parts';
 import {
@@ -100,7 +99,7 @@ export const useUploadPendingRecordingParts = () => {
     } catch (error) {
       // 업로드 단계는 뮤테이션이라 React Query 전역 핸들러가 이미 보고하므로 그 전 단계만 보고한다.
       if (stage !== 'upload') {
-        Sentry.captureException(error, {
+        captureException(error, {
           tags: {
             feature: 'recording-upload',
             'recording.session_id': recordingSessionId,
