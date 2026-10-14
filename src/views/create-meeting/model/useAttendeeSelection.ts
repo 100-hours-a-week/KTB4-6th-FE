@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { MEETING_ATTENDEE_MAX_COUNT } from '@/features/meeting';
+import { CUSTOM_ATTENDEE_MAX_COUNT, MEETING_ATTENDEE_MAX_COUNT } from '@/features/meeting';
 import { useTeamDetail, useTeamMembers } from '@/features/team-management';
 
 export interface AttendeeMember {
@@ -15,6 +15,7 @@ export const useAttendeeSelection = (teamId: number) => {
   const { data: team } = useTeamDetail(teamId);
   const { data: teamMembers } = useTeamMembers(teamId);
   const [otherMemberIds, setOtherMemberIds] = useState<number[]>([]);
+  const [customNames, setCustomNames] = useState<string[]>([]);
 
   const myTeamMemberId = team?.teamMemberId ?? null;
   const members: AttendeeMember[] = (teamMembers ?? [])
@@ -28,8 +29,9 @@ export const useAttendeeSelection = (teamId: number) => {
 
   const selectedTeamMemberIds =
     myTeamMemberId === null ? otherMemberIds : [myTeamMemberId, ...otherMemberIds];
-  const selectedCount = selectedTeamMemberIds.length;
+  const selectedCount = selectedTeamMemberIds.length + customNames.length;
   const isFull = selectedCount >= MEETING_ATTENDEE_MAX_COUNT;
+  const canAddCustomName = !isFull && customNames.length < CUSTOM_ATTENDEE_MAX_COUNT;
 
   const toggleMember = (teamMemberId: number) => {
     if (teamMemberId === myTeamMemberId) return;
@@ -42,6 +44,15 @@ export const useAttendeeSelection = (teamId: number) => {
     });
   };
 
+  const addCustomName = (name: string) => {
+    if (!canAddCustomName) return;
+    setCustomNames((current) => [...current, name.trim()]);
+  };
+
+  const removeCustomName = (name: string) => {
+    setCustomNames((current) => current.filter((customName) => customName !== name));
+  };
+
   return {
     members,
     selectedTeamMemberIds,
@@ -49,5 +60,10 @@ export const useAttendeeSelection = (teamId: number) => {
     maxCount: MEETING_ATTENDEE_MAX_COUNT,
     isFull,
     toggleMember,
+    customNames,
+    customMaxCount: CUSTOM_ATTENDEE_MAX_COUNT,
+    canAddCustomName,
+    addCustomName,
+    removeCustomName,
   };
 };

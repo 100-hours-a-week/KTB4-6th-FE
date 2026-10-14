@@ -5,6 +5,7 @@ import { Dialog } from '@base-ui/react/dialog';
 import { Check, X } from 'lucide-react';
 import { cn, useAppFrameElement } from '@/shared/lib';
 import type { AttendeeMember, useAttendeeSelection } from '../model/useAttendeeSelection';
+import { CustomAttendeeInput } from './CustomAttendeeInput';
 
 type AttendeeSelection = ReturnType<typeof useAttendeeSelection>;
 
@@ -25,8 +26,19 @@ export const AttendeeSelectDialog = ({
   onNext,
 }: AttendeeSelectDialogProps) => {
   const frame = useAppFrameElement();
-  const { members, selectedTeamMemberIds, selectedCount, maxCount, isFull, toggleMember } =
-    selection;
+  const {
+    members,
+    selectedTeamMemberIds,
+    selectedCount,
+    maxCount,
+    isFull,
+    toggleMember,
+    customNames,
+    customMaxCount,
+    canAddCustomName,
+    addCustomName,
+    removeCustomName,
+  } = selection;
   const selectedMembers = selectedTeamMemberIds
     .map((teamMemberId) => members.find((member) => member.teamMemberId === teamMemberId))
     .filter((member) => member !== undefined);
@@ -93,6 +105,23 @@ export const AttendeeSelectDialog = ({
                   )}
                 </li>
               ))}
+              {customNames.map((name) => (
+                <li
+                  key={`custom-${name}`}
+                  className="flex h-9 shrink-0 items-center gap-1 rounded-full border border-cool-200 bg-white pr-1.5 pl-4 text-sm font-semibold whitespace-nowrap text-cool-900"
+                >
+                  {name}
+                  <span className="text-xs font-medium text-cool-500">직접</span>
+                  <button
+                    type="button"
+                    aria-label={`${name} 삭제`}
+                    onClick={() => removeCustomName(name)}
+                    className="flex size-6 items-center justify-center rounded-full text-cool-500 hover:bg-cool-100"
+                  >
+                    <X aria-hidden="true" className="size-3.5" strokeWidth={2.4} />
+                  </button>
+                </li>
+              ))}
             </ul>
           </div>
 
@@ -146,6 +175,13 @@ export const AttendeeSelectDialog = ({
                 );
               })}
             </ul>
+
+            <CustomAttendeeInput
+              customNames={customNames}
+              maxCount={customMaxCount}
+              canAdd={canAddCustomName}
+              onAdd={addCustomName}
+            />
           </div>
 
           <div className="grid shrink-0 grid-cols-[2fr_3fr] gap-3 border-t border-cool-100 px-6 py-4">
