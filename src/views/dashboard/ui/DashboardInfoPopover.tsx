@@ -46,7 +46,7 @@ export const DashboardInfoPopover = ({ infoKey }: DashboardInfoPopoverProps) => 
         >
           <Popover.Popup className="w-[322px] max-w-[calc(100vw-2.5rem)] rounded-[11px] bg-cool-900 px-3.5 py-3 shadow-[0_12px_28px_rgba(22,30,43,0.22)] outline-none">
             <Popover.Arrow className="size-3 rotate-45 rounded-[2px] bg-cool-900 data-[side=bottom]:-top-1.5 data-[side=left]:-right-1.5 data-[side=right]:-left-1.5 data-[side=top]:-bottom-1.5" />
-            <Popover.Description className="text-left text-[13px] leading-[1.6] break-keep text-cool-200">
+            <Popover.Description className="text-center text-[13px] leading-[1.6] break-keep text-cool-200">
               {descriptionLines.map((line) => (
                 <span key={line} className="block">
                   {line}

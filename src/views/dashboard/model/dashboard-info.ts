@@ -10,8 +10,7 @@ export const DASHBOARD_INFO = {
   contextOut: {
     label: '맥락에서 벗어난 시간',
     descriptionLines: [
-      'AI가 회의 목적과 관련 없다고 판단한',
-      '발언 시간을 더한 값이에요.',
+      'AI가 회의 목적과 관련 없다고 판단한 발언 시간이에요.',
       '총 회의 시간과 함께 보여줘요.',
     ],
   },
