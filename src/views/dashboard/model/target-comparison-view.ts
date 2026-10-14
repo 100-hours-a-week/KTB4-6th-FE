@@ -1,13 +1,13 @@
 import { formatDurationSeconds } from '@/shared/lib';
 
-export interface TargetComparisonBucket {
+export interface TargetComparisonRange {
   startDate: string;
   endDate: string;
   targetDurationSeconds: number;
   actualDurationSeconds: number;
 }
 
-export interface SelectedBucketView {
+export interface SelectedRangeSummary {
   range: string;
   detail: string;
   overtime: string | null;
@@ -20,7 +20,7 @@ const parseDate = (value: string) => {
   return { month, day, weekday: WEEKDAYS[new Date(Date.UTC(year, month - 1, day)).getUTCDay()] };
 };
 
-const formatBucketRange = (startDate: string, endDate: string) => {
+const formatRangeLabel = (startDate: string, endDate: string) => {
   const start = parseDate(startDate);
 
   if (startDate === endDate) return `${start.month}월 ${start.day}일 (${start.weekday})`;
@@ -31,26 +31,25 @@ const formatBucketRange = (startDate: string, endDate: string) => {
   return `${start.month}월 ${start.day}일 – ${endLabel}`;
 };
 
-export const hasBucketMeetings = (bucket: TargetComparisonBucket) =>
-  bucket.targetDurationSeconds > 0;
+export const hasRangeMeetings = (range: TargetComparisonRange) => range.targetDurationSeconds > 0;
 
-export const getDefaultBucketIndex = (buckets: TargetComparisonBucket[]) => {
-  const lastIndexWithMeetings = buckets.findLastIndex(hasBucketMeetings);
-  return lastIndexWithMeetings === -1 ? buckets.length - 1 : lastIndexWithMeetings;
+export const getDefaultRangeIndex = (ranges: TargetComparisonRange[]) => {
+  const lastIndexWithMeetings = ranges.findLastIndex(hasRangeMeetings);
+  return lastIndexWithMeetings === -1 ? ranges.length - 1 : lastIndexWithMeetings;
 };
 
-export const toSelectedBucketView = (bucket: TargetComparisonBucket): SelectedBucketView => {
-  const range = formatBucketRange(bucket.startDate, bucket.endDate);
+export const toSelectedRangeSummary = (range: TargetComparisonRange): SelectedRangeSummary => {
+  const rangeLabel = formatRangeLabel(range.startDate, range.endDate);
 
-  if (!hasBucketMeetings(bucket)) {
-    return { range, detail: '종료된 회의가 없어요', overtime: null };
+  if (!hasRangeMeetings(range)) {
+    return { range: rangeLabel, detail: '종료된 회의가 없어요', overtime: null };
   }
 
-  const overtimeSeconds = bucket.actualDurationSeconds - bucket.targetDurationSeconds;
+  const overtimeSeconds = range.actualDurationSeconds - range.targetDurationSeconds;
 
   return {
-    range,
-    detail: `목표 ${formatDurationSeconds(bucket.targetDurationSeconds)} · 실제 ${formatDurationSeconds(bucket.actualDurationSeconds)}`,
+    range: rangeLabel,
+    detail: `목표 ${formatDurationSeconds(range.targetDurationSeconds)} · 실제 ${formatDurationSeconds(range.actualDurationSeconds)}`,
     overtime: overtimeSeconds > 0 ? `· ${formatDurationSeconds(overtimeSeconds)} 초과` : null,
   };
 };

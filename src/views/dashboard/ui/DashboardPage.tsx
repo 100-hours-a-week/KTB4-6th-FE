@@ -9,7 +9,7 @@ import {
   DASHBOARD_PREVIEW_SUMMARY,
   DASHBOARD_PREVIEW_TOPICS,
 } from '../model/dashboard-preview';
-import { getDefaultBucketIndex, toSelectedBucketView } from '../model/target-comparison-view';
+import { getDefaultRangeIndex, toSelectedRangeSummary } from '../model/target-comparison-view';
 import { DashboardHeader } from './DashboardHeader';
 import { DashboardPeriodTabs } from './DashboardPeriodTabs';
 import { DashboardSummaryCard } from './DashboardSummaryCard';
@@ -26,7 +26,10 @@ export const DashboardPage = ({ teamId }: DashboardPageProps) => {
   const { data: team } = useTeamDetail(teamId);
   const summary = DASHBOARD_PREVIEW_SUMMARY;
   const chart = DASHBOARD_PREVIEW_CHART;
-  const selectedBucket = toSelectedBucketView(chart[getDefaultBucketIndex(chart)]);
+  const hasMeetings = summary.totalMeetings > 0;
+  const selectedRangeSummary = hasMeetings
+    ? toSelectedRangeSummary(chart[getDefaultRangeIndex(chart)])
+    : null;
 
   return (
     <div className="flex h-dvh min-h-[844px] flex-col bg-cool-50">
@@ -41,7 +44,7 @@ export const DashboardPage = ({ teamId }: DashboardPageProps) => {
           overtimeRate={summary.overtimeDurationRate}
           contextOutSeconds={summary.totalContextOutSeconds}
         />
-        <DashboardTargetComparisonCard selectedBucket={selectedBucket} />
+        <DashboardTargetComparisonCard selectedRangeSummary={selectedRangeSummary} />
         <DashboardTopicsCard topics={DASHBOARD_PREVIEW_TOPICS} />
       </div>
 

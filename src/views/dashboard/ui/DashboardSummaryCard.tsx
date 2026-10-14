@@ -17,6 +17,8 @@ interface SummaryRow {
   isWarning?: boolean;
 }
 
+const EMPTY_VALUE = '–';
+
 const formatOvertimeRate = (rate: number) => {
   const roundedRate = Math.round(rate);
   return roundedRate > 0 ? `+${roundedRate}%` : '0%';
@@ -29,20 +31,27 @@ export const DashboardSummaryCard = ({
   overtimeRate,
   contextOutSeconds,
 }: DashboardSummaryCardProps) => {
+  const hasMeetings = totalMeetings > 0;
   const totalDuration = formatDurationSeconds(totalDurationSeconds);
-  const rows: SummaryRow[] = [
-    { infoKey: 'averageDuration', value: formatDurationSeconds(averageDurationSeconds) },
-    {
-      infoKey: 'overtimeRate',
-      value: formatOvertimeRate(overtimeRate),
-      isWarning: Math.round(overtimeRate) > 0,
-    },
-    {
-      infoKey: 'contextOut',
-      value: formatDurationSeconds(contextOutSeconds),
-      suffix: `/ ${totalDuration}`,
-    },
-  ];
+  const rows: SummaryRow[] = hasMeetings
+    ? [
+        { infoKey: 'averageDuration', value: formatDurationSeconds(averageDurationSeconds) },
+        {
+          infoKey: 'overtimeRate',
+          value: formatOvertimeRate(overtimeRate),
+          isWarning: Math.round(overtimeRate) > 0,
+        },
+        {
+          infoKey: 'contextOut',
+          value: formatDurationSeconds(contextOutSeconds),
+          suffix: `/ ${totalDuration}`,
+        },
+      ]
+    : [
+        { infoKey: 'averageDuration', value: EMPTY_VALUE },
+        { infoKey: 'overtimeRate', value: EMPTY_VALUE },
+        { infoKey: 'contextOut', value: EMPTY_VALUE },
+      ];
 
   return (
     <section
@@ -55,10 +64,10 @@ export const DashboardSummaryCard = ({
         </h2>
         <div className="flex items-baseline justify-between gap-2">
           <span className="text-[28px] leading-none font-semibold tracking-[-0.03em] whitespace-nowrap text-white tabular-nums">
-            {totalDuration}
+            {hasMeetings ? totalDuration : EMPTY_VALUE}
           </span>
           <span className="text-[13.5px] font-medium whitespace-nowrap text-brand-100">
-            종료된 회의 {totalMeetings}개
+            {hasMeetings ? `종료된 회의 ${totalMeetings}개` : '종료된 회의 없음'}
           </span>
         </div>
       </div>
