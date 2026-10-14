@@ -22,7 +22,7 @@ export const DashboardTopicsCard = ({ topics }: DashboardTopicsCardProps) => {
       <div className="flex items-center justify-between gap-2 pb-1.5">
         <h2
           id="dashboard-topics-title"
-          className="text-base font-semibold tracking-[-0.02em] text-cool-900"
+          className="text-[17px] font-bold tracking-[-0.02em] text-cool-900"
         >
           {DASHBOARD_INFO.topTopics.label}
         </h2>

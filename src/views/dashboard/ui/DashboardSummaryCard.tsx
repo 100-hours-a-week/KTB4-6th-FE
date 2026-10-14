@@ -49,12 +49,12 @@ export const DashboardSummaryCard = ({
       aria-label="회의 시간 요약"
       className="flex flex-col rounded-[20px] bg-white shadow-[0_2px_12px_rgba(31,53,85,0.07)]"
     >
-      <div className="flex flex-col gap-2.5 rounded-t-[20px] bg-brand-600 px-5 py-4 shadow-[0_6px_16px_rgba(47,76,116,0.18)]">
+      <div className="flex flex-col gap-1.5 rounded-t-[20px] bg-brand-600 px-5 py-3.5 shadow-[0_6px_16px_rgba(47,76,116,0.18)]">
         <h2 className="text-[14.5px] font-semibold tracking-[-0.015em] text-brand-100">
           총 회의 시간
         </h2>
         <div className="flex items-baseline justify-between gap-2">
-          <span className="text-[32px] leading-none font-semibold tracking-[-0.03em] whitespace-nowrap text-white tabular-nums">
+          <span className="text-[28px] leading-none font-semibold tracking-[-0.03em] whitespace-nowrap text-white tabular-nums">
             {totalDuration}
           </span>
           <span className="text-[13.5px] font-medium whitespace-nowrap text-brand-100">
