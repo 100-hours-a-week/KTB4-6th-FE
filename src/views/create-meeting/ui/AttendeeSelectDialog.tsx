@@ -42,7 +42,7 @@ export const AttendeeSelectDialog = ({
   const selectedMembers = selectedTeamMemberIds
     .map((teamMemberId) => members.find((member) => member.teamMemberId === teamMemberId))
     .filter((member) => member !== undefined);
-  const chipListRef = useRef<HTMLUListElement>(null);
+  const chipListRef = useRef<HTMLDivElement>(null);
   const previousCountRef = useRef(selectedCount);
 
   useEffect(() => {
@@ -58,71 +58,68 @@ export const AttendeeSelectDialog = ({
   return (
     <Dialog.Root open onOpenChange={(open) => !open && onCancel()}>
       <Dialog.Portal container={frame}>
-        <Dialog.Backdrop className="absolute inset-0 z-[85] bg-cool-900/40" />
-        <Dialog.Popup className="absolute top-1/2 left-1/2 z-[90] flex max-h-[calc(100%-2rem)] w-[calc(100%-2rem)] max-w-[358px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-3xl bg-white shadow-[0_16px_40px_rgba(20,34,56,0.2)] outline-none">
-          <div className="shrink-0 border-b border-cool-100 px-6 pt-6 pb-4">
-            <div className="flex items-center justify-between gap-3">
-              <Dialog.Title className="text-xl font-bold tracking-tight text-cool-900">
-                회의 참여자 선택
-              </Dialog.Title>
-              <span
-                aria-label={`${maxCount}명 중 ${selectedCount}명 선택`}
-                className="rounded-lg bg-cool-100 px-2.5 py-1 text-sm tabular-nums"
-              >
-                <span className="font-bold text-cool-900">{selectedCount}</span>
-                <span className="text-brand-500">/{maxCount}</span>
-              </span>
-            </div>
-            <Dialog.Description className="mt-2 text-sm text-cool-600">
-              나를 포함해 최대 {maxCount}명까지 선택할 수 있어요.
+        <Dialog.Backdrop className="absolute inset-0 z-[85] bg-cool-900/45" />
+        <Dialog.Popup className="absolute inset-x-5 top-[72px] bottom-[68px] z-[90] flex flex-col overflow-hidden rounded-[28px] bg-white shadow-[0_20px_48px_rgba(20,34,56,0.24)] outline-none">
+          <div className="relative shrink-0 border-b border-cool-100 px-6 pt-9 pb-4 text-center">
+            <Dialog.Title className="text-xl font-bold text-cool-900">
+              회의 참여자 선택
+            </Dialog.Title>
+            <Dialog.Description className="mt-2 text-sm text-cool-600 tabular-nums">
+              <span className="font-bold text-brand-600">{selectedCount}</span>/{maxCount}명 선택
             </Dialog.Description>
-
-            <ul
-              ref={chipListRef}
-              aria-label="선택한 참여자"
-              className="-mx-6 mt-4 flex gap-2 overflow-x-auto px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            <Dialog.Close
+              aria-label="회의 생성 취소"
+              className="absolute top-4 right-4 flex size-9 items-center justify-center rounded-full text-cool-500 transition-colors hover:bg-cool-50"
             >
-              {selectedMembers.map((member) => (
-                <li
-                  key={member.teamMemberId}
-                  className={cn(
-                    'flex h-9 shrink-0 items-center gap-1 rounded-full border text-sm font-semibold whitespace-nowrap',
-                    member.isMe
-                      ? 'border-brand-200 bg-brand-50 px-4 text-brand-700'
-                      : 'border-cool-200 bg-white pr-1.5 pl-4 text-cool-900',
-                  )}
-                >
-                  {member.name}
-                  {!member.isMe && (
+              <X className="size-5" strokeWidth={2} />
+            </Dialog.Close>
+            <div
+              ref={chipListRef}
+              className="-mx-6 mt-4 overflow-x-auto px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
+              <ul aria-label="선택한 참여자" className="mx-auto flex w-max gap-2">
+                {selectedMembers.map((member) => (
+                  <li
+                    key={member.teamMemberId}
+                    className={cn(
+                      'flex h-9 shrink-0 items-center gap-1 rounded-full border text-sm font-semibold whitespace-nowrap',
+                      member.isMe
+                        ? 'border-brand-200 bg-brand-50 px-4 text-brand-700'
+                        : 'border-cool-200 bg-white pr-1.5 pl-4 text-cool-900',
+                    )}
+                  >
+                    {member.name}
+                    {!member.isMe && (
+                      <button
+                        type="button"
+                        aria-label={`${member.name} 선택 해제`}
+                        onClick={() => toggleMember(member.teamMemberId)}
+                        className="flex size-6 items-center justify-center rounded-full text-cool-500 hover:bg-cool-100"
+                      >
+                        <X aria-hidden="true" className="size-3.5" strokeWidth={2.4} />
+                      </button>
+                    )}
+                  </li>
+                ))}
+                {customNames.map((name) => (
+                  <li
+                    key={`custom-${name}`}
+                    className="flex h-9 shrink-0 items-center gap-1 rounded-full border border-cool-200 bg-white pr-1.5 pl-4 text-sm font-semibold whitespace-nowrap text-cool-900"
+                  >
+                    {name}
+                    <span className="text-xs font-medium text-cool-500">직접</span>
                     <button
                       type="button"
-                      aria-label={`${member.name} 선택 해제`}
-                      onClick={() => toggleMember(member.teamMemberId)}
+                      aria-label={`${name} 삭제`}
+                      onClick={() => removeCustomName(name)}
                       className="flex size-6 items-center justify-center rounded-full text-cool-500 hover:bg-cool-100"
                     >
                       <X aria-hidden="true" className="size-3.5" strokeWidth={2.4} />
                     </button>
-                  )}
-                </li>
-              ))}
-              {customNames.map((name) => (
-                <li
-                  key={`custom-${name}`}
-                  className="flex h-9 shrink-0 items-center gap-1 rounded-full border border-cool-200 bg-white pr-1.5 pl-4 text-sm font-semibold whitespace-nowrap text-cool-900"
-                >
-                  {name}
-                  <span className="text-xs font-medium text-cool-500">직접</span>
-                  <button
-                    type="button"
-                    aria-label={`${name} 삭제`}
-                    onClick={() => removeCustomName(name)}
-                    className="flex size-6 items-center justify-center rounded-full text-cool-500 hover:bg-cool-100"
-                  >
-                    <X aria-hidden="true" className="size-3.5" strokeWidth={2.4} />
-                  </button>
-                </li>
-              ))}
-            </ul>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
@@ -184,11 +181,11 @@ export const AttendeeSelectDialog = ({
             />
           </div>
 
-          <div className="grid shrink-0 grid-cols-[2fr_3fr] gap-3 border-t border-cool-100 px-6 py-4">
+          <div className="flex shrink-0 gap-3 border-t border-cool-200 bg-white px-6 py-5">
             <button
               type="button"
               onClick={onCancel}
-              className="h-14 rounded-2xl border border-cool-200 bg-white text-base font-semibold text-cool-900 hover:bg-cool-50"
+              className="h-14 flex-1 rounded-xl border border-cool-200 text-base font-semibold text-cool-700 transition-colors hover:bg-cool-50"
             >
               취소
             </button>
@@ -196,7 +193,7 @@ export const AttendeeSelectDialog = ({
               type="button"
               onClick={onNext}
               disabled={selectedCount === 0}
-              className="h-14 rounded-2xl bg-brand-600 text-base font-semibold text-white hover:bg-brand-700 disabled:bg-cool-200 disabled:text-cool-500"
+              className="h-14 flex-1 rounded-xl bg-brand-600 text-base font-semibold text-white transition-colors hover:bg-brand-700 disabled:bg-cool-200 disabled:text-cool-400"
             >
               다음
             </button>

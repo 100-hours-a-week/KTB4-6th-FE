@@ -48,7 +48,7 @@ export const CustomAttendeeInput = ({
         </span>
       </div>
       <p className="mt-1.5 text-[13px] leading-5 text-cool-500">
-        팀에 없는 사람을 {maxCount}명까지 추가할 수 있어요. 추가하면 위 목록에 표시돼요.
+        팀에 없는 사람을 추가할 수 있어요.
       </p>
 
       <form noValidate onSubmit={handleSubmit} className="mt-3 flex gap-2">
