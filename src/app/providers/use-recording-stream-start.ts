@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useEffectEvent, useRef } from 'react';
-import * as Sentry from '@sentry/nextjs';
+import { captureException } from '@/shared/lib';
 import {
   appendRecordingChunk,
   getRecordingChunksToResend,
@@ -45,7 +45,7 @@ export const useRecordingStreamStart = ({
   const handleStarted = useEffectEvent(onStarted);
   // 소켓이 끊겨 실패한 경우는 연결 실패로 이미 보고돼서, 연결이 살아 있는 채 실패한 경우만 여기로 온다.
   const handleFailed = useEffectEvent((id: number, error: unknown) => {
-    Sentry.captureException(error, {
+    captureException(error, {
       tags: { feature: 'recording-recovery', 'recording.session_id': id },
     });
     disconnect(id);

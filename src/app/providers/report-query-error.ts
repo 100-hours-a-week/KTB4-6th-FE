@@ -1,5 +1,5 @@
 import axios from 'axios';
-import * as Sentry from '@sentry/nextjs';
+import { withScope } from '@/shared/lib';
 import type { QueryKey } from '@tanstack/react-query';
 
 interface ApiErrorResponse {
@@ -25,7 +25,7 @@ export const reportQueryError = (
 ) => {
   if (!shouldReport(error)) return;
 
-  Sentry.withScope((scope) => {
+  withScope((scope) => {
     scope.setTag('query.type', operation.type);
     if (operation.key) scope.setContext('query', { key: JSON.stringify(operation.key) });
 
@@ -41,6 +41,6 @@ export const reportQueryError = (
       if (code) scope.setTag('api.error_code', code);
     }
 
-    Sentry.captureException(error);
+    scope.captureException(error);
   });
 };

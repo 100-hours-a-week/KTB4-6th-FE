@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/nextjs';
+import { captureMessage } from '@/shared/lib';
 
 /** 녹음 음성 전송 연결이 끊긴 사실을 보고한다. 이후 음성은 서버로 실시간 전송되지 않는다. */
 export const reportSocketFailure = (
@@ -7,7 +7,7 @@ export const reportSocketFailure = (
   opened: boolean,
   closeEvent?: CloseEvent,
 ) => {
-  Sentry.captureMessage(message, {
+  captureMessage(message, {
     level: 'error',
     tags: {
       feature: 'recording-websocket',
