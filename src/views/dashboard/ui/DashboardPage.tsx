@@ -24,10 +24,12 @@ interface DashboardPageProps {
 export const DashboardPage = ({ teamId }: DashboardPageProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [periodDays, setPeriodDays] = useState<DashboardPeriodDays>(DEFAULT_DASHBOARD_PERIOD_DAYS);
+  const [selectedRangeIndex, setSelectedRangeIndex] = useState<number | null>(null);
   const { data: team } = useTeamDetail(teamId);
   const summary = DASHBOARD_PREVIEW_SUMMARY;
   const chart = DASHBOARD_PREVIEW_CHART;
   const hasMeetings = summary.totalMeetings > 0;
+  const activeRangeIndex = selectedRangeIndex ?? getDefaultRangeIndex(chart);
   const selectedRangeSummary = hasMeetings
     ? toSelectedRangeSummary(chart[getDefaultRangeIndex(chart)])
     : null;
@@ -46,7 +48,11 @@ export const DashboardPage = ({ teamId }: DashboardPageProps) => {
           contextOutSeconds={summary.totalContextOutSeconds}
         />
         <DashboardTargetComparisonCard selectedRangeSummary={selectedRangeSummary}>
-          <DashboardTargetComparisonChart ranges={chart} />
+          <DashboardTargetComparisonChart
+            ranges={chart}
+            selectedIndex={activeRangeIndex}
+            onSelect={setSelectedRangeIndex}
+          />
         </DashboardTargetComparisonCard>
         <DashboardTopicsCard topics={DASHBOARD_PREVIEW_TOPICS} />
       </div>
