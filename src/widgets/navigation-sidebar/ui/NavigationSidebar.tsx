@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Drawer } from '@base-ui/react/drawer';
-import { Bug, Home, LayoutDashboard, ListChecks, Radio, Users, X } from 'lucide-react';
+import { Bug, Coins, Home, LayoutDashboard, ListChecks, Radio, Users, X } from 'lucide-react';
 import { useActiveMeeting } from '@/features/home';
 import { useTeamCredits } from '@/features/team-management';
 import { useAppFrameElement } from '@/shared/lib';
@@ -36,6 +36,7 @@ export const NavigationSidebar = ({
   const managePath = `${homePath}/manage`;
   const meetingListPath = `${homePath}/meetings`;
   const dashboardPath = `${homePath}/dashboard`;
+  const creditManagePath = `${homePath}/creditmanage`;
   const currentMeetingPath = activeMeeting
     ? `${homePath}/meetings/${activeMeeting.meetingId}`
     : null;
@@ -118,6 +119,12 @@ export const NavigationSidebar = ({
                 label="대시보드"
                 isActive={pathname === dashboardPath}
                 onClick={() => navigateTo(dashboardPath)}
+              />
+              <SidebarNavItem
+                icon={<Coins className="size-5" strokeWidth={2} />}
+                label="크레딧 내역"
+                isActive={pathname === creditManagePath}
+                onClick={() => navigateTo(creditManagePath)}
               />
               <SidebarNavItem
                 icon={<Bug className="size-5" strokeWidth={2} />}

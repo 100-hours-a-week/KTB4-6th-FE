@@ -1,6 +1,6 @@
 'use client';
 
-import type { FormEvent } from 'react';
+import { type FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   getNameError,
@@ -102,8 +102,15 @@ export const NicknameScreen = ({ flow }: NicknameScreenProps) => {
   const resetJoin = useTeamSpaceOnboardingStore((state) => state.resetJoin);
   const { isCreating, createError, createTeamSpace, clearCreateError } = useCreateTeamSpace();
   const { isJoining, joinError, joinTeamSpace, clearJoinError } = useJoinTeamSpace();
+  const [hasJoined, setHasJoined] = useState(false);
 
-  const isSubmitting = flow === 'create' ? isCreating : isJoining;
+  useEffect(() => {
+    if (!hasJoined) return;
+
+    return () => resetJoin();
+  }, [hasJoined, resetJoin]);
+
+  const isSubmitting = flow === 'create' ? isCreating : isJoining || hasJoined;
   const submitError = flow === 'create' ? createError : joinError;
 
   const handleChange = (value: string) => {
@@ -126,8 +133,8 @@ export const NicknameScreen = ({ flow }: NicknameScreenProps) => {
     const teamId = await joinTeamSpace(inviteCode, nickname);
 
     if (teamId !== null) {
+      setHasJoined(true);
       router.push(`/teams/${teamId}`);
-      resetJoin();
     }
   };
 

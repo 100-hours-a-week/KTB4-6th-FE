@@ -1,3 +1,5 @@
+import type { MeetingAttendeeData } from '@/entities/meeting-attendee';
+
 export interface TranscriptSegment {
   id: string;
   speakerNumber: number | null;
@@ -8,7 +10,7 @@ export interface TranscriptSegment {
 export interface CurrentMeetingViewModel {
   title: string;
   recorderName: string;
-  participantCount: number;
+  attendees: MeetingAttendeeData[];
   targetMinutes: number;
   purpose: string;
   note: string;

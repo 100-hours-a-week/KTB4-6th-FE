@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import type { TeamMemberData } from '@/features/team-management';
 import { getMeetingPhase, isRecordingStartedByMe } from './meeting-phase';
 import { useCurrentMeetingData } from './useCurrentMeetingData';
 import { useCurrentMeetingRecordingSession } from './useCurrentMeetingRecordingSession';
@@ -11,6 +12,7 @@ interface UseCurrentMeetingRecordingParams {
   meetingId: number;
   /** 지금 이 화면을 보는 사용자의 팀원 ID. 새로고침 후 녹음자 권한 복원에 쓴다 */
   myTeamMemberId: number | null;
+  teamMembers: TeamMemberData[] | undefined;
 }
 
 /** 현재 회의 화면이 쓰는 회의 정보, 녹음 시작 모달, 녹음 세션, 진행 단계를 한 번에 조립한다. */
@@ -18,6 +20,7 @@ export const useCurrentMeetingRecording = ({
   teamId,
   meetingId,
   myTeamMemberId,
+  teamMembers,
 }: UseCurrentMeetingRecordingParams) => {
   const {
     meeting,
@@ -25,7 +28,7 @@ export const useCurrentMeetingRecording = ({
     isServerCompleted,
     isTranscriptHistoryPending,
     isTranscriptHistoryError,
-  } = useCurrentMeetingData(meetingId);
+  } = useCurrentMeetingData(meetingId, teamMembers);
   const {
     isStartDialogOpen,
     isRecordingAcknowledged,
