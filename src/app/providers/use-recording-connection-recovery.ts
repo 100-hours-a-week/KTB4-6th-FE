@@ -79,9 +79,16 @@ export const useRecordingConnectionRecovery = ({
     if (socketStatus === 'connected' && recorderStatus === 'ready') return;
 
     if (socketStatus === 'closed' || socketStatus === 'superseded') {
-      if (recorderStatus === 'idle') return;
-      releaseMicrophone();
-      if (socketStatus === 'superseded') notifyRecordingElsewhere();
+      if (recorderStatus !== 'idle') releaseMicrophone();
+      disconnect(recordingSessionId);
+      clearActiveRecording(recordingSessionId);
+      if (socketStatus === 'closed') {
+        void queryClient.invalidateQueries({
+          queryKey: getCurrentMeetingQueryKey(meetingId),
+        });
+      } else {
+        notifyRecordingElsewhere();
+      }
       return;
     }
 
@@ -136,10 +143,13 @@ export const useRecordingConnectionRecovery = ({
       window.clearTimeout(timeoutId);
     };
   }, [
+    clearActiveRecording,
     connect,
+    disconnect,
     isPausedByUser,
     meetingId,
     prepareMicrophone,
+    queryClient,
     recorderStatus,
     recordingSessionId,
     releaseMicrophone,
