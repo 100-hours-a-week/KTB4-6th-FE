@@ -20,11 +20,6 @@ interface MeetingDetailData {
   attendees?: MeetingAttendeeData[];
 }
 
-interface MeetingParticipantListData {
-  participantsCount: number;
-  participants: Array<{ teamMemberId: number; displayName: string }>;
-}
-
 interface ActiveRecordingData {
   recordingSessionId: number;
   startedByTeamMemberId: number;
@@ -40,9 +35,7 @@ export interface CurrentMeetingState {
   purpose: string;
   note: string;
   targetMinutes: number;
-  participantCount: number;
   attendees: MeetingAttendeeData[];
-  recorderName: string;
   meetingStatus: MeetingDetailData['status'];
   recordingStatus: ActiveRecordingData['status'] | null;
   recordingStartedAt: string | null;
@@ -66,13 +59,6 @@ const getMeeting = async (meetingId: number) => {
   return unwrap(response.data, '회의 정보를 불러오지 못했습니다.');
 };
 
-const getParticipants = async (meetingId: number) => {
-  const response = await apiClient.get<ApiResponse<MeetingParticipantListData>>(
-    `/api/v1/meetings/${meetingId}/participants`,
-  );
-  return unwrap(response.data, '회의 참여자 정보를 불러오지 못했습니다.');
-};
-
 const getActiveRecording = async (meetingId: number): Promise<ActiveRecordingData | null> => {
   try {
     const response = await apiClient.get<ApiResponse<ActiveRecordingData>>(
@@ -92,27 +78,16 @@ const getActiveRecording = async (meetingId: number): Promise<ActiveRecordingDat
 };
 
 export const getCurrentMeetingState = async (meetingId: number): Promise<CurrentMeetingState> => {
-  const [meeting, participantList] = await Promise.all([
-    getMeeting(meetingId),
-    getParticipants(meetingId),
-  ]);
+  const meeting = await getMeeting(meetingId);
   const activeRecording =
     meeting.status === 'IN_PROGRESS' ? await getActiveRecording(meetingId) : null;
-
-  const recorderName = activeRecording
-    ? (participantList.participants.find(
-        (participant) => participant.teamMemberId === activeRecording.startedByTeamMemberId,
-      )?.displayName ?? '다른 참여자')
-    : '';
 
   return {
     title: meeting.title,
     purpose: meeting.purpose,
     note: meeting.note ?? '',
     targetMinutes: meeting.targetDurationMinutes,
-    participantCount: participantList.participantsCount,
     attendees: meeting.attendees ?? [],
-    recorderName,
     meetingStatus: meeting.status,
     recordingStatus: activeRecording?.status ?? null,
     recordingStartedAt: activeRecording?.startedAt ?? null,

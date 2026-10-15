@@ -8,11 +8,15 @@ import {
   getCurrentMeetingState,
   useMeetingSse,
 } from '@/features/meeting-sse';
+import type { TeamMemberData } from '@/features/team-management';
 import { mergeTranscriptSegments } from './merge-transcript-segments';
 import type { CurrentMeetingViewModel } from './current-meeting';
 import { useElapsedSeconds } from './useElapsedSeconds';
 
-export const useCurrentMeetingData = (meetingId: number) => {
+export const useCurrentMeetingData = (
+  meetingId: number,
+  teamMembers: TeamMemberData[] | undefined,
+) => {
   const { transcriptsByMeetingId } = useMeetingSse();
   const currentMeetingQuery = useQuery({
     queryKey: getCurrentMeetingQueryKey(meetingId),
@@ -32,11 +36,15 @@ export const useCurrentMeetingData = (meetingId: number) => {
     pausedAt: currentMeetingQuery.data?.recordingPausedAt ?? null,
     totalPausedDurationMs: currentMeetingQuery.data?.recordingTotalPausedDurationMs ?? null,
   });
+  const recordingStartedByTeamMemberId =
+    currentMeetingQuery.data?.recordingStartedByTeamMemberId ?? null;
+  const recorderName =
+    teamMembers?.find((member) => member.teamMemberId === recordingStartedByTeamMemberId)
+      ?.displayName ?? '';
   const meeting: CurrentMeetingViewModel | null = currentMeetingQuery.data
     ? {
         title: currentMeetingQuery.data.title,
-        recorderName: currentMeetingQuery.data.recorderName,
-        participantCount: currentMeetingQuery.data.participantCount,
+        recorderName,
         attendees: currentMeetingQuery.data.attendees,
         targetMinutes: currentMeetingQuery.data.targetMinutes,
         purpose: currentMeetingQuery.data.purpose,

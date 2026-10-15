@@ -16,7 +16,6 @@ export interface CurrentMeetingContextValue {
   teamId: string;
   meetingId: number;
   team: TeamDetailData | null;
-  teamMemberCount: number | null;
   targetTranscriptSegmentId: string | null;
   recording: LoadedRecordingState;
   meetingEndedNotice: ReturnType<typeof useMeetingEndedNotice>;

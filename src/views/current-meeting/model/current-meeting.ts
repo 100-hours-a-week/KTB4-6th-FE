@@ -10,7 +10,6 @@ export interface TranscriptSegment {
 export interface CurrentMeetingViewModel {
   title: string;
   recorderName: string;
-  participantCount: number;
   attendees: MeetingAttendeeData[];
   targetMinutes: number;
   purpose: string;

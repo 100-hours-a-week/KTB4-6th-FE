@@ -13,7 +13,7 @@ const formatElapsed = (seconds: number) =>
     .join(':');
 
 export const CurrentMeetingHeader = () => {
-  const { team, teamMemberCount, recording, openSidebar } = useCurrentMeetingContext();
+  const { team, recording, openSidebar } = useCurrentMeetingContext();
   const { meeting, isWaiting, isPaused, isEnding, connectionStatus, isRecording, isCompleted } =
     recording;
   const [isInfoOpen, setIsInfoOpen] = useState(false);
@@ -74,9 +74,7 @@ export const CurrentMeetingHeader = () => {
           <h2 data-clarity-mask="true" className="truncate text-xl font-bold text-cool-900">
             {meeting.title}
           </h2>
-          <p className="mt-1 text-sm text-cool-500">
-            참여자 {meeting.participantCount} / {teamMemberCount ?? '-'}
-          </p>
+          <p className="mt-1 text-sm text-cool-500">참여자 {meeting.attendees.length}명</p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1.5">
           <div className="flex items-center gap-3">
