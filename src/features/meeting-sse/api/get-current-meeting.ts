@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { MeetingAttendeeData } from '@/entities/meeting-attendee';
 import { apiClient } from '@/shared/api';
 
 interface ApiResponse<T> {
@@ -16,6 +17,7 @@ interface MeetingDetailData {
   targetDurationMinutes: number;
   status: 'WAITING' | 'IN_PROGRESS' | 'COMPLETED';
   createdByTeamMemberId: number;
+  attendees?: MeetingAttendeeData[];
 }
 
 interface MeetingParticipantListData {
@@ -39,6 +41,7 @@ export interface CurrentMeetingState {
   note: string;
   targetMinutes: number;
   participantCount: number;
+  attendees: MeetingAttendeeData[];
   recorderName: string;
   meetingStatus: MeetingDetailData['status'];
   recordingStatus: ActiveRecordingData['status'] | null;
@@ -108,6 +111,7 @@ export const getCurrentMeetingState = async (meetingId: number): Promise<Current
     note: meeting.note ?? '',
     targetMinutes: meeting.targetDurationMinutes,
     participantCount: participantList.participantsCount,
+    attendees: meeting.attendees ?? [],
     recorderName,
     meetingStatus: meeting.status,
     recordingStatus: activeRecording?.status ?? null,

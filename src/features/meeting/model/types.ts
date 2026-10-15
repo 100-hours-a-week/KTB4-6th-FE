@@ -1,3 +1,5 @@
+import type { MeetingAttendeeData } from '@/entities/meeting-attendee';
+
 export interface ApiErrorPayload {
   code: string;
   message: string;
@@ -16,14 +18,6 @@ export interface MeetingAttendeesRequest {
 }
 
 export type CreateMeetingRequest = MeetingInfoRequest & MeetingAttendeesRequest;
-
-export type MeetingAttendeeType = 'TEAM_MEMBER' | 'CUSTOM';
-
-export interface MeetingAttendeeData {
-  teamMemberId: number | null;
-  name: string;
-  type: MeetingAttendeeType;
-}
 
 export interface CreateMeetingData {
   meetingId: number;

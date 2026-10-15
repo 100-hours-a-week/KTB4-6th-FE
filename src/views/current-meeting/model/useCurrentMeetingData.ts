@@ -37,6 +37,7 @@ export const useCurrentMeetingData = (meetingId: number) => {
         title: currentMeetingQuery.data.title,
         recorderName: currentMeetingQuery.data.recorderName,
         participantCount: currentMeetingQuery.data.participantCount,
+        attendees: currentMeetingQuery.data.attendees,
         targetMinutes: currentMeetingQuery.data.targetMinutes,
         purpose: currentMeetingQuery.data.purpose,
         note: currentMeetingQuery.data.note,
