@@ -54,6 +54,7 @@ export const CurrentMeetingPage = ({
     teamId,
     meetingId,
     myTeamMemberId: team?.teamMemberId ?? null,
+    teamMembers,
   });
   useMeetingChatEventSync({
     meetingId,
@@ -113,7 +114,7 @@ export const CurrentMeetingPage = ({
     teamId,
     meetingId,
     team: team ?? null,
-    teamMemberCount: teamMembers?.length ?? null,
+    teamMembers: teamMembers ?? [],
     targetTranscriptSegmentId,
     recording: { ...recording, meeting: recording.meeting },
     meetingEndedNotice,
