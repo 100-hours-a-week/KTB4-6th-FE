@@ -11,6 +11,7 @@ import { NavigationSidebar } from '@/widgets/navigation-sidebar';
 import { getDefaultRangeIndex, toSelectedRangeSummary } from '../model/target-comparison-view';
 import { DashboardHeader } from './DashboardHeader';
 import { DashboardPeriodTabs } from './DashboardPeriodTabs';
+import { DashboardErrorState, DashboardLoadingState } from './DashboardStates';
 import { DashboardSummaryCard } from './DashboardSummaryCard';
 import { DashboardTargetComparisonCard } from './DashboardTargetComparisonCard';
 import { DashboardTargetComparisonChart } from './DashboardTargetComparisonChart';
@@ -25,7 +26,12 @@ export const DashboardPage = ({ teamId }: DashboardPageProps) => {
   const [periodDays, setPeriodDays] = useState<DashboardPeriodDays>(DEFAULT_DASHBOARD_PERIOD_DAYS);
   const [selectedRangeIndex, setSelectedRangeIndex] = useState<number | null>(null);
   const { data: team } = useTeamDetail(teamId);
-  const { data: dashboard } = useDashboard(teamId, periodDays);
+  const {
+    data: dashboard,
+    isPending: isDashboardPending,
+    isFetching: isDashboardFetching,
+    refetch: refetchDashboard,
+  } = useDashboard(teamId, periodDays);
   const chart = dashboard?.chart ?? [];
   const hasMeetings = (dashboard?.summary.totalMeetings ?? 0) > 0;
   const activeRangeIndex = selectedRangeIndex ?? getDefaultRangeIndex(chart);
@@ -42,7 +48,7 @@ export const DashboardPage = ({ teamId }: DashboardPageProps) => {
       <DashboardPeriodTabs selectedDays={periodDays} onSelect={handlePeriodSelect} />
 
       <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-[22px] pt-[18px] pb-8">
-        {dashboard && (
+        {dashboard ? (
           <>
             <DashboardSummaryCard
               totalMeetings={dashboard.summary.totalMeetings}
@@ -60,6 +66,13 @@ export const DashboardPage = ({ teamId }: DashboardPageProps) => {
             </DashboardTargetComparisonCard>
             <DashboardTopicsCard topics={dashboard.topics} />
           </>
+        ) : isDashboardPending ? (
+          <DashboardLoadingState />
+        ) : (
+          <DashboardErrorState
+            isRetrying={isDashboardFetching}
+            onRetry={() => void refetchDashboard()}
+          />
         )}
       </div>
 
