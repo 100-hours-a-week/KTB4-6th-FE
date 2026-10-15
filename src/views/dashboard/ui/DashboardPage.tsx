@@ -30,14 +30,17 @@ export const DashboardPage = ({ teamId }: DashboardPageProps) => {
   const chart = DASHBOARD_PREVIEW_CHART;
   const hasMeetings = summary.totalMeetings > 0;
   const activeRangeIndex = selectedRangeIndex ?? getDefaultRangeIndex(chart);
-  const selectedRangeSummary = hasMeetings
-    ? toSelectedRangeSummary(chart[getDefaultRangeIndex(chart)])
-    : null;
+  const selectedRangeSummary = hasMeetings ? toSelectedRangeSummary(chart[activeRangeIndex]) : null;
+
+  const handlePeriodSelect = (days: DashboardPeriodDays) => {
+    setPeriodDays(days);
+    setSelectedRangeIndex(null);
+  };
 
   return (
     <div className="flex h-dvh min-h-[844px] flex-col bg-cool-50">
       <DashboardHeader isMenuDisabled={!team} onMenuClick={() => setIsSidebarOpen(true)} />
-      <DashboardPeriodTabs selectedDays={periodDays} onSelect={setPeriodDays} />
+      <DashboardPeriodTabs selectedDays={periodDays} onSelect={handlePeriodSelect} />
 
       <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-[22px] pt-[18px] pb-8">
         <DashboardSummaryCard
