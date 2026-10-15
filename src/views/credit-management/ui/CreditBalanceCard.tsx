@@ -1,9 +1,11 @@
+import type { Ref } from 'react';
 import { getCreditBalancePolicy } from '@/features/credit-management';
 import { CreditPolicyPopover } from './CreditPolicyPopover';
 
 interface CreditBalanceCardProps {
   balance: number;
   maxBalance: number;
+  amountRef?: Ref<HTMLDivElement>;
 }
 
 const nextGrantDateFormatter = new Intl.DateTimeFormat('ko-KR', {
@@ -22,7 +24,7 @@ const formatNextGrantAt = (date: Date) => {
   return `${month}.${day}(${weekday}) 00:00`;
 };
 
-export const CreditBalanceCard = ({ balance, maxBalance }: CreditBalanceCardProps) => {
+export const CreditBalanceCard = ({ balance, maxBalance, amountRef }: CreditBalanceCardProps) => {
   const { isFull, progressPercent, nextGrantAmount, nextGrantAt } = getCreditBalancePolicy(
     balance,
     maxBalance,
@@ -42,7 +44,7 @@ export const CreditBalanceCard = ({ balance, maxBalance }: CreditBalanceCardProp
         )}
       </div>
 
-      <div className="mt-7 flex items-baseline gap-1.5">
+      <div ref={amountRef} className="mt-7 flex items-baseline gap-1.5">
         <strong className="text-[38px] leading-none font-semibold tracking-tight">
           {balance.toLocaleString('ko-KR')}
         </strong>

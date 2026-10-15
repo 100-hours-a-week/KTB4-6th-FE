@@ -18,7 +18,7 @@ export const CreditManagementPage = ({ teamId }: CreditManagementPageProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCompactBalanceVisible, setIsCompactBalanceVisible] = useState(false);
   const scrollRootRef = useRef<HTMLDivElement>(null);
-  const creditBalanceSectionRef = useRef<HTMLDivElement>(null);
+  const balanceAmountRef = useRef<HTMLDivElement>(null);
   const { data: team } = useTeamDetail(teamId);
   const {
     data: credits,
@@ -38,22 +38,26 @@ export const CreditManagementPage = ({ teamId }: CreditManagementPageProps) => {
     fetchNextPage,
   } = useCreditLedgers(teamId);
   const creditLedgers = toCreditLedgerViewModels(creditLedgerPages?.pages ?? []);
+  const hasCredits = credits !== undefined;
   const loadMoreStatus = isFetchingNextPage ? 'loading' : isFetchNextPageError ? 'error' : 'idle';
 
   useEffect(() => {
     const scrollRoot = scrollRootRef.current;
-    const creditBalanceSection = creditBalanceSectionRef.current;
-    if (!scrollRoot || !creditBalanceSection) return;
+    const balanceAmount = balanceAmountRef.current;
+    if (!scrollRoot || !balanceAmount) {
+      setIsCompactBalanceVisible(false);
+      return;
+    }
 
     const observer = new IntersectionObserver(
-      ([entry]) => setIsCompactBalanceVisible(!entry.isIntersecting),
-      { root: scrollRoot, threshold: 0 },
+      ([entry]) => setIsCompactBalanceVisible(entry.intersectionRatio < 1),
+      { root: scrollRoot, threshold: 1 },
     );
 
-    observer.observe(creditBalanceSection);
+    observer.observe(balanceAmount);
 
     return () => observer.disconnect();
-  }, []);
+  }, [hasCredits]);
 
   const handleLoadMore = () => {
     if (!hasNextPage || isFetchingNextPage) return;
@@ -65,12 +69,13 @@ export const CreditManagementPage = ({ teamId }: CreditManagementPageProps) => {
       <CreditManagementHeader isMenuDisabled={!team} onMenuClick={() => setIsSidebarOpen(true)} />
 
       <div ref={scrollRootRef} className="min-h-0 flex-1 overflow-y-auto">
-        <div
-          ref={creditBalanceSectionRef}
-          className="border-b border-cool-200 bg-cool-50 px-[22px] pt-4 pb-3.5"
-        >
+        <div className="bg-cool-50 px-[22px] pt-4 pb-3.5">
           {credits ? (
-            <CreditBalanceCard balance={credits.balance} maxBalance={credits.maxBalance} />
+            <CreditBalanceCard
+              balance={credits.balance}
+              maxBalance={credits.maxBalance}
+              amountRef={balanceAmountRef}
+            />
           ) : isCreditsPending ? (
             <CreditBalanceLoadingState />
           ) : (
