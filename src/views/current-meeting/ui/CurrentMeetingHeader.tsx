@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Menu } from 'lucide-react';
+import { ChevronDown, ChevronUp, Menu, Users } from 'lucide-react';
 import { cn } from '@/shared/lib';
 import { useCurrentMeetingContext } from '../model/current-meeting-context';
+import { MeetingAttendeesSheet } from './MeetingAttendeesSheet';
 
 const MEETING_INFO_PANEL_ID = 'current-meeting-info';
 
@@ -17,6 +18,7 @@ export const CurrentMeetingHeader = () => {
   const { meeting, isWaiting, isPaused, isEnding, connectionStatus, isRecording, isCompleted } =
     recording;
   const [isInfoOpen, setIsInfoOpen] = useState(false);
+  const [isAttendeesOpen, setIsAttendeesOpen] = useState(false);
   const isDisconnected = connectionStatus === 'error';
   const isOvertime = meeting.elapsedSeconds > meeting.targetMinutes * 60;
   const connectionLabel =
@@ -74,7 +76,15 @@ export const CurrentMeetingHeader = () => {
           <h2 data-clarity-mask="true" className="truncate text-xl font-bold text-cool-900">
             {meeting.title}
           </h2>
-          <p className="mt-1 text-sm text-cool-500">참여자 {meeting.attendees.length}명</p>
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            onClick={() => setIsAttendeesOpen(true)}
+            className="mt-1 flex items-center gap-1.5 rounded-md py-0.5 text-sm text-cool-500 transition-colors hover:text-cool-700"
+          >
+            <Users aria-hidden="true" className="size-3.5" strokeWidth={2.2} />
+            참여자 {meeting.attendees.length}명
+          </button>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1.5">
           <div className="flex items-center gap-3">
@@ -149,6 +159,13 @@ export const CurrentMeetingHeader = () => {
           </div>
         </dl>
       )}
+
+      <MeetingAttendeesSheet
+        isOpen={isAttendeesOpen}
+        meetingTitle={meeting.title}
+        attendees={meeting.attendees}
+        onOpenChange={setIsAttendeesOpen}
+      />
     </header>
   );
 };
