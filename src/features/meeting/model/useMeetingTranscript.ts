@@ -6,15 +6,17 @@ import { meetingKeys } from './query-keys';
 
 interface UseMeetingTranscriptOptions {
   isEnabled?: boolean;
+  staleTime?: number;
 }
 
 /** 회의의 전사 목록. 발화가 없으면 data가 빈 배열이다. */
 export const useMeetingTranscript = (
   meetingId: number,
-  { isEnabled = true }: UseMeetingTranscriptOptions = {},
+  { isEnabled = true, staleTime }: UseMeetingTranscriptOptions = {},
 ) =>
   useQuery({
     queryKey: meetingKeys.transcript(meetingId),
     queryFn: () => getMeetingTranscript(meetingId),
     enabled: isEnabled,
+    staleTime,
   });
