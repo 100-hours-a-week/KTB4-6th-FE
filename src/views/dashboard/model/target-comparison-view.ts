@@ -14,6 +14,7 @@ export interface SelectedRangeSummary {
 }
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+const MIN_AXIS_RATE = 20;
 
 const parseDate = (value: string) => {
   const [year, month, day] = value.split('-').map(Number);
@@ -32,6 +33,20 @@ const formatRangeLabel = (startDate: string, endDate: string) => {
 };
 
 export const hasRangeMeetings = (range: TargetComparisonRange) => range.targetDurationSeconds > 0;
+
+export const getTargetDeviationRate = (range: TargetComparisonRange) => {
+  if (!hasRangeMeetings(range)) return null;
+
+  const overtimeSeconds = range.actualDurationSeconds - range.targetDurationSeconds;
+  return Math.round((overtimeSeconds / range.targetDurationSeconds) * 100);
+};
+
+export const getTargetDeviationDomain = (rates: (number | null)[]): [number, number] => {
+  const maxOverRate = Math.max(MIN_AXIS_RATE, ...rates.map((rate) => rate ?? 0));
+  const maxUnderRate = Math.max(MIN_AXIS_RATE, ...rates.map((rate) => -(rate ?? 0)));
+
+  return [-maxUnderRate, maxOverRate];
+};
 
 export const getDefaultRangeIndex = (ranges: TargetComparisonRange[]) => {
   const lastIndexWithMeetings = ranges.findLastIndex(hasRangeMeetings);
