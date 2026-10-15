@@ -114,6 +114,7 @@ export const CurrentMeetingPage = ({
     teamId,
     meetingId,
     team: team ?? null,
+    teamMembers: teamMembers ?? [],
     targetTranscriptSegmentId,
     recording: { ...recording, meeting: recording.meeting },
     meetingEndedNotice,

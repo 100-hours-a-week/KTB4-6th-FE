@@ -3,12 +3,16 @@
 import { Drawer } from '@base-ui/react/drawer';
 import { X } from 'lucide-react';
 import type { MeetingAttendeeData } from '@/entities/meeting-attendee';
-import { useAppFrameElement } from '@/shared/lib';
+import type { TeamMemberData } from '@/features/team-management';
+import { cn, useAppFrameElement } from '@/shared/lib';
+import { toMeetingAttendeeSheet } from '../model/meeting-attendee-sheet';
 
 interface MeetingAttendeesSheetProps {
   isOpen: boolean;
   meetingTitle: string;
   attendees: MeetingAttendeeData[];
+  teamMembers: TeamMemberData[];
+  myTeamMemberId: number | null;
   onOpenChange: (open: boolean) => void;
 }
 
@@ -16,9 +20,16 @@ export const MeetingAttendeesSheet = ({
   isOpen,
   meetingTitle,
   attendees,
+  teamMembers,
+  myTeamMemberId,
   onOpenChange,
 }: MeetingAttendeesSheetProps) => {
   const frame = useAppFrameElement();
+  const { teamAttendees, customAttendees } = toMeetingAttendeeSheet(
+    attendees,
+    teamMembers,
+    myTeamMemberId,
+  );
 
   return (
     <Drawer.Root open={isOpen} onOpenChange={onOpenChange} swipeDirection="down">
@@ -50,6 +61,75 @@ export const MeetingAttendeesSheet = ({
               >
                 <X className="size-5" strokeWidth={2} />
               </Drawer.Close>
+            </div>
+
+            <div className="mt-6 flex min-h-0 flex-col gap-6 overflow-y-auto">
+              {teamAttendees.length > 0 && (
+                <section>
+                  <h3 className="text-sm font-semibold text-cool-700">
+                    팀원 {teamAttendees.length}
+                  </h3>
+                  <ul className="mt-2.5 grid grid-cols-2 gap-2.5">
+                    {teamAttendees.map((attendee) => (
+                      <li
+                        key={attendee.key}
+                        className={cn(
+                          'flex min-w-0 items-center gap-2.5 rounded-2xl border px-3 py-3',
+                          attendee.isMe
+                            ? 'border-brand-200 bg-brand-50'
+                            : 'border-cool-100 bg-cool-50',
+                        )}
+                      >
+                        <span
+                          aria-hidden="true"
+                          className={cn(
+                            'flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold',
+                            attendee.isMe
+                              ? 'bg-brand-600 text-white'
+                              : 'bg-brand-100 text-brand-700',
+                          )}
+                        >
+                          {attendee.name.charAt(0)}
+                        </span>
+                        <span className="flex min-w-0 flex-col">
+                          <span className="truncate text-sm font-semibold text-cool-900">
+                            {attendee.name}
+                          </span>
+                          {attendee.caption && (
+                            <span className="text-xs text-cool-500">{attendee.caption}</span>
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {customAttendees.length > 0 && (
+                <section>
+                  <h3 className="text-sm font-semibold text-cool-700">
+                    직접 입력 {customAttendees.length}
+                  </h3>
+                  <ul className="mt-2.5 grid grid-cols-2 gap-2.5">
+                    {customAttendees.map((attendee) => (
+                      <li
+                        key={attendee.key}
+                        className="flex min-w-0 items-center gap-2.5 rounded-2xl border border-dashed border-cool-300 bg-white px-3 py-3"
+                      >
+                        <span
+                          aria-hidden="true"
+                          className="flex size-9 shrink-0 items-center justify-center rounded-full bg-cool-100 text-sm font-semibold text-cool-500"
+                        >
+                          {attendee.name.charAt(0)}
+                        </span>
+                        <span className="truncate text-sm font-semibold text-cool-900">
+                          {attendee.name}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
             </div>
           </Drawer.Popup>
         </Drawer.Viewport>

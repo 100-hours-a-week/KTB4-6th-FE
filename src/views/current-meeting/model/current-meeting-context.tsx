@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, type ReactNode } from 'react';
-import type { TeamDetailData } from '@/features/team-management';
+import type { TeamDetailData, TeamMemberData } from '@/features/team-management';
 import type { CurrentMeetingViewModel } from './current-meeting';
 import type { useCurrentMeetingRecording } from './useCurrentMeetingRecording';
 import type { useMeetingEndedNotice } from './useMeetingEndedNotice';
@@ -16,6 +16,7 @@ export interface CurrentMeetingContextValue {
   teamId: string;
   meetingId: number;
   team: TeamDetailData | null;
+  teamMembers: TeamMemberData[];
   targetTranscriptSegmentId: string | null;
   recording: LoadedRecordingState;
   meetingEndedNotice: ReturnType<typeof useMeetingEndedNotice>;

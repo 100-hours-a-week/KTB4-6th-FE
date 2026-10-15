@@ -14,7 +14,7 @@ const formatElapsed = (seconds: number) =>
     .join(':');
 
 export const CurrentMeetingHeader = () => {
-  const { team, recording, openSidebar } = useCurrentMeetingContext();
+  const { team, teamMembers, recording, openSidebar } = useCurrentMeetingContext();
   const { meeting, isWaiting, isPaused, isEnding, connectionStatus, isRecording, isCompleted } =
     recording;
   const [isInfoOpen, setIsInfoOpen] = useState(false);
@@ -164,6 +164,8 @@ export const CurrentMeetingHeader = () => {
         isOpen={isAttendeesOpen}
         meetingTitle={meeting.title}
         attendees={meeting.attendees}
+        teamMembers={teamMembers}
+        myTeamMemberId={team?.teamMemberId ?? null}
         onOpenChange={setIsAttendeesOpen}
       />
     </header>
