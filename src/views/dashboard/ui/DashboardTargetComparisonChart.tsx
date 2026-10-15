@@ -31,7 +31,6 @@ interface DashboardTargetComparisonChartProps {
 const CHART_MARGIN = { top: 18, right: 0, bottom: 0, left: 0 };
 const Y_AXIS_WIDTH = 44;
 const X_AXIS_HEIGHT = 42;
-const COLUMN_HEIGHT = 200;
 const BAR_SIZE = 22;
 const BAR_RADIUS = 6;
 const RATE_LABEL_GAP = 11;
@@ -136,7 +135,7 @@ export const DashboardTargetComparisonChart = ({
     <div className="relative h-full">
       <div
         className="absolute top-0 right-0 flex"
-        style={{ left: Y_AXIS_WIDTH, height: COLUMN_HEIGHT }}
+        style={{ left: Y_AXIS_WIDTH, bottom: X_AXIS_HEIGHT - CHART_MARGIN.top }}
       >
         {bars.map((bar, index) => (
           <button

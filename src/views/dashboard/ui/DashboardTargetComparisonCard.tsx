@@ -40,7 +40,7 @@ export const DashboardTargetComparisonCard = ({
           </p>
         </div>
 
-        <div className="h-[224px]">{children}</div>
+        <div className="h-[260px]">{children}</div>
       </>
     ) : (
       <div className="flex h-[200px] flex-col items-center justify-center gap-1.5 rounded-[10px] bg-cool-50">
