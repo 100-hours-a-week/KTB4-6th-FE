@@ -7,6 +7,11 @@ export interface TargetComparisonRange {
   actualDurationSeconds: number;
 }
 
+export interface TargetComparisonBar {
+  label: string;
+  rate: number | null;
+}
+
 export interface SelectedRangeSummary {
   range: string;
   detail: string;
@@ -32,6 +37,13 @@ const formatRangeLabel = (startDate: string, endDate: string) => {
   return `${start.month}월 ${start.day}일 – ${endLabel}`;
 };
 
+const formatAxisLabel = (range: TargetComparisonRange, isLast: boolean) => {
+  const start = parseDate(range.startDate);
+
+  if (range.startDate !== range.endDate) return `${start.month}/${start.day}`;
+  return isLast ? '오늘' : start.weekday;
+};
+
 export const hasRangeMeetings = (range: TargetComparisonRange) => range.targetDurationSeconds > 0;
 
 export const getTargetDeviationRate = (range: TargetComparisonRange) => {
@@ -46,6 +58,17 @@ export const getTargetDeviationDomain = (rates: (number | null)[]): [number, num
   const maxUnderRate = Math.max(MIN_AXIS_RATE, ...rates.map((rate) => -(rate ?? 0)));
 
   return [-maxUnderRate, maxOverRate];
+};
+
+export const toTargetComparisonBars = (ranges: TargetComparisonRange[]): TargetComparisonBar[] =>
+  ranges.map((range, index) => ({
+    label: formatAxisLabel(range, index === ranges.length - 1),
+    rate: getTargetDeviationRate(range),
+  }));
+
+export const formatTargetRateTick = (rate: number) => {
+  if (rate === 0) return '목표';
+  return rate > 0 ? `+${rate}%` : `−${-rate}%`;
 };
 
 export const getDefaultRangeIndex = (ranges: TargetComparisonRange[]) => {

@@ -14,6 +14,7 @@ import { DashboardHeader } from './DashboardHeader';
 import { DashboardPeriodTabs } from './DashboardPeriodTabs';
 import { DashboardSummaryCard } from './DashboardSummaryCard';
 import { DashboardTargetComparisonCard } from './DashboardTargetComparisonCard';
+import { DashboardTargetComparisonChart } from './DashboardTargetComparisonChart';
 import { DashboardTopicsCard } from './DashboardTopicsCard';
 
 interface DashboardPageProps {
@@ -44,7 +45,9 @@ export const DashboardPage = ({ teamId }: DashboardPageProps) => {
           overtimeRate={summary.overtimeDurationRate}
           contextOutSeconds={summary.totalContextOutSeconds}
         />
-        <DashboardTargetComparisonCard selectedRangeSummary={selectedRangeSummary} />
+        <DashboardTargetComparisonCard selectedRangeSummary={selectedRangeSummary}>
+          <DashboardTargetComparisonChart ranges={chart} />
+        </DashboardTargetComparisonCard>
         <DashboardTopicsCard topics={DASHBOARD_PREVIEW_TOPICS} />
       </div>
 
