@@ -16,7 +16,7 @@ export {
 export { isAudioFileExpiredError, isAudioFileNotAvailableError } from './model/audio-file-errors';
 export { MeetingApiError } from './model/errors';
 export { getMeetingSummaryPhase } from './model/meeting-summary-phase';
-export { meetingKeys } from './model/query-keys';
+export { meetingKeys, PREFETCHED_MEETING_STALE_TIME } from './model/query-keys';
 export { deleteAudioFile } from './api/delete-audio-file';
 export { getMeetingSummary } from './api/get-meeting-summary';
 export { getMeetingTranscript } from './api/get-meeting-transcript';

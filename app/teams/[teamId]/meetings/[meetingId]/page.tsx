@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { MeetingRouteSwitch } from '@/app/meeting-route';
+import { MeetingRouteScreen } from '@/app/meeting-route';
 
 interface MeetingRouteProps {
   params: Promise<{ teamId: string; meetingId: string }>;
@@ -12,5 +12,5 @@ export default async function MeetingRoute({ params }: MeetingRouteProps) {
     notFound();
   }
 
-  return <MeetingRouteSwitch teamId={teamId} meetingId={Number(meetingId)} />;
+  return <MeetingRouteScreen teamId={teamId} meetingId={Number(meetingId)} />;
 }
