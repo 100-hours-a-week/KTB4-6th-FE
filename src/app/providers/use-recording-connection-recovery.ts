@@ -32,6 +32,7 @@ export const useRecordingConnectionRecovery = ({
 }: UseRecordingConnectionRecoveryParams) => {
   const queryClient = useQueryClient();
   const isPausedByUser = useRecordingSessionStore((state) => state.isPausedByUser);
+  const operation = useRecordingSessionStore((state) => state.operation);
   const setOperation = useRecordingSessionStore((state) => state.setOperation);
   const clearActiveRecording = useRecordingSessionStore((state) => state.clearActiveRecording);
   const recorderStatus = useMediaRecorder((state) => state.status);
@@ -97,7 +98,7 @@ export const useRecordingConnectionRecovery = ({
       socketStatus === 'unconfigured' ||
       (socketStatus === 'idle' && recorderStatus === 'recording');
 
-    if (isPausedByUser) return;
+    if (isPausedByUser || operation === 'finishing') return;
 
     if (!connectionLost && recorderStatus === 'ready' && socketStatus !== 'connecting') {
       const { audioFormat } = useMediaRecorder.getState();
@@ -148,6 +149,7 @@ export const useRecordingConnectionRecovery = ({
     disconnect,
     isPausedByUser,
     meetingId,
+    operation,
     prepareMicrophone,
     queryClient,
     recorderStatus,
