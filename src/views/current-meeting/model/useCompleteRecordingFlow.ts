@@ -15,7 +15,6 @@ interface UseCompleteRecordingFlowParams {
   onCompleted: () => void;
 }
 
-/** 녹음 마무리 → mp4 변환 → 파일 업로드 → 녹음 종료 요청 → 마이크·소켓 정리 순서로 회의를 종료한다. */
 export const useCompleteRecordingFlow = ({
   recordingSessionId,
   isCompleted,
@@ -24,7 +23,7 @@ export const useCompleteRecordingFlow = ({
   const completeRecording = useCompleteRecording();
   const uploadPendingRecordingParts = useUploadPendingRecordingParts();
   const resumeBrowserRecording = useMediaRecorder((state) => state.resume);
-  const flushForCompletion = useMediaRecorder((state) => state.flushForCompletion);
+  const flushBrowserRecording = useMediaRecorder((state) => state.flush);
   const releaseMicrophone = useMediaRecorder((state) => state.release);
   const clearActiveRecording = useRecordingSessionStore((state) => state.clearActiveRecording);
   const setOperation = useRecordingSessionStore((state) => state.setOperation);
@@ -55,7 +54,7 @@ export const useCompleteRecordingFlow = ({
         currentUpload?.recordingSessionId === recordingSessionId ? currentUpload : null;
 
       if (!reusableUpload?.isCompleted) {
-        if (!isPausedByUser) await flushForCompletion();
+        if (!isPausedByUser) await flushBrowserRecording();
         await uploadPendingRecordingParts(recordingSessionId);
       }
 
