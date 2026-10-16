@@ -37,7 +37,9 @@ export const CurrentMeetingHeader = () => {
           ? '일시정지'
           : isRecording
             ? '녹음 중'
-            : '대기 중';
+            : isWaiting
+              ? '대기 중'
+              : '연결 중';
 
   return (
     <header className="shrink-0 border-b border-cool-200 bg-white px-5 pt-5 pb-4">
