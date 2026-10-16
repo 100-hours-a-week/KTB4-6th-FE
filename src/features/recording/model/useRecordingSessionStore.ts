@@ -21,13 +21,7 @@ interface RecordingSessionState {
   activeRecording: ActiveRecording | null;
   pendingUpload: PendingRecordingUpload | null;
   operation: RecordingOperation;
-  /**
-   * 사용자가 직접 일시정지를 눌러서 녹음 객체가 없는 상태인지.
-   * RecordingSessionManager가 recorder 소실을 "복구해야 할 문제"로 오인해 자동으로
-   * 재연결을 시도하지 않도록 구분하는 데 쓴다.
-   */
   isPausedByUser: boolean;
-  /** 재연결 후 끊긴 동안의 녹음을 다시 보내고 새 녹음을 준비하는 중인지 */
   isResumingStream: boolean;
   setActiveRecording: (recording: ActiveRecording) => void;
   clearActiveRecording: (recordingSessionId: number) => void;
