@@ -10,12 +10,10 @@ import { useRecordingStartDialog } from './useRecordingStartDialog';
 interface UseCurrentMeetingRecordingParams {
   teamId: string;
   meetingId: number;
-  /** 지금 이 화면을 보는 사용자의 팀원 ID. 새로고침 후 녹음자 권한 복원에 쓴다 */
   myTeamMemberId: number | null;
   teamMembers: TeamMemberData[] | undefined;
 }
 
-/** 현재 회의 화면이 쓰는 회의 정보, 녹음 시작 모달, 녹음 세션, 진행 단계를 한 번에 조립한다. */
 export const useCurrentMeetingRecording = ({
   teamId,
   meetingId,
@@ -66,6 +64,7 @@ export const useCurrentMeetingRecording = ({
     serverRecordingSessionId: meeting?.recordingSessionId ?? null,
     serverRecordingStartedAt: meeting?.recordingStartedAt ?? null,
     isServerPaused: meeting?.recordingStatus === 'paused',
+    isServerCompleted,
     onRecordingStarted: () => handleStartDialogOpenChange(false),
     onInsufficientCredit: () => {
       handleStartDialogOpenChange(false);
@@ -80,7 +79,6 @@ export const useCurrentMeetingRecording = ({
       hasRecordingSession: recordingSessionId !== null,
       hasCompleted,
       isBrowserRecording: recorderStatus === 'recording',
-      // 일시정지 중엔 recorder 자체가 없어서 recorderStatus로는 구분이 안 된다.
       isBrowserPaused: isPausedByUser,
       isFinishing: operation === 'finishing',
       connectionStatus,
