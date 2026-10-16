@@ -1,9 +1,10 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { AUTH_COOKIE_NAMES } from '@/features/auth';
 import { refreshAuthTokens, TokenRefreshApiError } from '@/features/auth/index.server';
 import { clearAuthCookies, setAuthCookies } from './auth-cookies';
 
 export const refreshTokensHandler = async (request: NextRequest) => {
-  const refreshToken = request.cookies.get('refreshToken')?.value;
+  const refreshToken = request.cookies.get(AUTH_COOKIE_NAMES.refreshToken)?.value;
 
   if (!refreshToken) {
     const response = NextResponse.json(
