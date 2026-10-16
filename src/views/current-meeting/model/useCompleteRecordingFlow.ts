@@ -43,9 +43,10 @@ export const useCompleteRecordingFlow = ({
     setOperation('finishing');
     const recorder = useMediaRecorder.getState().recorder;
     const wasRecording = recorder?.state === 'recording';
+    const { isPausedByUser } = useRecordingSessionStore.getState();
 
     try {
-      if (!recorder || recorder.state === 'inactive') {
+      if (!isPausedByUser && (!recorder || recorder.state === 'inactive')) {
         throw new Error('종료할 브라우저 녹음이 없습니다.');
       }
 
@@ -54,9 +55,7 @@ export const useCompleteRecordingFlow = ({
         currentUpload?.recordingSessionId === recordingSessionId ? currentUpload : null;
 
       if (!reusableUpload?.isCompleted) {
-        // 마지막 chunk까지 recorder에서 흘려보낸 뒤(반환 Blob은 안 씀), 세션 전체의 part
-        // 파일을 병합·업로드한다.
-        await flushForCompletion();
+        if (!isPausedByUser) await flushForCompletion();
         await uploadPendingRecordingParts(recordingSessionId);
       }
 
