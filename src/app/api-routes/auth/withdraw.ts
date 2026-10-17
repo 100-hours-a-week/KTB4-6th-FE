@@ -1,9 +1,10 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { AUTH_COOKIE_NAMES } from '@/features/auth';
 import { withdrawAccount, WithdrawAccountApiError } from '@/features/auth/index.server';
 import { clearAuthCookies } from './auth-cookies';
 
 export const withdrawHandler = async (request: NextRequest) => {
-  const accessToken = request.cookies.get('accessToken')?.value;
+  const accessToken = request.cookies.get(AUTH_COOKIE_NAMES.accessToken)?.value;
 
   if (!accessToken) {
     return NextResponse.json(

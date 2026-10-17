@@ -2,22 +2,33 @@
 
 import { useMutation } from '@tanstack/react-query';
 import { createMeeting } from '../api/create-meeting';
-import { toCreateMeetingRequest, type CreateMeetingFormValues } from './create-meeting-form';
-import type { CreateMeetingData } from './types';
+import { toMeetingInfoRequest, type CreateMeetingFormValues } from './create-meeting-form';
+import type { CreateMeetingData, MeetingAttendeesRequest } from './types';
 
-export const useCreateMeeting = (teamId: number) => {
+interface CreateMeetingVariables {
+  values: CreateMeetingFormValues;
+  attendees: MeetingAttendeesRequest;
+}
+
+interface UseCreateMeetingOptions {
+  onError?: (error: Error) => void;
+}
+
+export const useCreateMeeting = (teamId: number, { onError }: UseCreateMeetingOptions = {}) => {
   const mutation = useMutation({
-    mutationFn: (values: CreateMeetingFormValues) =>
-      createMeeting(teamId, toCreateMeetingRequest(values)),
+    mutationFn: ({ values, attendees }: CreateMeetingVariables) =>
+      createMeeting(teamId, { ...toMeetingInfoRequest(values), ...attendees }),
+    onError,
   });
 
   const createMeetingWithValues = async (
     values: CreateMeetingFormValues,
+    attendees: MeetingAttendeesRequest,
   ): Promise<CreateMeetingData | null> => {
     if (mutation.isPending) return null;
 
     try {
-      return await mutation.mutateAsync(values);
+      return await mutation.mutateAsync({ values, attendees });
     } catch {
       return null;
     }
@@ -25,7 +36,7 @@ export const useCreateMeeting = (teamId: number) => {
 
   return {
     isCreating: mutation.isPending,
-    createError: mutation.error?.message ?? null,
+    createError: mutation.error,
     createMeeting: createMeetingWithValues,
   };
 };

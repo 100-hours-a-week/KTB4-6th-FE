@@ -32,6 +32,7 @@ export const useRecordingConnectionRecovery = ({
 }: UseRecordingConnectionRecoveryParams) => {
   const queryClient = useQueryClient();
   const isPausedByUser = useRecordingSessionStore((state) => state.isPausedByUser);
+  const operation = useRecordingSessionStore((state) => state.operation);
   const setOperation = useRecordingSessionStore((state) => state.setOperation);
   const clearActiveRecording = useRecordingSessionStore((state) => state.clearActiveRecording);
   const recorderStatus = useMediaRecorder((state) => state.status);
@@ -79,9 +80,16 @@ export const useRecordingConnectionRecovery = ({
     if (socketStatus === 'connected' && recorderStatus === 'ready') return;
 
     if (socketStatus === 'closed' || socketStatus === 'superseded') {
-      if (recorderStatus === 'idle') return;
-      releaseMicrophone();
-      if (socketStatus === 'superseded') notifyRecordingElsewhere();
+      if (recorderStatus !== 'idle') releaseMicrophone();
+      disconnect(recordingSessionId);
+      clearActiveRecording(recordingSessionId);
+      if (socketStatus === 'closed') {
+        void queryClient.invalidateQueries({
+          queryKey: getCurrentMeetingQueryKey(meetingId),
+        });
+      } else {
+        notifyRecordingElsewhere();
+      }
       return;
     }
 
@@ -90,7 +98,7 @@ export const useRecordingConnectionRecovery = ({
       socketStatus === 'unconfigured' ||
       (socketStatus === 'idle' && recorderStatus === 'recording');
 
-    if (isPausedByUser) return;
+    if (isPausedByUser || operation === 'finishing') return;
 
     if (!connectionLost && recorderStatus === 'ready' && socketStatus !== 'connecting') {
       const { audioFormat } = useMediaRecorder.getState();
@@ -136,10 +144,14 @@ export const useRecordingConnectionRecovery = ({
       window.clearTimeout(timeoutId);
     };
   }, [
+    clearActiveRecording,
     connect,
+    disconnect,
     isPausedByUser,
     meetingId,
+    operation,
     prepareMicrophone,
+    queryClient,
     recorderStatus,
     recordingSessionId,
     releaseMicrophone,

@@ -1,9 +1,11 @@
+import type { Ref } from 'react';
 import { getCreditBalancePolicy } from '@/features/credit-management';
 import { CreditPolicyPopover } from './CreditPolicyPopover';
 
 interface CreditBalanceCardProps {
   balance: number;
   maxBalance: number;
+  amountRef?: Ref<HTMLDivElement>;
 }
 
 const nextGrantDateFormatter = new Intl.DateTimeFormat('ko-KR', {
@@ -22,14 +24,14 @@ const formatNextGrantAt = (date: Date) => {
   return `${month}.${day}(${weekday}) 00:00`;
 };
 
-export const CreditBalanceCard = ({ balance, maxBalance }: CreditBalanceCardProps) => {
+export const CreditBalanceCard = ({ balance, maxBalance, amountRef }: CreditBalanceCardProps) => {
   const { isFull, progressPercent, nextGrantAmount, nextGrantAt } = getCreditBalancePolicy(
     balance,
     maxBalance,
   );
 
   return (
-    <section className="rounded-2xl bg-brand-600 px-5 py-6 text-white shadow-[0_8px_20px_rgba(47,76,116,0.22)]">
+    <section className="rounded-2xl bg-brand-600 px-5 py-5 text-white shadow-[0_8px_20px_rgba(47,76,116,0.22)]">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-0.5">
           <h2 className="text-sm font-semibold text-brand-100">팀 크레딧</h2>
@@ -42,8 +44,8 @@ export const CreditBalanceCard = ({ balance, maxBalance }: CreditBalanceCardProp
         )}
       </div>
 
-      <div className="mt-7 flex items-baseline gap-1.5">
-        <strong className="text-[38px] leading-none font-semibold tracking-tight">
+      <div ref={amountRef} className="mt-4 flex items-baseline gap-1.5">
+        <strong className="text-[34px] leading-none font-semibold tracking-tight">
           {balance.toLocaleString('ko-KR')}
         </strong>
         <span className="text-base font-medium text-brand-200">
@@ -51,7 +53,7 @@ export const CreditBalanceCard = ({ balance, maxBalance }: CreditBalanceCardProp
         </span>
       </div>
 
-      <div className="mt-7">
+      <div className="mt-5">
         <div
           role="progressbar"
           aria-label="크레딧 보유량"
@@ -65,7 +67,7 @@ export const CreditBalanceCard = ({ balance, maxBalance }: CreditBalanceCardProp
             style={{ width: `${progressPercent}%` }}
           />
         </div>
-        <p className="mt-2.5 text-[13px] leading-5 text-brand-100">
+        <p className="mt-2 text-[13px] leading-5 text-brand-100">
           {isFull
             ? '사용한 만큼만 채워집니다'
             : `${formatNextGrantAt(nextGrantAt)}에 ${nextGrantAmount.toLocaleString('ko-KR')} 크레딧이 적립돼요`}

@@ -1,3 +1,5 @@
+import type { MeetingAttendeeData } from '@/entities/meeting-attendee';
+
 export interface CurrentMeetingDetailData {
   title: string;
   purpose: string;
@@ -7,11 +9,7 @@ export interface CurrentMeetingDetailData {
   targetDurationMinutes: number;
   status: 'WAITING' | 'IN_PROGRESS' | 'COMPLETED';
   createdByTeamMemberId: number;
-}
-
-export interface MeetingParticipantListData {
-  participantsCount: number;
-  participants: Array<{ teamMemberId: number; displayName: string }>;
+  attendees?: MeetingAttendeeData[];
 }
 
 export interface ActiveRecordingData {
@@ -29,8 +27,7 @@ export interface CurrentMeetingState {
   purpose: string;
   note: string;
   targetMinutes: number;
-  participantCount: number;
-  recorderName: string;
+  attendees: MeetingAttendeeData[];
   meetingStatus: CurrentMeetingDetailData['status'];
   recordingStatus: ActiveRecordingData['status'] | null;
   recordingStartedAt: string | null;
@@ -44,30 +41,20 @@ export interface CurrentMeetingState {
 
 export const toCurrentMeetingState = (
   meeting: CurrentMeetingDetailData,
-  participantList: MeetingParticipantListData,
   activeRecording: ActiveRecordingData | null,
-): CurrentMeetingState => {
-  const recorderName = activeRecording
-    ? (participantList.participants.find(
-        (participant) => participant.teamMemberId === activeRecording.startedByTeamMemberId,
-      )?.displayName ?? '다른 참여자')
-    : '';
-
-  return {
-    title: meeting.title,
-    purpose: meeting.purpose,
-    note: meeting.note ?? '',
-    targetMinutes: meeting.targetDurationMinutes,
-    participantCount: participantList.participantsCount,
-    recorderName,
-    meetingStatus: meeting.status,
-    recordingStatus: activeRecording?.status ?? null,
-    recordingStartedAt: activeRecording?.startedAt ?? null,
-    recordingPausedAt: activeRecording?.pausedAt ?? null,
-    recordingTotalPausedDurationMs: activeRecording?.totalPausedDurationMs ?? null,
-    recordingEndedAt: activeRecording?.endedAt ?? null,
-    recordingStartedByTeamMemberId: activeRecording?.startedByTeamMemberId ?? null,
-    recordingSessionId: activeRecording?.recordingSessionId ?? null,
-    createdByTeamMemberId: meeting.createdByTeamMemberId,
-  };
-};
+): CurrentMeetingState => ({
+  title: meeting.title,
+  purpose: meeting.purpose,
+  note: meeting.note ?? '',
+  targetMinutes: meeting.targetDurationMinutes,
+  attendees: meeting.attendees ?? [],
+  meetingStatus: meeting.status,
+  recordingStatus: activeRecording?.status ?? null,
+  recordingStartedAt: activeRecording?.startedAt ?? null,
+  recordingPausedAt: activeRecording?.pausedAt ?? null,
+  recordingTotalPausedDurationMs: activeRecording?.totalPausedDurationMs ?? null,
+  recordingEndedAt: activeRecording?.endedAt ?? null,
+  recordingStartedByTeamMemberId: activeRecording?.startedByTeamMemberId ?? null,
+  recordingSessionId: activeRecording?.recordingSessionId ?? null,
+  createdByTeamMemberId: meeting.createdByTeamMemberId,
+});

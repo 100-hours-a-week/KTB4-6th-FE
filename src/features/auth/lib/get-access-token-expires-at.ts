@@ -1,4 +1,6 @@
-const ACCESS_TOKEN_EXPIRES_AT_COOKIE = 'accessTokenExpiresAt';
+import { AUTH_COOKIE_NAMES } from '../model/auth-cookie-names';
+
+const ACCESS_TOKEN_EXPIRES_AT_COOKIE = AUTH_COOKIE_NAMES.accessTokenExpiresAt;
 
 export const getAccessTokenExpiresAt = (): number | null => {
   const value = document.cookie

@@ -1,16 +1,7 @@
 import 'server-only';
 
 import { getApiOnServer, ServerApiError } from '@/shared/api/index.server';
-import type {
-  ActiveRecordingData,
-  MeetingParticipantListData,
-} from '../model/current-meeting-state';
-
-export const getMeetingParticipantsOnServer = (meetingId: number, accessToken: string) =>
-  getApiOnServer<MeetingParticipantListData>(
-    `/api/v1/meetings/${meetingId}/participants`,
-    accessToken,
-  );
+import type { ActiveRecordingData } from '../model/current-meeting-state';
 
 export const getActiveRecordingOnServer = async (
   meetingId: number,

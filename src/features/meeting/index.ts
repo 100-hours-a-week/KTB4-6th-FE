@@ -11,8 +11,15 @@ export {
   getCreateMeetingTitleError,
   INITIAL_CREATE_MEETING_FORM_VALUES,
   isCreateMeetingFormValid,
-  toCreateMeetingRequest,
+  toMeetingInfoRequest,
 } from './model/create-meeting-form';
+export {
+  CUSTOM_ATTENDEE_MAX_COUNT,
+  CUSTOM_NAME_MAX_LENGTH,
+  getCustomAttendeeNameError,
+  isInvalidMeetingAttendeeError,
+  MEETING_ATTENDEE_MAX_COUNT,
+} from './model/meeting-attendee';
 export { isAudioFileExpiredError, isAudioFileNotAvailableError } from './model/audio-file-errors';
 export { MeetingApiError } from './model/errors';
 export { getMeetingSummaryPhase } from './model/meeting-summary-phase';
@@ -51,7 +58,9 @@ export type {
   AudioFileStatus,
   CreateMeetingData,
   CreateMeetingRequest,
+  MeetingAttendeesRequest,
   MeetingDetailData,
+  MeetingInfoRequest,
   MeetingSummaryData,
   MeetingSummaryRequestData,
   MeetingTranscriptSegmentData,
