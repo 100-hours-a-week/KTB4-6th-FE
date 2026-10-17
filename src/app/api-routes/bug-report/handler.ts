@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { AUTH_COOKIE_NAMES } from '@/features/auth';
 
 interface BugReportRequestBody {
   title?: string;
@@ -92,7 +93,7 @@ export const POST = async (request: NextRequest) => {
     );
   }
 
-  if (!request.cookies.get('accessToken')?.value) {
+  if (!request.cookies.get(AUTH_COOKIE_NAMES.accessToken)?.value) {
     return NextResponse.json(
       { success: false, error: '로그인 후 버그를 제보해주세요.' },
       { status: 401 },

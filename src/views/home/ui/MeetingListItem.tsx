@@ -51,8 +51,11 @@ export const MeetingListItem = ({ meeting, teamId }: MeetingListItemProps) => {
           >
             {meeting.title}
           </span>
-          <Badge variant={isInProgress ? 'danger' : 'success'}>
-            {isInProgress ? '진행 중' : isWaiting ? '대기 중' : '완료'}
+          <Badge
+            variant={isInProgress ? 'danger' : isWaiting ? 'warning' : 'neutral'}
+            className="rounded px-1.5 py-1 text-[11.5px] leading-none font-semibold"
+          >
+            {isInProgress ? '진행 중' : isWaiting ? '대기 중' : '종료됨'}
           </Badge>
         </span>
         <span className="truncate text-xs text-cool-500">

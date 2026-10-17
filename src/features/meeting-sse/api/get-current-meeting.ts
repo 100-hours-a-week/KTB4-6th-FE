@@ -5,7 +5,6 @@ import {
   type ActiveRecordingData,
   type CurrentMeetingDetailData,
   type CurrentMeetingState,
-  type MeetingParticipantListData,
 } from '../model/current-meeting-state';
 
 interface ApiResponse<T> {
@@ -24,13 +23,6 @@ const getMeeting = async (meetingId: number) => {
     `/api/v1/meetings/${meetingId}`,
   );
   return unwrap(response.data, '회의 정보를 불러오지 못했습니다.');
-};
-
-const getParticipants = async (meetingId: number) => {
-  const response = await apiClient.get<ApiResponse<MeetingParticipantListData>>(
-    `/api/v1/meetings/${meetingId}/participants`,
-  );
-  return unwrap(response.data, '회의 참여자 정보를 불러오지 못했습니다.');
 };
 
 const getActiveRecording = async (meetingId: number): Promise<ActiveRecordingData | null> => {
@@ -52,14 +44,11 @@ const getActiveRecording = async (meetingId: number): Promise<ActiveRecordingDat
 };
 
 export const getCurrentMeetingState = async (meetingId: number): Promise<CurrentMeetingState> => {
-  const [meeting, participantList] = await Promise.all([
-    getMeeting(meetingId),
-    getParticipants(meetingId),
-  ]);
+  const meeting = await getMeeting(meetingId);
   const activeRecording =
     meeting.status === 'IN_PROGRESS' ? await getActiveRecording(meetingId) : null;
 
-  return toCurrentMeetingState(meeting, participantList, activeRecording);
+  return toCurrentMeetingState(meeting, activeRecording);
 };
 
 export type { CurrentMeetingState };

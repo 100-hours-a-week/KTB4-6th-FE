@@ -1,7 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { Headphones, Menu } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useAttendeeSelection } from '../model/useAttendeeSelection';
+import { AttendeeSelectDialog } from './AttendeeSelectDialog';
 import { CreateMeetingDialog } from './CreateMeetingDialog';
 
 interface CreateMeetingPageProps {
@@ -11,6 +14,8 @@ interface CreateMeetingPageProps {
 export const CreateMeetingPage = ({ teamId }: CreateMeetingPageProps) => {
   const router = useRouter();
   const closeModal = () => router.replace(`/teams/${teamId}`);
+  const [step, setStep] = useState<'attendees' | 'info'>('attendees');
+  const selection = useAttendeeSelection(teamId);
 
   return (
     <div className="relative flex h-dvh min-h-[844px] flex-1 flex-col overflow-hidden bg-cool-50">
@@ -34,7 +39,20 @@ export const CreateMeetingPage = ({ teamId }: CreateMeetingPageProps) => {
         <p className="mt-5 text-base font-bold text-cool-900">회의 정보를 입력해주세요</p>
       </main>
 
-      <CreateMeetingDialog teamId={teamId} onClose={closeModal} />
+      {step === 'attendees' ? (
+        <AttendeeSelectDialog
+          selection={selection}
+          onCancel={closeModal}
+          onNext={() => setStep('info')}
+        />
+      ) : (
+        <CreateMeetingDialog
+          teamId={teamId}
+          attendees={selection.attendeesRequest}
+          onBack={() => setStep('attendees')}
+          onClose={closeModal}
+        />
+      )}
     </div>
   );
 };

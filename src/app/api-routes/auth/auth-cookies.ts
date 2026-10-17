@@ -1,4 +1,5 @@
 import type { NextResponse } from 'next/server';
+import { AUTH_COOKIE_NAMES } from '@/features/auth';
 
 interface AuthCookieTokens {
   accessToken: string;
@@ -18,16 +19,16 @@ export const setAuthCookies = (response: NextResponse, tokens: AuthCookieTokens)
     ...(isProduction && cookieDomain ? { domain: cookieDomain } : {}),
   } as const;
 
-  response.cookies.set('accessToken', tokens.accessToken, {
+  response.cookies.set(AUTH_COOKIE_NAMES.accessToken, tokens.accessToken, {
     ...accessTokenCookieOptions,
     httpOnly: true,
   });
   response.cookies.set(
-    'accessTokenExpiresAt',
+    AUTH_COOKIE_NAMES.accessTokenExpiresAt,
     String(Date.now() + tokens.accessTokenExpiresIn * 1000),
     { ...accessTokenCookieOptions, httpOnly: false },
   );
-  response.cookies.set('refreshToken', tokens.refreshToken, {
+  response.cookies.set(AUTH_COOKIE_NAMES.refreshToken, tokens.refreshToken, {
     httpOnly: true,
     secure: isProduction,
     sameSite: 'lax',
@@ -35,6 +36,9 @@ export const setAuthCookies = (response: NextResponse, tokens: AuthCookieTokens)
     maxAge: tokens.refreshTokenExpiresIn,
   });
 };
+
+export const hasAccessTokenCookie = (cookieStore: { has: (name: string) => boolean }) =>
+  cookieStore.has(AUTH_COOKIE_NAMES.accessToken);
 
 export const clearAuthCookies = (response: NextResponse) => {
   setAuthCookies(response, {

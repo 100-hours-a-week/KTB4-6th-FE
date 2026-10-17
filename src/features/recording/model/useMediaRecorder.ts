@@ -25,14 +25,13 @@ interface MediaRecorderState {
   start: (onChunk: (chunk: Blob) => void) => void;
   pause: () => void;
   resume: () => void;
-  flushForCompletion: () => Promise<Blob>;
+  flush: () => Promise<void>;
   convertToMp4: (parts: Blob[], fileName: string) => Promise<ConvertedRecordingFile>;
   release: () => void;
 }
 
 let pendingPreparation: { version: number; promise: Promise<AudioFormat> } | null = null;
 let preparationVersion = 0;
-let recordedChunks: Blob[] = [];
 
 export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
   status: 'idle',
@@ -97,10 +96,8 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
     const { recorder } = get();
     if (!recorder || recorder.state !== 'inactive') return;
 
-    recordedChunks = [];
     recorder.ondataavailable = (event) => {
       if (event.data.size > 0 && (recorder.state === 'recording' || get().isFlushing)) {
-        recordedChunks.push(event.data);
         onChunk(event.data);
       }
     };
@@ -132,10 +129,10 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
     set({ status: 'recording' });
   },
 
-  flushForCompletion: async () => {
+  flush: async () => {
     const { recorder } = get();
     if (!recorder || recorder.state === 'inactive') {
-      throw new Error('종료할 브라우저 녹음이 없습니다.');
+      throw new Error('마무리할 브라우저 녹음이 없습니다.');
     }
 
     const waitForEvent = (eventName: 'pause' | 'dataavailable', action: () => void) =>
@@ -173,12 +170,6 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
       }
 
       await waitForEvent('dataavailable', () => recorder.requestData());
-      const recordingBlob = new Blob(recordedChunks, { type: recorder.mimeType });
-      if (recordingBlob.size === 0) {
-        throw new Error('생성된 브라우저 녹음 파일이 비어 있습니다.');
-      }
-
-      return recordingBlob;
     } finally {
       set({ isFlushing: false });
     }
@@ -205,7 +196,6 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
   release: () => {
     preparationVersion += 1;
     pendingPreparation = null;
-    recordedChunks = [];
     const { recorder } = get();
     set({
       recorder: null,

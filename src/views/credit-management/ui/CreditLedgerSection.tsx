@@ -35,7 +35,7 @@ export const CreditLedgerSection = ({
   onLoadMore,
   scrollRootRef,
 }: CreditLedgerSectionProps) => (
-  <section aria-labelledby="credit-ledger-list-title" className="min-h-full bg-cool-50">
+  <section aria-labelledby="credit-ledger-list-title" className="bg-cool-50">
     <div className="sticky top-0 z-10 bg-cool-50 px-[22px] pt-[18px] pb-2.5">
       <div className="flex items-center justify-between gap-3">
         <h2

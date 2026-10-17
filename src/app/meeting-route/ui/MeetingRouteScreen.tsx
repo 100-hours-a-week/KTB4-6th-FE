@@ -10,7 +10,6 @@ import {
 import {
   getActiveRecordingOnServer,
   getCurrentMeetingQueryKey,
-  getMeetingParticipantsOnServer,
   toCurrentMeetingState,
 } from '@/features/meeting-sse/index.server';
 import { MeetingRouteLoadingState } from './MeetingRouteLoadingState';
@@ -26,16 +25,14 @@ const prefetchCurrentMeetingState = async (
   meeting: MeetingDetailData,
   accessToken: string,
 ) => {
-  const [participantList, activeRecording] = await Promise.all([
-    getMeetingParticipantsOnServer(meeting.meetingId, accessToken),
+  const activeRecording =
     meeting.status === 'IN_PROGRESS'
-      ? getActiveRecordingOnServer(meeting.meetingId, accessToken)
-      : null,
-  ]);
+      ? await getActiveRecordingOnServer(meeting.meetingId, accessToken)
+      : null;
 
   queryClient.setQueryData(
     getCurrentMeetingQueryKey(meeting.meetingId),
-    toCurrentMeetingState(meeting, participantList, activeRecording),
+    toCurrentMeetingState(meeting, activeRecording),
   );
 };
 
