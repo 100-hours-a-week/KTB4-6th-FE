@@ -13,6 +13,7 @@ import {
 
 interface ChatMessageListProps {
   messages: ChatMessageViewModel[];
+  ownQuestionMessageId: number | null;
   isLoading: boolean;
   isError: boolean;
   isRetrying: boolean;
@@ -25,6 +26,7 @@ interface ChatMessageListProps {
 
 export const ChatMessageList = ({
   messages,
+  ownQuestionMessageId,
   isLoading,
   isError,
   isRetrying,
@@ -34,9 +36,17 @@ export const ChatMessageList = ({
   onRetry,
   onLoadOlderMessages,
 }: ChatMessageListProps) => {
-  const { scrollContainerRef, topSentinelRef, retryLoadOlderMessages } =
+  const messagesKey = messages.map((message) => `${message.id}:${message.answerState}`).join('|');
+  const visibleOwnQuestionMessageId = messages.some(
+    (message) => message.messageId === ownQuestionMessageId,
+  )
+    ? ownQuestionMessageId
+    : null;
+  const { scrollContainerRef, topSentinelRef, handleScroll, retryLoadOlderMessages } =
     useMeetingChatReverseScroll({
       messageCount: messages.length,
+      messagesKey,
+      ownQuestionMessageId: visibleOwnQuestionMessageId,
       isInitialLoading: isLoading,
       hasOlderMessages,
       isLoadingOlderMessages,
@@ -47,6 +57,7 @@ export const ChatMessageList = ({
   return (
     <main
       ref={scrollContainerRef}
+      onScroll={handleScroll}
       data-clarity-mask="true"
       className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-4"
     >
