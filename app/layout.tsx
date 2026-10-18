@@ -29,7 +29,6 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
       className={cn('h-full', 'antialiased', displayFont.variable, 'font-sans')}
     >
       <head>
-        {/* Pretendard: 한글 UI 서체. Google Fonts 카탈로그에 없어 next/font 대신 동적 서브셋 CDN으로 로드. */}
         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
         <link
           rel="stylesheet"
