@@ -3,15 +3,15 @@ export const DASHBOARD_INFO = {
     label: '평균 회의 시간',
     descriptionLines: ['총 회의 시간을 종료된 회의 수로 나눈 값이에요.'],
   },
-  overtimeRate: {
-    label: '평균 초과율',
-    descriptionLines: ['목표 시간을 넘긴 회의가', '목표보다 평균 몇 % 더 길어졌는지 보여줘요.'],
+  goalAchievement: {
+    label: '목표 달성률',
+    descriptionLines: ['목표 시간을 지켰거나 단축한 회의가', '종료된 회의 중 몇 %인지 보여줘요.'],
   },
   contextOut: {
     label: '맥락에서 벗어난 시간',
     descriptionLines: [
-      'AI가 회의 목적과 관련 없다고 판단한 발언 시간이에요.',
-      '총 회의 시간과 함께 보여줘요.',
+      'AI가 회의 목적과 관련 없다고 판단한 발언 시간을 더한 값이에요.',
+      '전체 회의 시간에서 차지하는 비율도 함께 보여줘요.',
     ],
   },
   targetComparison: {
