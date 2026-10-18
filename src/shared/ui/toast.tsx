@@ -23,9 +23,7 @@ interface AppToastProviderProps {
   children: ReactNode;
 }
 
-// 설계서 지시사항: 토스트 배경은 하나로 통일하고, 성공/실패는 좌측 점(dot) 색상으로만 구분한다.
 export const AppToastProvider = ({ children }: AppToastProviderProps) => {
-  // 390px 모바일 프레임 안에만 토스트가 보이도록 포털 대상을 지정한다.
   const frame = useAppFrameElement();
 
   return (
@@ -72,8 +70,16 @@ const AppToastList = () => {
 export const useAppToast = () => {
   const manager = Toast.useToastManager();
 
-  const showToast = (description: string, variant: AppToastVariant = 'neutral') =>
-    manager.add({ description, data: { variant } satisfies AppToastData });
+  const showToast = (
+    description: string,
+    variant: AppToastVariant = 'neutral',
+    options?: { timeout?: number },
+  ) =>
+    manager.add({
+      description,
+      timeout: options?.timeout,
+      data: { variant } satisfies AppToastData,
+    });
 
   return { showToast };
 };
