@@ -20,11 +20,10 @@ export const DashboardTargetComparisonCard = ({
   children,
 }: DashboardTargetComparisonCardProps) => {
   const hasMeetings = totalMeetings > 0;
-
   return (
     <section
       aria-labelledby="dashboard-target-comparison-title"
-      className="flex flex-col overflow-hidden rounded-[20px] bg-white shadow-[0_2px_12px_rgba(31,53,85,0.07)]"
+      className="motion-safe:animate-in motion-safe:fade-in flex shrink-0 flex-col overflow-hidden rounded-[20px] bg-white shadow-[0_2px_12px_rgba(31,53,85,0.07)] motion-safe:duration-200"
     >
       <div className="flex items-end justify-between gap-2.5 bg-brand-600 px-5 py-4">
         <div className="flex min-w-0 flex-col gap-2.5">
@@ -89,29 +88,11 @@ export const DashboardTargetComparisonCard = ({
             </div>
 
             <div className="h-[176px]">{children}</div>
-
-            <div className="flex items-center justify-center gap-3.5 text-[12px] leading-none font-medium text-cool-600">
-              <span className="flex items-center gap-1.5">
-                <span className="w-3.5 border-t-[1.5px] border-dashed border-cool-500" />
-                목표 시간
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="size-2.5 rounded-[3px] bg-danger" />
-                초과
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="size-2.5 rounded-[3px] bg-brand-500" />
-                단축
-              </span>
-            </div>
           </>
         ) : (
-          <div className="flex h-[176px] flex-col items-center justify-center gap-1.5 rounded-[10px] bg-cool-50">
+          <div className="flex h-[176px] items-center justify-center rounded-[10px] bg-cool-50">
             <p className="text-sm leading-[1.3] font-medium text-cool-600">
-              이 날 종료된 회의가 없어요
-            </p>
-            <p className="text-[12.5px] leading-[1.3] text-cool-500">
-              회의가 끝나면 여기에 표시돼요
+              회의가 존재하지 않습니다
             </p>
           </div>
         )}
