@@ -42,8 +42,12 @@ export const NavigationSidebar = ({
     : null;
 
   const navigateTo = (path: string) => {
-    if (pathname !== path) router.push(path);
-    onOpenChange(false);
+    if (pathname === path) {
+      onOpenChange(false);
+      return;
+    }
+
+    router.push(path);
   };
 
   const handleCurrentMeetingClick = () => {
