@@ -50,20 +50,25 @@ export const DashboardPage = ({ teamId }: DashboardPageProps) => {
       <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-[22px] pt-[18px] pb-8">
         {dashboard ? (
           <>
-            <DashboardSummaryCard
+            <DashboardTargetComparisonCard
               totalMeetings={dashboard.summary.totalMeetings}
               totalDurationSeconds={dashboard.summary.totalMeetingDurationSeconds}
-              averageDurationSeconds={dashboard.summary.averageMeetingDurationSeconds}
-              overtimeRate={dashboard.summary.overtimeDurationRate}
-              contextOutSeconds={dashboard.summary.totalContextOutSeconds}
-            />
-            <DashboardTargetComparisonCard selectedRangeSummary={selectedRangeSummary}>
+              selectedRangeSummary={selectedRangeSummary}
+            >
               <DashboardTargetComparisonChart
                 ranges={chart}
                 selectedIndex={activeRangeIndex}
                 onSelect={setSelectedRangeIndex}
               />
             </DashboardTargetComparisonCard>
+            <DashboardSummaryCard
+              totalMeetings={dashboard.summary.totalMeetings}
+              totalDurationSeconds={dashboard.summary.totalMeetingDurationSeconds}
+              averageDurationSeconds={dashboard.summary.averageMeetingDurationSeconds}
+              overtimeMeetings={dashboard.summary.overtimeMeetings}
+              contextOutSeconds={dashboard.summary.totalContextOutSeconds}
+              contextOutRate={dashboard.summary.contextOutRate}
+            />
             <DashboardTopicsCard topics={dashboard.topics} />
           </>
         ) : isDashboardPending ? (
