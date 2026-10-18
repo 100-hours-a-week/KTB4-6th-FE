@@ -23,6 +23,14 @@ export const DASHBOARD_INFO = {
       '막대를 누르면 목표와의 차이를 볼 수 있어요.',
     ],
   },
+  weeklyOvertime: {
+    label: '목표 시간 초과 회의 비율',
+    descriptionLines: [
+      '날짜별로 목표 시간을 넘긴 회의가',
+      '종료된 회의 중 몇 %인지 보여줘요.',
+      '막대를 누르면 해당 날짜의 회의 시간을 볼 수 있어요.',
+    ],
+  },
   topTopics: {
     label: '안건별 논의 시간 Top 5',
     descriptionLines: ['선택한 기간의 모든 회의에서', '가장 오래 논의한 안건 5개예요.'],
