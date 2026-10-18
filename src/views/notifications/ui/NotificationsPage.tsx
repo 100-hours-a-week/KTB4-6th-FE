@@ -66,7 +66,7 @@ export const NotificationsPage = ({ teamId }: NotificationsPageProps) => {
   };
 
   return (
-    <div className="flex h-dvh min-h-[844px] flex-col bg-white">
+    <div className="flex min-h-0 flex-1 flex-col bg-white">
       <NotificationsHeader
         teamId={teamId}
         isReadAllDisabled={!hasUnread}

@@ -126,7 +126,7 @@ export const CurrentMeetingPage = ({
 
   return (
     <CurrentMeetingProvider value={contextValue}>
-      <div className="relative flex h-dvh min-h-[844px] flex-col bg-cool-50">
+      <div className="relative flex min-h-0 flex-1 flex-col bg-cool-50">
         {!recording.isCompleted && (
           <MeetingSseConnection
             meetingId={String(meetingId)}
