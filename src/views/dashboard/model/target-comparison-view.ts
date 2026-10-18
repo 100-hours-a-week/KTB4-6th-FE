@@ -1,108 +1,67 @@
+import type { DashboardMeetingData } from '@/features/dashboard';
 import { formatDurationSeconds } from '@/shared/lib';
 
-export interface TargetComparisonRange {
-  startDate: string;
-  endDate: string;
-  targetDurationSeconds: number;
-  actualDurationSeconds: number;
-}
-
-export interface TargetComparisonBar {
-  label: string;
-  rangeLabel: string;
-  rate: number | null;
+export interface TargetComparisonBar extends DashboardMeetingData {
+  differenceMinutes: number;
   isSelected: boolean;
 }
 
-export interface SelectedRangeSummary {
-  range: string;
+export interface SelectedMeetingSummary {
+  title: string;
   detail: string;
-  overtime: string | null;
+  difference: string;
+  differenceType: 'over' | 'under' | 'same';
 }
 
-const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
-const MIN_AXIS_RATE = 20;
-const RATE_LABEL_MIN_DIFF = 10;
+const MIN_AXIS_MINUTES = 10;
 
-const parseDate = (value: string) => {
-  const [year, month, day] = value.split('-').map(Number);
-  return { month, day, weekday: WEEKDAYS[new Date(Date.UTC(year, month - 1, day)).getUTCDay()] };
-};
-
-const formatRangeLabel = (startDate: string, endDate: string) => {
-  const start = parseDate(startDate);
-
-  if (startDate === endDate) return `${start.month}월 ${start.day}일 (${start.weekday})`;
-
-  const end = parseDate(endDate);
-  const endLabel = end.month === start.month ? `${end.day}일` : `${end.month}월 ${end.day}일`;
-
-  return `${start.month}월 ${start.day}일 – ${endLabel}`;
-};
-
-const formatAxisLabel = (range: TargetComparisonRange, isLast: boolean) => {
-  const start = parseDate(range.startDate);
-
-  if (range.startDate !== range.endDate) return `${start.month}/${start.day}`;
-  return isLast ? '오늘' : start.weekday;
-};
-
-export const hasRangeMeetings = (range: TargetComparisonRange) => range.targetDurationSeconds > 0;
-
-export const getTargetDeviationRate = (range: TargetComparisonRange) => {
-  if (!hasRangeMeetings(range)) return null;
-
-  const overtimeSeconds = range.actualDurationSeconds - range.targetDurationSeconds;
-  return Math.round((overtimeSeconds / range.targetDurationSeconds) * 100);
-};
-
-export const getTargetDeviationDomain = (rates: (number | null)[]): [number, number] => {
-  const maxOverRate = Math.max(MIN_AXIS_RATE, ...rates.map((rate) => rate ?? 0));
-  const maxUnderRate = Math.max(MIN_AXIS_RATE, ...rates.map((rate) => -(rate ?? 0)));
-
-  return [-maxUnderRate, maxOverRate];
-};
+const roundAxisMinutes = (minutes: number, step: number) =>
+  Math.max(MIN_AXIS_MINUTES, Math.ceil(minutes / step) * step);
 
 export const toTargetComparisonBars = (
-  ranges: TargetComparisonRange[],
-  selectedIndex: number,
+  meetings: DashboardMeetingData[],
+  selectedMeetingId: number | null,
 ): TargetComparisonBar[] =>
-  ranges.map((range, index) => ({
-    label: formatAxisLabel(range, index === ranges.length - 1),
-    rangeLabel: formatRangeLabel(range.startDate, range.endDate),
-    rate: getTargetDeviationRate(range),
-    isSelected: index === selectedIndex,
+  meetings.map((meeting) => ({
+    ...meeting,
+    differenceMinutes: (meeting.actualDurationSeconds - meeting.targetDurationSeconds) / 60,
+    isSelected: meeting.meetingId === selectedMeetingId,
   }));
 
-export const formatTargetRate = (rate: number | null) => {
-  if (rate === null) return '–';
-  if (rate === 0) return '0%';
-  return rate > 0 ? `+${rate}%` : `−${-rate}%`;
+export const getTargetDifferenceScale = (
+  differences: number[],
+): { domain: [number, number]; ticks: number[] } => {
+  const largestOvertime = Math.max(0, ...differences);
+  const largestReduction = Math.max(0, ...differences.map((difference) => -difference));
+  const roughTotal = largestOvertime + largestReduction;
+  const step = roughTotal > 60 ? 20 : 10;
+  const max = roundAxisMinutes(largestOvertime, step);
+  const min = -roundAxisMinutes(largestReduction, step);
+  const ticks = [min, 0, max];
+
+  for (let value = -step; value > min; value -= step) ticks.push(value);
+  for (let value = step; value < max; value += step) ticks.push(value);
+
+  return { domain: [min, max], ticks: [...new Set(ticks)].sort((a, b) => a - b) };
 };
 
-export const formatTargetRateTick = (rate: number) =>
-  rate === 0 ? '목표' : formatTargetRate(rate);
-
-export const isRateLabelVisible = ({ rate, isSelected }: TargetComparisonBar) =>
-  isSelected || rate === null || rate === 0 || Math.abs(rate) >= RATE_LABEL_MIN_DIFF;
-
-export const getDefaultRangeIndex = (ranges: TargetComparisonRange[]) => {
-  const lastIndexWithMeetings = ranges.findLastIndex(hasRangeMeetings);
-  return lastIndexWithMeetings === -1 ? ranges.length - 1 : lastIndexWithMeetings;
+export const formatTargetDifferenceTick = (minutes: number) => {
+  if (minutes === 0) return '목표';
+  return minutes > 0 ? `+${minutes}분` : `−${Math.abs(minutes)}분`;
 };
 
-export const toSelectedRangeSummary = (range: TargetComparisonRange): SelectedRangeSummary => {
-  const rangeLabel = formatRangeLabel(range.startDate, range.endDate);
-
-  if (!hasRangeMeetings(range)) {
-    return { range: rangeLabel, detail: '종료된 회의가 없어요', overtime: null };
-  }
-
-  const overtimeSeconds = range.actualDurationSeconds - range.targetDurationSeconds;
+export const toSelectedMeetingSummary = (meeting: DashboardMeetingData): SelectedMeetingSummary => {
+  const differenceSeconds = meeting.actualDurationSeconds - meeting.targetDurationSeconds;
 
   return {
-    range: rangeLabel,
-    detail: `목표 ${formatDurationSeconds(range.targetDurationSeconds)} · 실제 ${formatDurationSeconds(range.actualDurationSeconds)}`,
-    overtime: overtimeSeconds > 0 ? `· ${formatDurationSeconds(overtimeSeconds)} 초과` : null,
+    title: meeting.title,
+    detail: `목표 ${formatDurationSeconds(meeting.targetDurationSeconds)} · 실제 ${formatDurationSeconds(meeting.actualDurationSeconds)}`,
+    difference:
+      differenceSeconds > 0
+        ? `+${formatDurationSeconds(differenceSeconds)} 초과`
+        : differenceSeconds < 0
+          ? `${formatDurationSeconds(-differenceSeconds)} 단축`
+          : '목표와 같음',
+    differenceType: differenceSeconds > 0 ? 'over' : differenceSeconds < 0 ? 'under' : 'same',
   };
 };
