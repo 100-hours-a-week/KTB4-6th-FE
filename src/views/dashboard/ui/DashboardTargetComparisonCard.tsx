@@ -1,13 +1,13 @@
 import type { ReactNode } from 'react';
 import { formatDurationSeconds } from '@/shared/lib';
 import { DASHBOARD_INFO } from '../model/dashboard-info';
-import type { SelectedRangeSummary } from '../model/target-comparison-view';
+import type { SelectedMeetingSummary } from '../model/target-comparison-view';
 import { DashboardInfoPopover } from './DashboardInfoPopover';
 
 interface DashboardTargetComparisonCardProps {
   totalMeetings: number;
   totalDurationSeconds: number;
-  selectedRangeSummary: SelectedRangeSummary | null;
+  selectedMeetingSummary: SelectedMeetingSummary | null;
   dateNavigator: ReactNode;
   children?: ReactNode;
 }
@@ -15,7 +15,7 @@ interface DashboardTargetComparisonCardProps {
 export const DashboardTargetComparisonCard = ({
   totalMeetings,
   totalDurationSeconds,
-  selectedRangeSummary,
+  selectedMeetingSummary,
   dateNavigator,
   children,
 }: DashboardTargetComparisonCardProps) => {
@@ -53,21 +53,57 @@ export const DashboardTargetComparisonCard = ({
 
         {dateNavigator}
 
-        {selectedRangeSummary ? (
+        {hasMeetings ? (
           <>
-            <div aria-live="polite" className="flex flex-col gap-1.5 px-0.5">
-              <p className="text-[15px] font-semibold tracking-[-0.01em] text-cool-900">
-                {selectedRangeSummary.range}
-              </p>
-              <p className="flex gap-1.5 text-[13px] leading-[1.2] whitespace-nowrap text-cool-600">
-                <span>{selectedRangeSummary.detail}</span>
-                {selectedRangeSummary.overtime && (
-                  <span className="font-semibold text-danger">{selectedRangeSummary.overtime}</span>
-                )}
-              </p>
+            <div
+              aria-live="polite"
+              className="flex min-h-[46px] items-center justify-between gap-2.5 rounded-[11px] bg-cool-50 px-3.5"
+            >
+              {selectedMeetingSummary ? (
+                <>
+                  <div className="flex min-w-0 flex-col gap-1">
+                    <p className="truncate text-[13px] leading-[1.2] font-semibold tracking-[-0.01em] text-cool-900">
+                      {selectedMeetingSummary.title}
+                    </p>
+                    <p className="text-[12px] leading-[1.1] whitespace-nowrap text-cool-600">
+                      {selectedMeetingSummary.detail}
+                    </p>
+                  </div>
+                  <span
+                    className={`shrink-0 text-[16px] leading-none font-semibold tracking-[-0.02em] whitespace-nowrap tabular-nums ${
+                      selectedMeetingSummary.differenceType === 'over'
+                        ? 'text-danger'
+                        : selectedMeetingSummary.differenceType === 'under'
+                          ? 'text-brand-500'
+                          : 'text-cool-600'
+                    }`}
+                  >
+                    {selectedMeetingSummary.difference}
+                  </span>
+                </>
+              ) : (
+                <span className="flex-1 text-center text-[12.5px] leading-[1.3] text-cool-500">
+                  막대를 누르면 자세히 볼 수 있어요
+                </span>
+              )}
             </div>
 
-            <div className="h-[260px]">{children}</div>
+            <div className="h-[176px]">{children}</div>
+
+            <div className="flex items-center justify-center gap-3.5 text-[12px] leading-none font-medium text-cool-600">
+              <span className="flex items-center gap-1.5">
+                <span className="w-3.5 border-t-[1.5px] border-dashed border-cool-500" />
+                목표 시간
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="size-2.5 rounded-[3px] bg-danger" />
+                초과
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="size-2.5 rounded-[3px] bg-brand-500" />
+                단축
+              </span>
+            </div>
           </>
         ) : (
           <div className="flex h-[176px] flex-col items-center justify-center gap-1.5 rounded-[10px] bg-cool-50">
