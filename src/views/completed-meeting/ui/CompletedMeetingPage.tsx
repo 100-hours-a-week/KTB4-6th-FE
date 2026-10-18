@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useMeetingDetail } from '@/features/meeting';
 import { getTeamDetail } from '@/features/team-management';
 import { NavigationSidebar } from '@/widgets/navigation-sidebar';
-import type { CompletedMeetingTab } from '../model/completed-meeting-tab';
+import { parseCompletedMeetingSegmentId } from '../model/completed-meeting-segment-id';
+import { parseCompletedMeetingTab, type CompletedMeetingTab } from '../model/completed-meeting-tab';
 import { useAudioViewState } from '../model/useAudioViewState';
 import { CompletedMeetingHeader } from './CompletedMeetingHeader';
 import { CompletedMeetingLoadingState } from './CompletedMeetingLoadingState';
@@ -16,10 +18,12 @@ import { TranscriptScreen } from './TranscriptScreen';
 interface CompletedMeetingPageProps {
   teamId: string;
   meetingId: number;
-  tab: CompletedMeetingTab;
 }
 
-export const CompletedMeetingPage = ({ teamId, meetingId, tab }: CompletedMeetingPageProps) => {
+export const CompletedMeetingPage = ({ teamId, meetingId }: CompletedMeetingPageProps) => {
+  const searchParams = useSearchParams();
+  const tab = parseCompletedMeetingTab(searchParams.get('tab') ?? undefined);
+  const segmentId = parseCompletedMeetingSegmentId(searchParams.get('segmentId') ?? undefined);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const numericTeamId = Number(teamId);
   const { data: team } = useQuery({
@@ -28,14 +32,12 @@ export const CompletedMeetingPage = ({ teamId, meetingId, tab }: CompletedMeetin
     enabled: Number.isSafeInteger(numericTeamId) && numericTeamId > 0,
   });
   const meetingDetailQuery = useMeetingDetail(meetingId);
-  // 팀 정보가 오기 전에는 팀장인지 알 수 없어 팀원으로 본다.
   const viewerRole = team?.role === 'LEADER' ? 'leader' : 'member';
   const { state: audio, retry: retryAudioFile } = useAudioViewState({ meetingId });
 
   const getTabHref = (nextTab: CompletedMeetingTab) =>
     `/teams/${encodeURIComponent(teamId)}/meetings/${meetingId}?tab=${nextTab}`;
 
-  // 회의 상세를 아직 못 받았으면 화면 전체를 로딩·오류로 대체한다.
   const meetingDetail = meetingDetailQuery.data;
   if (meetingDetailQuery.isPending || meetingDetailQuery.isError || !meetingDetail) {
     return (
@@ -53,7 +55,7 @@ export const CompletedMeetingPage = ({ teamId, meetingId, tab }: CompletedMeetin
   };
 
   return (
-    <div className="flex h-dvh min-h-[844px] flex-col bg-cool-50">
+    <div className="flex min-h-0 flex-1 flex-col bg-cool-50">
       <header className="shrink-0 bg-white">
         <CompletedMeetingHeader
           teamId={teamId}
@@ -74,7 +76,12 @@ export const CompletedMeetingPage = ({ teamId, meetingId, tab }: CompletedMeetin
           transcriptHref={getTabHref('transcript')}
         />
       ) : (
-        <TranscriptScreen meetingId={meetingId} audio={audio} onAudioFileRetry={retryAudioFile} />
+        <TranscriptScreen
+          meetingId={meetingId}
+          targetEntryId={segmentId}
+          audio={audio}
+          onAudioFileRetry={retryAudioFile}
+        />
       )}
 
       {team && (

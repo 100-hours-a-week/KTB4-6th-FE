@@ -18,11 +18,11 @@ interface MeetingInfoDialogProps {
   closeLabel?: string;
   onSubmit: (values: CreateMeetingFormValues) => void;
   onClose: () => void;
+  onBack?: () => void;
 }
 
 const MEETING_INFO_FORM_ID = 'meeting-info-form';
 
-/** 회의 이름·목표 시간·목적·비고를 입력하는 모달. 생성과 수정에서 함께 쓴다. */
 export const MeetingInfoDialog = ({
   initialValues = INITIAL_CREATE_MEETING_FORM_VALUES,
   isSubmitting,
@@ -30,6 +30,7 @@ export const MeetingInfoDialog = ({
   closeLabel = '닫기',
   onSubmit,
   onClose,
+  onBack,
 }: MeetingInfoDialogProps) => {
   const frame = useAppFrameElement();
   const [isFormValid, setIsFormValid] = useState(() => isCreateMeetingFormValid(initialValues));
@@ -70,12 +71,23 @@ export const MeetingInfoDialog = ({
               </p>
             )}
             <div className="flex gap-3">
-              <Dialog.Close
-                disabled={isSubmitting}
-                className="h-14 flex-1 rounded-xl border border-cool-200 text-base font-semibold text-cool-700 transition-colors hover:bg-cool-50 disabled:text-cool-400 disabled:hover:bg-transparent"
-              >
-                취소
-              </Dialog.Close>
+              {onBack ? (
+                <button
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={onBack}
+                  className="h-14 flex-1 rounded-xl border border-cool-200 text-base font-semibold text-cool-700 transition-colors hover:bg-cool-50 disabled:text-cool-400 disabled:hover:bg-transparent"
+                >
+                  이전
+                </button>
+              ) : (
+                <Dialog.Close
+                  disabled={isSubmitting}
+                  className="h-14 flex-1 rounded-xl border border-cool-200 text-base font-semibold text-cool-700 transition-colors hover:bg-cool-50 disabled:text-cool-400 disabled:hover:bg-transparent"
+                >
+                  취소
+                </Dialog.Close>
+              )}
               <button
                 type="submit"
                 form={MEETING_INFO_FORM_ID}

@@ -3,10 +3,11 @@ export interface ApiErrorPayload {
   message: string;
 }
 
-export type MeetingListItemStatus = 'WAITING' | 'IN_PROGRESS' | 'COMPLETED';
+export type MeetingListItemStatus = 'SCHEDULED' | 'WAITING' | 'IN_PROGRESS' | 'COMPLETED';
 
 export interface MeetingListItemData {
   meetingId: number;
+  createdByTeamMemberId?: number;
   title: string;
   scheduledAt: string;
   startedAt: string | null;
@@ -25,6 +26,13 @@ export interface MeetingListData {
   groups: MeetingListGroupData[];
   nextCursor: string | null;
   hasNext: boolean;
+}
+
+export interface MeetingListParams {
+  cursor?: string;
+  from?: string;
+  to?: string;
+  keyword?: string;
 }
 
 export interface MeetingListResponse {

@@ -11,12 +11,14 @@ import {
 } from 'react';
 import type { ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import * as Sentry from '@sentry/nextjs';
+import { captureException, captureMessage } from '@/shared/lib';
 import { joinMeeting } from '../api/join-meeting';
+import { CHAT_SSE_EVENT_TYPES, type ChatSseEventData } from './chat-event';
 import { getCurrentMeetingQueryKey } from './current-meeting-query-key';
 import { createListenerRegistry } from './listener-registry';
 import { RECORDING_SSE_EVENT_TYPES, type RecordingSseEventType } from './recording-event';
 import type { TranscriptCreatedEventData } from './transcript-event';
+import { useMeetingChatEvents } from './use-meeting-chat-events';
 import { useMeetingTranscripts } from './use-meeting-transcripts';
 
 export type MeetingSseStatus = 'idle' | 'unconfigured' | 'connecting' | 'connected' | 'error';
@@ -26,6 +28,10 @@ interface MeetingSseContextValue {
   transcriptsByMeetingId: Record<string, TranscriptCreatedEventData[]>;
   connect: (meetingId: string) => void;
   disconnect: (meetingId: string) => void;
+  subscribeChatEvent: (
+    meetingId: string,
+    listener: (event: ChatSseEventData) => void,
+  ) => () => void;
   subscribeDeleted: (meetingId: string, listener: () => void) => () => void;
   subscribeRecordingEvent: (
     meetingId: string,
@@ -43,14 +49,16 @@ interface MeetingSseProviderProps {
   children: ReactNode;
 }
 
-/** 회의별 SSE 연결 수명 주기와 연결 상태를 관리하고, 수신한 이벤트를 전사 훅과 구독자에게 넘긴다. */
 export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
   const queryClient = useQueryClient();
   const sources = useRef(new Map<string, EventSource>());
   const joining = useRef(new Map<string, { cancelled: boolean }>());
+  const reconnectedAfterClose = useRef(new Set<string>());
+  const reconnect = useRef<(meetingId: string) => void>(() => {});
   const [deletedListeners] = useState(() => createListenerRegistry());
   const [recordingListeners] = useState(() => createListenerRegistry<[RecordingSseEventType]>());
   const [statuses, setStatuses] = useState<Record<string, MeetingSseStatus>>({});
+  const { subscribeChatEvent, receiveChatEvent } = useMeetingChatEvents();
   const { transcriptsByMeetingId, subscribeTranscriptCreated, receiveTranscript } =
     useMeetingTranscripts();
 
@@ -60,6 +68,7 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
       pendingJoin.cancelled = true;
       joining.current.delete(meetingId);
     }
+    reconnectedAfterClose.current.delete(meetingId);
 
     const source = sources.current.get(meetingId);
     if (source) {
@@ -93,7 +102,7 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
       try {
         url = new URL(`/api/v1/meetings/${encodeURIComponent(meetingId)}/events`, baseUrl);
       } catch (error) {
-        Sentry.captureException(error, {
+        captureException(error, {
           tags: { feature: 'meeting-sse', 'meeting.id': meetingId },
         });
         setStatuses((current) => ({ ...current, [meetingId]: 'error' }));
@@ -116,11 +125,13 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
           const source = new EventSource(url.toString(), { withCredentials: true });
           sources.current.set(meetingId, source);
 
-          // 연결 자체가 실패했는지, 연결된 뒤에 끊겼는지 구분하기 위해 기록한다.
           let opened = false;
+          let hasReportedCurrentError = false;
 
           source.onopen = () => {
             opened = true;
+            hasReportedCurrentError = false;
+            reconnectedAfterClose.current.delete(meetingId);
             setStatuses((current) => ({ ...current, [meetingId]: 'connected' }));
           };
 
@@ -128,14 +139,19 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
             receiveTranscript(meetingId, event.data);
           });
 
-          // 연결이 회의 단위라 페이로드 없이 어떤 이벤트인지만 알린다.
+          CHAT_SSE_EVENT_TYPES.forEach((type) => {
+            source.addEventListener(type, (event) => {
+              if (sources.current.get(meetingId) !== source) return;
+              receiveChatEvent(meetingId, type, event.data);
+            });
+          });
+
           RECORDING_SSE_EVENT_TYPES.forEach((type) => {
             source.addEventListener(type, () => {
               if (sources.current.get(meetingId) !== source) return;
 
               recordingListeners.emit(meetingId, type);
 
-              // 서버는 종료 이벤트를 보낸 뒤 연결을 닫는다. 연결 오류로 보이지 않도록 먼저 정리한다.
               if (type === 'RECORDING_COMPLETED') disconnect(meetingId);
             });
           });
@@ -148,13 +164,26 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
           });
 
           source.onerror = () => {
-            // EventSource의 자동 재연결은 이번 작업 범위에 포함하지 않는다.
-            source.close();
-            sources.current.delete(meetingId);
+            if (sources.current.get(meetingId) !== source) return;
+
+            if (
+              source.readyState === EventSource.CLOSED &&
+              !reconnectedAfterClose.current.has(meetingId)
+            ) {
+              reconnectedAfterClose.current.add(meetingId);
+              source.onopen = null;
+              source.onerror = null;
+              source.close();
+              sources.current.delete(meetingId);
+              reconnect.current(meetingId);
+              return;
+            }
+
             setStatuses((current) => ({ ...current, [meetingId]: 'error' }));
 
-            // 정상 종료(녹음 종료·회의 삭제)는 이벤트 수신 시 disconnect로 핸들러를 먼저 해제한다.
-            Sentry.captureMessage('회의 SSE 연결 끊김', {
+            if (hasReportedCurrentError) return;
+            hasReportedCurrentError = true;
+            captureMessage('회의 SSE 연결 끊김', {
               level: 'error',
               tags: {
                 feature: 'meeting-sse',
@@ -175,8 +204,19 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
         }
       })();
     },
-    [deletedListeners, disconnect, queryClient, receiveTranscript, recordingListeners],
+    [
+      deletedListeners,
+      disconnect,
+      queryClient,
+      receiveChatEvent,
+      receiveTranscript,
+      recordingListeners,
+    ],
   );
+
+  useEffect(() => {
+    reconnect.current = connect;
+  }, [connect]);
 
   useEffect(() => {
     const activeSources = sources.current;
@@ -198,6 +238,7 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
       transcriptsByMeetingId,
       connect,
       disconnect,
+      subscribeChatEvent,
       subscribeDeleted: deletedListeners.subscribe,
       subscribeRecordingEvent: recordingListeners.subscribe,
       subscribeTranscriptCreated,
@@ -209,6 +250,7 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
       disconnect,
       deletedListeners.subscribe,
       recordingListeners.subscribe,
+      subscribeChatEvent,
       subscribeTranscriptCreated,
     ],
   );

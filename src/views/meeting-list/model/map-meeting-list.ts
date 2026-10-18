@@ -1,15 +1,19 @@
 import type {
   MeetingListData,
+  MeetingListGroupData,
   MeetingListItemData,
   MeetingListItemStatus,
 } from '@/features/meeting-list';
-import type { Meeting } from './type';
+import type { Meeting, MeetingDateGroup, TodayMeetings } from './type';
 
 const MEETING_STATUS_BY_API_STATUS: Record<MeetingListItemStatus, Meeting['status']> = {
+  SCHEDULED: 'scheduled',
   WAITING: 'waiting',
   IN_PROGRESS: 'in_progress',
   COMPLETED: 'completed',
 };
+
+const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 const formatMinutes = (totalMinutes: number) => {
   const hours = Math.floor(totalMinutes / 60);
@@ -21,35 +25,83 @@ const formatMinutes = (totalMinutes: number) => {
   return `${hours}시간 ${minutes}분`;
 };
 
-const formatDate = (dateTime: string) => dateTime.slice(0, 10).replaceAll('-', '.');
 const formatTime = (dateTime: string) => dateTime.slice(11, 16);
 
-const getStartedAtLabel = (meeting: MeetingListItemData) => {
-  const startAt =
-    meeting.status === 'WAITING' ? meeting.scheduledAt : (meeting.startedAt ?? meeting.scheduledAt);
-  const date = formatDate(startAt);
-  const time = formatTime(startAt);
+const formatDate = (date: string) => date.replaceAll('-', '.');
 
-  return meeting.status === 'IN_PROGRESS' ? `${date} · ${time} 시작` : `${date} ${time}`;
+const formatGroupLabel = (date: string) => {
+  const [year, month, day] = date.split('-');
+  const weekday = WEEKDAYS[new Date(Date.UTC(+year, +month - 1, +day)).getUTCDay()];
+
+  return `${formatDate(date)} (${weekday})`;
 };
 
+const getStartAt = (meeting: MeetingListItemData) =>
+  meeting.status === 'SCHEDULED' || meeting.status === 'WAITING'
+    ? meeting.scheduledAt
+    : (meeting.startedAt ?? meeting.scheduledAt);
+
 const getDurationLabel = (meeting: MeetingListItemData) => {
-  if (meeting.status !== 'COMPLETED' || !meeting.startedAt || !meeting.endedAt) return undefined;
+  if (!meeting.startedAt || !meeting.endedAt) return undefined;
 
   const durationMs = new Date(meeting.endedAt).getTime() - new Date(meeting.startedAt).getTime();
 
   return formatMinutes(Math.max(0, Math.ceil(durationMs / 60000)));
 };
 
+const getSubLabel = (meeting: MeetingListItemData) => {
+  if (meeting.status !== 'COMPLETED') {
+    return `목표 ${formatMinutes(meeting.targetDurationMinutes)}`;
+  }
+
+  const durationLabel = getDurationLabel(meeting);
+
+  return durationLabel && `${durationLabel} 진행`;
+};
+
 const toMeeting = (meeting: MeetingListItemData): Meeting => ({
   id: meeting.meetingId,
+  createdByTeamMemberId: meeting.createdByTeamMemberId ?? null,
   title: meeting.title,
   status: MEETING_STATUS_BY_API_STATUS[meeting.status],
-  startedAtLabel: getStartedAtLabel(meeting),
-  durationLabel: getDurationLabel(meeting),
+  time: formatTime(getStartAt(meeting)),
+  subLabel: getSubLabel(meeting),
 });
 
-export const toMeetings = (pages: MeetingListData[]): Meeting[] =>
+const toMeetingDateGroup = (group: MeetingListGroupData): MeetingDateGroup => ({
+  date: group.date,
+  label: formatGroupLabel(group.date),
+  meetingCount: group.meetingCount,
+  meetings: group.meetings.map(toMeeting),
+});
+
+export const toMeetingDateGroups = (pages: MeetingListData[], today: string): MeetingDateGroup[] =>
   pages.flatMap((page) =>
-    page.groups.flatMap((group) => [...group.meetings].reverse().map(toMeeting)),
+    page.groups.filter((group) => group.date !== today).map(toMeetingDateGroup),
+  );
+
+export const toTodayMeetings = (data: MeetingListData, today: string): TodayMeetings | null => {
+  const group = data.groups.find(({ date }) => date === today);
+  if (!group || group.meetings.length === 0) return null;
+
+  const meetings = group.meetings.map(toMeeting);
+
+  return {
+    label: formatGroupLabel(today),
+    meetingCount: group.meetingCount,
+    inProgressMeeting: meetings.find(({ status }) => status === 'in_progress'),
+    otherMeetings: meetings.filter(({ status }) => status !== 'in_progress'),
+  };
+};
+
+export const toMeetingSearchResults = (pages: MeetingListData[]): Meeting[] =>
+  pages.flatMap((page) =>
+    page.groups.flatMap((group) =>
+      group.meetings.map(toMeeting).map((meeting) => ({
+        ...meeting,
+        subLabel: [formatDate(group.date), meeting.time, meeting.subLabel]
+          .filter(Boolean)
+          .join(' · '),
+      })),
+    ),
   );

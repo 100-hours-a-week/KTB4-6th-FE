@@ -17,9 +17,7 @@ interface MeetingRenameDialogProps {
 }
 
 const TITLE_HINT = `${CREATE_MEETING_TITLE_MIN_LENGTH}자 이상 ${CREATE_MEETING_TITLE_MAX_LENGTH}자 이하`;
-const TITLE_ERROR = `${CREATE_MEETING_TITLE_MIN_LENGTH}자 이상으로 입력해주세요`;
 
-/** 회의 목록에서 회의 이름을 바꾸는 모달. 열릴 때마다 입력값이 비워진 상태로 시작한다. */
 export const MeetingRenameDialog = ({
   currentTitle,
   onConfirm,
@@ -27,8 +25,10 @@ export const MeetingRenameDialog = ({
 }: MeetingRenameDialogProps) => {
   const frame = useAppFrameElement();
   const [title, setTitle] = useState('');
-  const isValid = getCreateMeetingTitleError(title) === '';
-  const isInvalidInput = title.length > 0 && !isValid;
+  const [isTouched, setIsTouched] = useState(false);
+  const titleError = getCreateMeetingTitleError(title);
+  const isValid = titleError === '';
+  const isInvalidInput = isTouched && !isValid;
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -59,34 +59,38 @@ export const MeetingRenameDialog = ({
               회의 이름 변경
             </Dialog.Title>
 
-            <p className="mt-4 flex h-12 items-center truncate rounded-xl border border-cool-200 bg-cool-50 px-4 text-base text-cool-500">
-              {currentTitle}
-            </p>
-            <div className="mt-2 flex items-center justify-between text-xs">
-              <span className="text-cool-500">{TITLE_HINT}</span>
-              <span className="font-mono text-cool-500 tabular-nums">
-                {title.length}/{CREATE_MEETING_TITLE_MAX_LENGTH}
-              </span>
-            </div>
             <input
               autoFocus
               aria-label="새 회의 이름"
               aria-invalid={isInvalidInput}
+              aria-describedby="rename-title-help"
               value={title}
-              maxLength={CREATE_MEETING_TITLE_MAX_LENGTH}
-              onChange={(event) => setTitle(event.target.value)}
+              placeholder={currentTitle}
+              maxLength={CREATE_MEETING_TITLE_MAX_LENGTH + 1}
+              onChange={(event) => {
+                setTitle(event.target.value);
+                setIsTouched(true);
+              }}
               className={cn(
-                'mt-2 h-12 w-full rounded-xl border bg-white px-4 text-base font-medium text-cool-900 transition-colors outline-none',
+                'mt-4 h-12 w-full rounded-xl border bg-cool-50 px-4 text-base font-medium text-cool-900 transition-colors outline-none placeholder:font-normal placeholder:text-cool-400',
                 isInvalidInput
                   ? 'border-danger ring-4 ring-danger/15'
                   : 'border-cool-200 focus:border-brand-600',
               )}
             />
-            {isInvalidInput && (
-              <p role="alert" className="mt-2 text-xs text-danger">
-                {TITLE_ERROR}
-              </p>
-            )}
+            <div className="mt-2 flex items-start justify-between gap-3 text-xs">
+              {/* 오류가 있으면 안내 문구 자리에 오류를 보여준다 */}
+              <span
+                id="rename-title-help"
+                role={isInvalidInput ? 'alert' : undefined}
+                className={isInvalidInput ? 'text-danger' : 'text-cool-500'}
+              >
+                {isInvalidInput ? titleError : TITLE_HINT}
+              </span>
+              <span className="shrink-0 font-mono text-cool-500 tabular-nums">
+                {title.length}/{CREATE_MEETING_TITLE_MAX_LENGTH}
+              </span>
+            </div>
 
             <div className="mt-5 grid grid-cols-2 gap-2">
               <Dialog.Close className="h-12 rounded-xl border border-cool-200 text-sm font-semibold text-cool-700 transition-colors hover:bg-cool-50">

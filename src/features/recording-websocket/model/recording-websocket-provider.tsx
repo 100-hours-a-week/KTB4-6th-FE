@@ -10,7 +10,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import * as Sentry from '@sentry/nextjs';
+import { captureException } from '@/shared/lib';
 import type { AudioFormat } from '@/entities/recording';
 import {
   CLOSE_CODE_COMPLETED,
@@ -26,7 +26,8 @@ import {
 import { createRecoveryMessageInbox } from './recovery-message-inbox';
 import { reportSocketFailure } from './report-socket-failure';
 
-/** closed: 녹음 종료로 BE가 닫음, superseded: 다른 탭·기기의 새 연결로 대체됨. 둘 다 재연결하지 않는다. */
+const SEND_BUFFER_POLL_INTERVAL_MS = 50;
+
 export type RecordingWebSocketStatus =
   'idle' | 'unconfigured' | 'connecting' | 'connected' | 'error' | 'closed' | 'superseded';
 
@@ -40,6 +41,7 @@ interface RecordingWebSocketContextValue {
   connect: (recordingSessionId: number, audioFormat: AudioFormat) => void;
   sendAudioChunk: (recordingSessionId: number, chunk: Blob, seq: number) => void;
   sendRecoveryFinished: (recordingSessionId: number, lastSequence: number) => void;
+  waitForAudioSent: (recordingSessionId: number, timeoutMs: number) => Promise<void>;
   disconnect: (recordingSessionId: number) => void;
   addMessageListener: (listener: RecordingSocketMessageListener) => () => void;
   waitForRecoveryMessage: (
@@ -103,7 +105,7 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
       // 브라우저가 전송 가능한 쿠키를 핸드셰이크에 자동으로 포함한다.
       socket = new WebSocket(url);
     } catch (error) {
-      Sentry.captureException(error, {
+      captureException(error, {
         tags: { feature: 'recording-websocket', 'recording.session_id': recordingSessionId },
       });
       setStatuses((current) => ({ ...current, [recordingSessionId]: 'error' }));
@@ -113,7 +115,6 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
     sockets.current.set(recordingSessionId, socket);
     setStatuses((current) => ({ ...current, [recordingSessionId]: 'connecting' }));
 
-    // 연결 자체가 실패했는지, 녹음 중에 끊겼는지 구분하기 위해 기록한다.
     let opened = false;
 
     socket.onopen = () => {
@@ -139,7 +140,6 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
       reportSocketFailure('녹음 WebSocket 오류', recordingSessionId, opened);
     };
 
-    // 직접 끊을 때는 disconnect에서 핸들러를 먼저 해제하므로, 여기까지 오면 의도하지 않은 종료다.
     socket.onclose = (event) => {
       if (sockets.current.get(recordingSessionId) !== socket) return;
       sockets.current.delete(recordingSessionId);
@@ -168,6 +168,27 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
     }
   }, []);
 
+  const waitForAudioSent = useCallback(
+    (recordingSessionId: number, timeoutMs: number) =>
+      new Promise<void>((resolve) => {
+        const deadline = Date.now() + timeoutMs;
+        const check = () => {
+          const socket = sockets.current.get(recordingSessionId);
+          if (
+            socket?.readyState !== WebSocket.OPEN ||
+            socket.bufferedAmount === 0 ||
+            Date.now() >= deadline
+          ) {
+            resolve();
+            return;
+          }
+          window.setTimeout(check, SEND_BUFFER_POLL_INTERVAL_MS);
+        };
+        check();
+      }),
+    [],
+  );
+
   useEffect(() => {
     const activeSockets = sockets.current;
     return () => {
@@ -195,6 +216,7 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
       connect,
       sendAudioChunk,
       sendRecoveryFinished,
+      waitForAudioSent,
       disconnect,
       addMessageListener,
       waitForRecoveryMessage,
@@ -204,6 +226,7 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
       connect,
       sendAudioChunk,
       sendRecoveryFinished,
+      waitForAudioSent,
       disconnect,
       addMessageListener,
       waitForRecoveryMessage,

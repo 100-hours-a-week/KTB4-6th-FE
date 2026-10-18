@@ -7,11 +7,9 @@ import { SummaryRegenerateReasonDialog } from './SummaryRegenerateReasonDialog';
 interface SummaryFailedStateProps {
   transcriptHref: string;
   isRetrying: boolean;
-  /** 사유와 함께 요약 생성을 다시 요청한다. 요청을 마쳤으면 true */
   onRetry: (reason: string) => Promise<boolean>;
 }
 
-/** 요약 생성에 실패했을 때 보여준다. `다시 시도`는 재생성과 같은 사유 입력 모달을 거쳐 바로 요청한다. */
 export const SummaryFailedState = ({
   transcriptHref,
   isRetrying,

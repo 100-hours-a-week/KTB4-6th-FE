@@ -21,8 +21,12 @@ export const ParticipantStatusMessage = ({
       : isDisconnected
         ? '실시간 연결이 끊어졌습니다'
         : isPaused
-          ? recorderName + '님이 녹음을 일시정지했습니다'
-          : recorderName + '님이 녹음을 진행 중입니다';
+          ? recorderName
+            ? `${recorderName}님이 녹음을 일시정지했습니다`
+            : '녹음이 일시정지되었습니다'
+          : recorderName
+            ? `${recorderName}님이 녹음을 진행 중입니다`
+            : '녹음이 진행 중입니다';
 
   return (
     <p className="flex h-12 min-w-0 items-center justify-center rounded-xl border border-cool-200 bg-cool-50 px-2 text-center text-xs text-cool-700">

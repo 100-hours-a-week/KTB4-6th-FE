@@ -1,24 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Menu } from 'lucide-react';
+import { AlarmClock, ChevronDown, ChevronUp, Menu, Users } from 'lucide-react';
 import { cn } from '@/shared/lib';
-import type { CurrentMeetingViewModel } from '../model/preview-meeting';
-import type { CurrentMeetingConnectionStatus } from '../model/useCurrentMeetingConnection';
-
-interface CurrentMeetingHeaderProps {
-  meeting: CurrentMeetingViewModel;
-  /** 팀 전체 인원 수. 조회 전이면 null. */
-  teamMemberCount: number | null;
-  isMenuDisabled: boolean;
-  isWaiting: boolean;
-  isPaused: boolean;
-  isEnding: boolean;
-  connectionStatus: CurrentMeetingConnectionStatus;
-  isRecording: boolean;
-  isCompleted: boolean;
-  onMenuClick: () => void;
-}
+import { useCurrentMeetingContext } from '../model/current-meeting-context';
+import { MeetingAttendeesSheet } from './MeetingAttendeesSheet';
 
 const MEETING_INFO_PANEL_ID = 'current-meeting-info';
 
@@ -27,21 +13,14 @@ const formatElapsed = (seconds: number) =>
     .map((part) => String(part).padStart(2, '0'))
     .join(':');
 
-export const CurrentMeetingHeader = ({
-  meeting,
-  teamMemberCount,
-  isMenuDisabled,
-  isWaiting,
-  isPaused,
-  isEnding,
-  connectionStatus,
-  isRecording,
-  isCompleted,
-  onMenuClick,
-}: CurrentMeetingHeaderProps) => {
+export const CurrentMeetingHeader = () => {
+  const { team, teamMembers, recording, openSidebar } = useCurrentMeetingContext();
+  const { meeting, isWaiting, isPaused, isEnding, connectionStatus, isRecording, isCompleted } =
+    recording;
   const [isInfoOpen, setIsInfoOpen] = useState(false);
+  const [isAttendeesOpen, setIsAttendeesOpen] = useState(false);
   const isDisconnected = connectionStatus === 'error';
-  const isOvertime = meeting.elapsedSeconds > meeting.targetMinutes * 60;
+  const isOvertime = meeting.elapsedSeconds >= meeting.targetMinutes * 60;
   const connectionLabel =
     connectionStatus === 'connecting'
       ? '실시간 연결 중'
@@ -58,7 +37,9 @@ export const CurrentMeetingHeader = ({
           ? '일시정지'
           : isRecording
             ? '녹음 중'
-            : '대기 중';
+            : isWaiting
+              ? '대기 중'
+              : '연결 중';
 
   return (
     <header className="shrink-0 border-b border-cool-200 bg-white px-5 pt-5 pb-4">
@@ -66,8 +47,8 @@ export const CurrentMeetingHeader = ({
         <button
           type="button"
           aria-label="메뉴 열기"
-          disabled={isMenuDisabled}
-          onClick={onMenuClick}
+          disabled={!team}
+          onClick={openSidebar}
           className="flex size-9 shrink-0 items-center justify-center rounded-full text-cool-900 disabled:text-cool-400"
         >
           <Menu className="size-5" strokeWidth={2} />
@@ -97,9 +78,15 @@ export const CurrentMeetingHeader = ({
           <h2 data-clarity-mask="true" className="truncate text-xl font-bold text-cool-900">
             {meeting.title}
           </h2>
-          <p className="mt-1 text-sm text-cool-500">
-            참여자 {meeting.participantCount} / {teamMemberCount ?? '-'}
-          </p>
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            onClick={() => setIsAttendeesOpen(true)}
+            className="mt-1 flex items-center gap-1.5 rounded-md py-0.5 text-sm text-cool-500 transition-colors hover:text-cool-700"
+          >
+            <Users aria-hidden="true" className="size-3.5" strokeWidth={2.2} />
+            참여자 {meeting.attendees.length}명
+          </button>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1.5">
           <div className="flex items-center gap-3">
@@ -141,11 +128,17 @@ export const CurrentMeetingHeader = ({
           {!isWaiting && (
             <span
               className={cn(
-                'font-mono text-xs font-semibold whitespace-nowrap tabular-nums',
-                isOvertime ? 'text-amber-700' : 'text-cool-600',
+                'flex items-center gap-1 font-mono text-xs font-semibold whitespace-nowrap tabular-nums',
+                isOvertime
+                  ? 'rounded-md bg-amber-50 px-1.5 py-0.5 text-amber-700 ring-1 ring-amber-200'
+                  : 'text-cool-600',
               )}
             >
+              {isOvertime && (
+                <AlarmClock aria-hidden="true" className="size-3.5 shrink-0" strokeWidth={2.2} />
+              )}
               {formatElapsed(meeting.elapsedSeconds)} / {meeting.targetMinutes}분
+              {isOvertime && <span className="font-sans">초과</span>}
             </span>
           )}
         </div>
@@ -174,6 +167,15 @@ export const CurrentMeetingHeader = ({
           </div>
         </dl>
       )}
+
+      <MeetingAttendeesSheet
+        isOpen={isAttendeesOpen}
+        meetingTitle={meeting.title}
+        attendees={meeting.attendees}
+        teamMembers={teamMembers}
+        myTeamMemberId={team?.teamMemberId ?? null}
+        onOpenChange={setIsAttendeesOpen}
+      />
     </header>
   );
 };

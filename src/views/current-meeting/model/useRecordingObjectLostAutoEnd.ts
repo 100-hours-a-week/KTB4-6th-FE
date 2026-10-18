@@ -4,7 +4,6 @@ import { useMediaRecorder, useRecordingSessionStore } from '@/features/recording
 import { useRecordingWebSocket } from '@/features/recording-websocket';
 
 interface UseRecordingObjectLostAutoEndParams {
-  isPreview: boolean;
   isRecorder: boolean;
   /** 서버 기준으로 지금 녹음이 진행 중(RECORDING 또는 PAUSED)인지 */
   isActivelyRecording: boolean;
@@ -14,7 +13,6 @@ interface UseRecordingObjectLostAutoEndParams {
 }
 
 export const useRecordingObjectLostAutoEnd = ({
-  isPreview,
   isRecorder,
   isActivelyRecording,
   isCompleted,
@@ -30,7 +28,6 @@ export const useRecordingObjectLostAutoEnd = ({
   const isRecordingElsewhere =
     recordingSessionId !== undefined && statuses[recordingSessionId] === 'superseded';
   const isOpen =
-    !isPreview &&
     !isCompleted &&
     isRecorder &&
     isActivelyRecording &&
@@ -38,8 +35,7 @@ export const useRecordingObjectLostAutoEnd = ({
     !isPausedByUser &&
     !isRecordingElsewhere;
 
-  const isResumingOpen =
-    !isPreview && !isCompleted && isRecorder && isActivelyRecording && isResumingStream;
+  const isResumingOpen = !isCompleted && isRecorder && isActivelyRecording && isResumingStream;
 
   return { isOpen: isOpen || isResumingOpen, isResuming: isResumingOpen };
 };

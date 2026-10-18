@@ -29,7 +29,6 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
       className={cn('h-full', 'antialiased', displayFont.variable, 'font-sans')}
     >
       <head>
-        {/* Pretendard: 한글 UI 서체. Google Fonts 카탈로그에 없어 next/font 대신 동적 서브셋 CDN으로 로드. */}
         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
         <link
           rel="stylesheet"
@@ -38,8 +37,6 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
       </head>
       <body className="min-h-full bg-cool-100">
         <AppProviders>
-          {/* 기준 화면: 390 x 844(min-height), iPhone 12/13/14 계열. 콘텐츠가 넘치면 스크롤. */}
-          {/* id="app-frame": 토스트 포털을 이 프레임 안에 가두기 위한 앵커(src/shared/ui/toast.tsx 참고) */}
           <AppFrame>{children}</AppFrame>
         </AppProviders>
       </body>

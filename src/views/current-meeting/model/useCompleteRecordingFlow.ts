@@ -12,21 +12,18 @@ import { useAppToast } from '@/shared/ui';
 interface UseCompleteRecordingFlowParams {
   recordingSessionId: number | null;
   isCompleted: boolean;
-  isPreview: boolean;
   onCompleted: () => void;
 }
 
-/** 녹음 마무리 → mp4 변환 → 파일 업로드 → 녹음 종료 요청 → 마이크·소켓 정리 순서로 회의를 종료한다. */
 export const useCompleteRecordingFlow = ({
   recordingSessionId,
   isCompleted,
-  isPreview,
   onCompleted,
 }: UseCompleteRecordingFlowParams) => {
   const completeRecording = useCompleteRecording();
   const uploadPendingRecordingParts = useUploadPendingRecordingParts();
   const resumeBrowserRecording = useMediaRecorder((state) => state.resume);
-  const flushForCompletion = useMediaRecorder((state) => state.flushForCompletion);
+  const flushBrowserRecording = useMediaRecorder((state) => state.flush);
   const releaseMicrophone = useMediaRecorder((state) => state.release);
   const clearActiveRecording = useRecordingSessionStore((state) => state.clearActiveRecording);
   const setOperation = useRecordingSessionStore((state) => state.setOperation);
@@ -37,8 +34,7 @@ export const useCompleteRecordingFlow = ({
     if (
       recordingSessionId === null ||
       isCompleted ||
-      useRecordingSessionStore.getState().operation !== 'idle' ||
-      isPreview
+      useRecordingSessionStore.getState().operation !== 'idle'
     ) {
       return;
     }
@@ -46,20 +42,20 @@ export const useCompleteRecordingFlow = ({
     setOperation('finishing');
     const recorder = useMediaRecorder.getState().recorder;
     const wasRecording = recorder?.state === 'recording';
+    const isRecorderAlive = recorder !== null && recorder.state !== 'inactive';
+
+    if (!isRecorderAlive) {
+      releaseMicrophone();
+      disconnect(recordingSessionId);
+    }
 
     try {
-      if (!recorder || recorder.state === 'inactive') {
-        throw new Error('종료할 브라우저 녹음이 없습니다.');
-      }
-
       const currentUpload = useRecordingSessionStore.getState().pendingUpload;
       const reusableUpload =
         currentUpload?.recordingSessionId === recordingSessionId ? currentUpload : null;
 
       if (!reusableUpload?.isCompleted) {
-        // 마지막 chunk까지 recorder에서 흘려보낸 뒤(반환 Blob은 안 씀), 세션 전체의 part
-        // 파일을 병합·업로드한다.
-        await flushForCompletion();
+        if (isRecorderAlive) await flushBrowserRecording();
         await uploadPendingRecordingParts(recordingSessionId);
       }
 

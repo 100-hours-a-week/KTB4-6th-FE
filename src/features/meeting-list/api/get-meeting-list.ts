@@ -1,12 +1,15 @@
 import { apiClient } from '@/shared/api';
 
 import { toMeetingListApiError } from '../model/errors';
-import type { MeetingListData, MeetingListResponse } from '../model/types';
+import type { MeetingListData, MeetingListParams, MeetingListResponse } from '../model/types';
 
-export const getMeetingList = async (teamId: number, cursor?: string): Promise<MeetingListData> => {
+export const getMeetingList = async (
+  teamId: number,
+  params: MeetingListParams = {},
+): Promise<MeetingListData> => {
   try {
     const response = await apiClient.get<MeetingListResponse>(`/api/v1/teams/${teamId}/meetings`, {
-      params: { cursor },
+      params,
     });
     const result = response.data;
 

@@ -6,15 +6,23 @@ import { MeetingSseConnection } from '@/features/meeting-sse';
 import { useTeamDetail, useTeamMembers } from '@/features/team-management';
 import { useBeforeUnloadWarning, useWakeLock } from '@/shared/lib';
 import { NavigationSidebar } from '@/widgets/navigation-sidebar';
+import {
+  CurrentMeetingProvider,
+  type CurrentMeetingContextValue,
+} from '../model/current-meeting-context';
 import { useCurrentMeetingRecording } from '../model/useCurrentMeetingRecording';
 import { useMeetingEndedNotice } from '../model/useMeetingEndedNotice';
+import { useMeetingChatEventSync } from '../model/useMeetingChatEventSync';
 import { useMeetingInfoEdit } from '../model/useMeetingInfoEdit';
 import { useRecordingObjectLostAutoEnd } from '../model/useRecordingObjectLostAutoEnd';
 import { useRecordingStartedNotice } from '../model/useRecordingStartedNotice';
 import { useRecordingStatusSync } from '../model/useRecordingStatusSync';
+import { useTargetTimeReachedNotice } from '../model/useTargetTimeReachedNotice';
 import { CurrentMeetingDialogs } from './CurrentMeetingDialogs';
 import { CurrentMeetingHeader } from './CurrentMeetingHeader';
 import { CurrentMeetingLoadingState } from './CurrentMeetingLoadingState';
+import { CurrentMeetingTabs, type CurrentMeetingTab } from './CurrentMeetingTabs';
+import { MeetingChat } from './MeetingChat';
 import { MeetingControls } from './MeetingControls';
 import { MeetingEndingOverlay } from './MeetingEndingOverlay';
 import { MeetingTranscript } from './MeetingTranscript';
@@ -24,217 +32,148 @@ import { WaitingForRecordingNotice } from './WaitingForRecordingNotice';
 interface CurrentMeetingPageProps {
   teamId: string;
   meetingId: number;
-  previewState?: string;
-  previewRole?: 'recorder' | 'participant';
-  /** 회의가 종료 상태이면 현재 회의 대신 보여줄 화면 (views끼리는 import할 수 없어 라우트가 넘긴다) */
   completedView?: ReactNode;
 }
 
 export const CurrentMeetingPage = ({
   teamId,
   meetingId,
-  previewState,
-  previewRole = 'recorder',
   completedView,
 }: CurrentMeetingPageProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<CurrentMeetingTab>('transcript');
+  const [targetTranscriptSegmentId, setTargetTranscriptSegmentId] = useState<string | null>(null);
   const numericTeamId = Number(teamId);
-  const isPreview = previewState !== undefined;
+  const isValidTeamId = Number.isSafeInteger(numericTeamId) && numericTeamId > 0;
   const { data: team } = useTeamDetail(numericTeamId, {
-    isEnabled: !isPreview && Number.isSafeInteger(numericTeamId) && numericTeamId > 0,
+    isEnabled: isValidTeamId,
   });
   const { data: teamMembers } = useTeamMembers(numericTeamId, {
-    isEnabled: !isPreview && Number.isSafeInteger(numericTeamId) && numericTeamId > 0,
+    isEnabled: isValidTeamId,
   });
-  const {
-    meeting,
-    isMeetingPending,
-    isTranscriptHistoryPending,
-    isTranscriptHistoryError,
-    isWaiting,
-    isPaused,
-    isPausedByUser,
-    isEnding,
-    connectionStatus,
-    isDisconnected,
-    isRecording,
-    isRecorder,
-    isCompleted,
-    isServerCompleted,
-    isStartDialogOpen,
-    isRecordingAcknowledged,
-    isInsufficientCreditDialogOpen,
-    isStartingRecording,
-    isUpdatingRecordingStatus,
-    canStartRecording,
-    startBlockedReason,
-    canPauseResumeRecording,
-    pauseResumeBlockedReason,
-    canCompleteRecording,
-    setIsRecordingAcknowledged,
-    setIsInsufficientCreditDialogOpen,
-    handleStartRecording,
-    handleStartDialogOpenChange,
-    handleConfirmRecording,
-    handlePauseResumeRecording,
-    handleCompleteRecording,
-  } = useCurrentMeetingRecording({
+  const recording = useCurrentMeetingRecording({
     teamId,
     meetingId,
-    previewState,
-    previewRole,
     myTeamMemberId: team?.teamMemberId ?? null,
+    teamMembers,
   });
-  useRecordingStatusSync({ meetingId, isPreview });
-  const { isMeetingEndedNoticeOpen, goToResult, goHome } = useMeetingEndedNotice({
+  useMeetingChatEventSync({
+    meetingId,
+    teamId: numericTeamId,
+    currentTeamMemberId: team?.teamMemberId ?? null,
+    isEnabled: isValidTeamId && !recording.isCompleted,
+  });
+  useRecordingStatusSync(meetingId);
+  const meetingEndedNotice = useMeetingEndedNotice({
     teamId,
     meetingId,
-    isPreview,
-    isMeetingLoaded: meeting !== null,
-    hasCompleted: isCompleted,
+    isMeetingLoaded: recording.meeting !== null,
+    hasCompleted: recording.isCompleted,
   });
   const redirectAfterMeetingDeleted = useMeetingDeletedRedirect(teamId);
-  const { isRecordingStartedNoticeOpen, setIsRecordingStartedNoticeOpen } =
-    useRecordingStartedNotice({ meetingId, isPreview });
-  const {
-    isEditNoticeOpen,
-    isEditFormOpen,
-    editFormInitialValues,
-    isSubmitting: isEditFormSubmitting,
-    submitError: editFormSubmitError,
-    setIsEditNoticeOpen,
-    handleEditInfo,
-    handleConfirmEditNotice,
-    handleSubmitEditForm,
-    handleCloseEditForm,
-  } = useMeetingInfoEdit({ meetingId, meeting });
+  const recordingStartedNotice = useRecordingStartedNotice(meetingId);
+  useTargetTimeReachedNotice({
+    elapsedSeconds: recording.meeting?.elapsedSeconds ?? null,
+    targetMinutes: recording.meeting?.targetMinutes ?? null,
+    isRecording:
+      recording.meeting?.recordingStatus === 'recording' &&
+      !recording.isCompleted &&
+      !recording.isServerCompleted,
+  });
+  const meetingInfoEdit = useMeetingInfoEdit({ meetingId, meeting: recording.meeting });
   const { isOpen: isRecordingObjectLostNoticeOpen, isResuming: isResumingRecording } =
     useRecordingObjectLostAutoEnd({
-      isPreview,
-      isRecorder,
-      isActivelyRecording: isRecording || isPaused,
-      isCompleted,
-      isPausedByUser,
+      isRecorder: recording.isRecorder,
+      isActivelyRecording: recording.isRecording || recording.isPaused,
+      isCompleted: recording.isCompleted,
+      isPausedByUser: recording.isPausedByUser,
     });
-  // 녹음자의 화면이 꺼져서 녹음 객체가 소실되는 걸 막는다.
-  useWakeLock(!isPreview && isRecorder && (isRecording || isPaused));
-  // 녹음자가 실수로 새로고침·탭을 닫아 녹음 객체를 잃는 걸 막는다.
-  useBeforeUnloadWarning(!isPreview && isRecorder && (isRecording || isPaused));
+  useWakeLock(recording.isRecorder && (recording.isRecording || recording.isPaused));
+  useBeforeUnloadWarning(recording.isRecorder && (recording.isRecording || recording.isPaused));
 
-  // 종료 안내 모달에서 이동을 고르기 전에는 현재 회의 화면을 유지한다.
-  if (isServerCompleted && completedView && !isMeetingEndedNoticeOpen) return completedView;
+  const handleTabChange = (tab: CurrentMeetingTab) => {
+    setTargetTranscriptSegmentId(null);
+    setActiveTab(tab);
+  };
 
-  if (!meeting) {
+  const navigateToTranscriptSegment = (segmentId: number) => {
+    if (!Number.isSafeInteger(segmentId) || segmentId <= 0) return;
+
+    setTargetTranscriptSegmentId(String(segmentId));
+    setActiveTab('transcript');
+  };
+
+  if (
+    recording.isServerCompleted &&
+    completedView &&
+    !meetingEndedNotice.isMeetingEndedNoticeOpen
+  ) {
+    return completedView;
+  }
+  if (!recording.meeting) {
     return (
       <CurrentMeetingLoadingState
-        isPending={isMeetingPending}
+        isPending={recording.isMeetingPending}
         teamHomeHref={`/teams/${encodeURIComponent(teamId)}`}
       />
     );
   }
 
+  const contextValue: CurrentMeetingContextValue = {
+    teamId,
+    meetingId,
+    team: team ?? null,
+    teamMembers: teamMembers ?? [],
+    targetTranscriptSegmentId,
+    recording: { ...recording, meeting: recording.meeting },
+    meetingEndedNotice,
+    meetingInfoEdit,
+    recordingStartedNotice,
+    navigateToTranscriptSegment,
+    openSidebar: () => setIsSidebarOpen(true),
+  };
+
   return (
-    <div className="relative flex h-dvh min-h-[844px] flex-col bg-cool-50">
-      {!isPreview && !isCompleted && (
-        <MeetingSseConnection
-          meetingId={String(meetingId)}
-          onMeetingDeleted={redirectAfterMeetingDeleted}
-        />
-      )}
-      <CurrentMeetingHeader
-        meeting={meeting}
-        teamMemberCount={teamMembers?.length ?? null}
-        isMenuDisabled={!team}
-        isWaiting={isWaiting}
-        isPaused={isPaused}
-        isEnding={isEnding}
-        connectionStatus={connectionStatus}
-        isRecording={isRecording}
-        isCompleted={isCompleted}
-        onMenuClick={() => setIsSidebarOpen(true)}
-      />
+    <CurrentMeetingProvider value={contextValue}>
+      <div className="relative flex min-h-0 flex-1 flex-col bg-cool-50">
+        {!recording.isCompleted && (
+          <MeetingSseConnection
+            meetingId={String(meetingId)}
+            onMeetingDeleted={redirectAfterMeetingDeleted}
+          />
+        )}
+        <CurrentMeetingHeader />
 
-      {isWaiting ? (
-        <WaitingForRecordingNotice />
-      ) : (
-        <MeetingTranscript
-          segments={meeting.transcripts}
-          isRecording={isRecording}
-          isPaused={isPaused}
-          isHistoryPending={isTranscriptHistoryPending}
-          isHistoryError={isTranscriptHistoryError}
-        />
-      )}
+        {!recording.isWaiting && (
+          <CurrentMeetingTabs activeTab={activeTab} onTabChange={handleTabChange} />
+        )}
 
-      <MeetingControls
-        teamId={teamId}
-        meetingId={String(meetingId)}
-        isPreview={isPreview}
-        canDelete={!isPreview && team?.role === 'LEADER'}
-        canEditInfo={
-          isWaiting &&
-          !isPreview &&
-          (team?.role === 'LEADER' || team?.teamMemberId === meeting.createdByTeamMemberId)
-        }
-        onEditInfo={handleEditInfo}
-        isWaiting={isWaiting}
-        isRecorder={isRecorder}
-        isPaused={isPaused}
-        isDisconnected={isDisconnected}
-        isEnding={isEnding}
-        isStartingRecording={isStartingRecording}
-        isUpdatingRecordingStatus={isUpdatingRecordingStatus}
-        canStartRecording={canStartRecording}
-        startBlockedReason={startBlockedReason}
-        onStartRecording={handleStartRecording}
-        canPauseResumeRecording={canPauseResumeRecording}
-        pauseResumeBlockedReason={pauseResumeBlockedReason}
-        isMeetingInProgress={!isWaiting && !isCompleted}
-        onPauseResumeRecording={handlePauseResumeRecording}
-        canCompleteRecording={canCompleteRecording}
-        isCompleted={isCompleted}
-        onCompleteRecording={handleCompleteRecording}
-        recorderName={meeting.recorderName}
-      />
+        {recording.isWaiting ? (
+          <WaitingForRecordingNotice />
+        ) : activeTab === 'chat' ? (
+          <MeetingChat />
+        ) : (
+          <MeetingTranscript />
+        )}
 
-      <CurrentMeetingDialogs
-        isRecordingAcknowledged={isRecordingAcknowledged}
-        isStartDialogOpen={isStartDialogOpen}
-        isStartingRecording={isStartingRecording}
-        onAcknowledgedChange={setIsRecordingAcknowledged}
-        onConfirmRecording={handleConfirmRecording}
-        onStartDialogOpenChange={handleStartDialogOpenChange}
-        isInsufficientCreditDialogOpen={isInsufficientCreditDialogOpen}
-        onInsufficientCreditDialogOpenChange={setIsInsufficientCreditDialogOpen}
-        isRecordingStartedNoticeOpen={isRecordingStartedNoticeOpen}
-        onRecordingStartedNoticeOpenChange={setIsRecordingStartedNoticeOpen}
-        isMeetingEndedNoticeOpen={isMeetingEndedNoticeOpen}
-        onGoToResult={goToResult}
-        onGoHome={goHome}
-        isEditNoticeOpen={isEditNoticeOpen}
-        onConfirmEditNotice={handleConfirmEditNotice}
-        onEditNoticeOpenChange={setIsEditNoticeOpen}
-        isEditFormOpen={isEditFormOpen}
-        editFormInitialValues={editFormInitialValues}
-        isEditFormSubmitting={isEditFormSubmitting}
-        editFormSubmitError={editFormSubmitError}
-        onSubmitEditForm={handleSubmitEditForm}
-        onCloseEditForm={handleCloseEditForm}
-      />
+        {(recording.isWaiting || activeTab === 'transcript') && <MeetingControls />}
 
-      {team && (
-        <NavigationSidebar
-          isOpen={isSidebarOpen}
-          onOpenChange={setIsSidebarOpen}
-          teamId={numericTeamId}
-          teamName={team.name}
-        />
-      )}
+        <CurrentMeetingDialogs />
 
-      {isEnding && <MeetingEndingOverlay />}
-      {isRecordingObjectLostNoticeOpen && (
-        <RecordingObjectLostOverlay isResuming={isResumingRecording} />
-      )}
-    </div>
+        {team && (
+          <NavigationSidebar
+            isOpen={isSidebarOpen}
+            onOpenChange={setIsSidebarOpen}
+            teamId={numericTeamId}
+            teamName={team.name}
+          />
+        )}
+
+        {recording.isEnding && <MeetingEndingOverlay />}
+        {isRecordingObjectLostNoticeOpen && (
+          <RecordingObjectLostOverlay isResuming={isResumingRecording} />
+        )}
+      </div>
+    </CurrentMeetingProvider>
   );
 };

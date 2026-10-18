@@ -1,13 +1,10 @@
-import type { CurrentMeetingViewModel } from './preview-meeting';
+import type { CurrentMeetingViewModel } from './current-meeting';
 import type { CurrentMeetingConnectionStatus } from './useCurrentMeetingConnection';
 
 interface MeetingPhaseInput {
   serverRecordingStatus: CurrentMeetingViewModel['recordingStatus'] | undefined;
   hasRecordingSession: boolean;
   hasCompleted: boolean;
-  isPreview: boolean;
-  isPreviewEnding: boolean;
-  previewRole: 'recorder' | 'participant';
   isBrowserRecording: boolean;
   isBrowserPaused: boolean;
   isFinishing: boolean;
@@ -44,29 +41,24 @@ export const getMeetingPhase = ({
   serverRecordingStatus,
   hasRecordingSession,
   hasCompleted,
-  isPreview,
-  isPreviewEnding,
-  previewRole,
   isBrowserRecording,
   isBrowserPaused,
   isFinishing,
   connectionStatus,
   isRecorderByServer,
 }: MeetingPhaseInput) => {
-  const usesServerStatus = isPreview || !hasRecordingSession;
+  const usesServerStatus = !hasRecordingSession;
   const isDisconnected = connectionStatus === 'error';
 
   return {
     isWaiting: serverRecordingStatus === 'waiting' && !hasRecordingSession && !hasCompleted,
     isPaused: usesServerStatus ? serverRecordingStatus === 'paused' : isBrowserPaused,
-    isEnding: isPreviewEnding || (hasRecordingSession && isFinishing),
+    isEnding: hasRecordingSession && isFinishing,
     isDisconnected,
     isRecording:
       (usesServerStatus ? serverRecordingStatus === 'recording' : isBrowserRecording) &&
       !isDisconnected &&
       !hasCompleted,
-    isRecorder:
-      !hasCompleted &&
-      (isPreview ? previewRole === 'recorder' : hasRecordingSession || isRecorderByServer),
+    isRecorder: !hasCompleted && (hasRecordingSession || isRecorderByServer),
   };
 };

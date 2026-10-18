@@ -1,10 +1,11 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { AUTH_COOKIE_NAMES } from '@/features/auth';
 import { logout, LogoutApiError } from '@/features/auth/index.server';
 import { clearAuthCookies } from './auth-cookies';
 
 export const logoutHandler = async (request: NextRequest) => {
-  const accessToken = request.cookies.get('accessToken')?.value;
-  const refreshToken = request.cookies.get('refreshToken')?.value;
+  const accessToken = request.cookies.get(AUTH_COOKIE_NAMES.accessToken)?.value;
+  const refreshToken = request.cookies.get(AUTH_COOKIE_NAMES.refreshToken)?.value;
 
   if (!accessToken || !refreshToken) {
     const response = NextResponse.json(
