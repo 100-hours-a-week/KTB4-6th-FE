@@ -9,7 +9,6 @@ permissions:
 
 env:
   IMAGE_NAME: ${{ vars.DOCKERHUB_USERNAME }}/meety-fe
-  AWS_REGION: us-east-2
 
 jobs:
   build-and-push:
@@ -26,6 +25,7 @@ jobs:
 
     outputs:
       image_tag: ${{ steps.tag.outputs.value }}
+      image_digest: ${{ steps.build.outputs.digest }}
 
     env:
       DEPLOY_ENV: production
@@ -86,6 +86,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: FE 이미지 빌드 및 게시
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -104,6 +105,7 @@ jobs:
             NEXT_PUBLIC_SENTRY_ENVIRONMENT=${{ env.NEXT_PUBLIC_SENTRY_ENVIRONMENT }}
             NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE=${{ env.NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE }}
             NEXT_PUBLIC_AUTH_COOKIE_PREFIX=${{ env.NEXT_PUBLIC_AUTH_COOKIE_PREFIX }}
+            API_BASE_URL=${{ env.NEXT_PUBLIC_API_BASE_URL }}
             SENTRY_ORG=${{ env.SENTRY_ORG }}
             SENTRY_PROJECT=${{ env.SENTRY_PROJECT }}
             SENTRY_RELEASE=${{ env.SENTRY_RELEASE }}
@@ -115,9 +117,9 @@ jobs:
           cache-to: type=gha,mode=max
 
   deploy:
-    name: FE 운영 EC2 배포
+    name: FE V2 prod 무중단 배포
     needs: build-and-push
-    # 기존 dev 인스턴스는 수동 배포 전용으로 두고 main만 운영에 배포한다.
+    # main만 서울 운영에 배포한다. dev는 기존 staging 경로를 유지한다.
     if: ${{ github.ref_name == 'main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -130,117 +132,161 @@ jobs:
       contents: read
 
     concurrency:
-      group: deploy-frontend-${{ github.ref_name }}
+      group: deploy-frontend-v2-prod
       cancel-in-progress: false
 
     env:
-      DEPLOY_ENV: production
-      IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
-      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+      AWS_REGION: ap-northeast-2
       INSTANCE_ID: ${{ secrets.APP_INSTANCE_ID }}
-      DEPLOY_DIR: ${{ secrets.APP_DEPLOY_DIR }}
+      TARGET_GROUP_NAME: meety-v2-prod-fe-tg
+      # 새 컨테이너는 사용 중이지 않은 포트에 띄운다. 두 포트를 번갈아 쓴다.
+      PORTS: "3000 3001"
+      IMAGE: ${{ vars.DOCKERHUB_USERNAME }}/meety-fe@${{ needs.build-and-push.outputs.image_digest }}
+      API_BASE_URL: https://api.meety.io.kr
+      AUTH_COOKIE_DOMAIN: meety.io.kr
+      # DNS 전환 전에도 서울 ALB를 직접 검증한다.
+      ALB_DNS_NAME: ${{ vars.ALB_DNS_NAME }}
+      SITE_HEALTH_URL: https://meety.io.kr/api/health
 
     steps:
       - name: 배포 설정 확인
+        env:
+          AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
         run: |
-          # 시크릿 값은 출력하지 않고 선택된 환경과 설정 여부만 기록한다.
-          echo "::notice::FE EC2 배포 대상: branch=${GITHUB_REF_NAME}, environment=${DEPLOY_ENV}"
-          # 선택된 Environment의 배포 대상 값이 모두 있는지 확인한다.
-          [ -n "$AWS_ROLE_ARN" ] || {
-            echo "::error::AWS_ROLE_ARN 누락"
-            exit 1
-          }
-          [ -n "$INSTANCE_ID" ] || {
-            echo "::error::APP_INSTANCE_ID 누락"
-            exit 1
-          }
-          [ -n "$DEPLOY_DIR" ] || {
-            echo "::error::APP_DEPLOY_DIR 누락"
-            exit 1
-          }
-          echo "::notice::FE EC2 배포 시크릿: AWS_ROLE_ARN, APP_INSTANCE_ID, APP_DEPLOY_DIR 설정됨"
+          echo "::notice::FE V2 prod 배포 대상: image=${IMAGE}"
+          [ -n "$AWS_ROLE_ARN" ] || { echo "::error::AWS_ROLE_ARN 누락"; exit 1; }
+          [[ "$ALB_DNS_NAME" =~ ^[a-zA-Z0-9.-]+\.elb\.amazonaws\.com$ ]] || { echo "::error::서울 ALB_DNS_NAME 설정 필요"; exit 1; }
+          [ -n "$INSTANCE_ID" ] || { echo "::error::APP_INSTANCE_ID 누락"; exit 1; }
 
       - name: AWS 인증
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-          role-session-name: gha-fe-deploy-${{ github.run_id }}
+          role-session-name: gha-fe-v2-deploy-${{ github.run_id }}
           role-skip-session-tagging: true
 
-      - name: SSM 배포 명령 전송
-        id: send
+      - name: 배포 도구 준비
         run: |
-          # 선택된 서버에서 frontend 서비스만 새 이미지로 교체한다.
-          cat > remote.sh <<EOF
+          # FE 인스턴스에서 셸 명령을 실행하고 결과를 출력한다. 실패하면 0이 아닌 값으로 끝난다.
+          cat > "$RUNNER_TEMP/run-remote.sh" <<'EOF'
           #!/bin/bash
           set -euo pipefail
-          cd "${DEPLOY_DIR}"
+          COMMAND_ID=$(aws ssm send-command --instance-ids "$INSTANCE_ID" --document-name AWS-RunShellScript \
+            --comment "deploy v2 frontend (run ${GITHUB_RUN_ID})" --timeout-seconds 60 \
+            --parameters "$(jq -Rs '{commands: split("\n"), executionTimeout: ["600"]}' "$1")" \
+            --query Command.CommandId --output text)
+          STATUS=Pending
+          for i in $(seq 1 120); do
+            STATUS=$(aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" \
+              --query Status --output text 2>/dev/null || echo Pending)
+            case "$STATUS" in Pending|InProgress|Delayed) sleep 5 ;; *) break ;; esac
+          done
+          aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" \
+            --query StandardOutputContent --output text || true
+          aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" \
+            --query StandardErrorContent --output text >&2 || true
+          [ "$STATUS" = "Success" ] || { echo "::error::FE 인스턴스 명령 실패 (status=$STATUS)"; exit 1; }
+          EOF
+          chmod +x "$RUNNER_TEMP/run-remote.sh"
 
-          if grep -q '^FE_IMAGE_TAG=' .env; then
-            sed -i "s|^FE_IMAGE_TAG=.*|FE_IMAGE_TAG=${IMAGE_TAG}|" .env
-          else
-            echo "FE_IMAGE_TAG=${IMAGE_TAG}" >> .env
+          TG_ARN=$(aws elbv2 describe-target-groups --names "$TARGET_GROUP_NAME" \
+            --query 'TargetGroups[0].TargetGroupArn' --output text)
+          echo "TG_ARN=$TG_ARN" >> "$GITHUB_ENV"
+
+      - name: 사용 중인 포트 확인
+        id: ports
+        run: |
+          # 대상 그룹에 등록된 FE 포트가 지금 트래픽을 받는 컨테이너다.
+          ACTIVE=$(aws elbv2 describe-target-health --target-group-arn "$TG_ARN" \
+            --query "TargetHealthDescriptions[?Target.Id=='${INSTANCE_ID}' && TargetHealth.State!='draining'].Target.Port" \
+            --output text | tr '\t' '\n' | sed '/^$/d')
+          [ "$(echo "$ACTIVE" | wc -l)" -le 1 ] || { echo "::error::등록된 포트가 둘 이상입니다: $ACTIVE"; exit 1; }
+          NEW=""
+          for port in $PORTS; do [ "$port" != "$ACTIVE" ] && { NEW=$port; break; }; done
+          echo "사용 중: ${ACTIVE:-없음}, 새 컨테이너: $NEW"
+          echo "active=$ACTIVE" >> "$GITHUB_OUTPUT"
+          echo "new=$NEW" >> "$GITHUB_OUTPUT"
+
+      # 기존 컨테이너는 그대로 두고 새 컨테이너만 띄운다. FE 인스턴스는 NAT를 겸하므로 Docker와 인스턴스는 재시작하지 않는다.
+      - name: 새 컨테이너 실행
+        env:
+          NEW: ${{ steps.ports.outputs.new }}
+        run: |
+          cat > start.sh <<EOF
+          #!/bin/bash
+          set -euo pipefail
+          # 최초 배포 전에 Docker와 AWS CLI가 준비되어 있어야 한다. NAT 인스턴스라 자동 설치·재시작하지 않는다.
+          command -v docker >/dev/null
+          [ -x /snap/bin/aws ] || { echo "AWS CLI 설치가 필요합니다"; exit 1; }
+          BUG_REPORT_DISCORD_WEBHOOK_URL=\$(/snap/bin/aws ssm get-parameter --region ${AWS_REGION} \
+            --name /meety/prod/fe/BUG_REPORT_DISCORD_WEBHOOK_URL --with-decryption --query Parameter.Value --output text)
+          export BUG_REPORT_DISCORD_WEBHOOK_URL
+          [ -n "\$BUG_REPORT_DISCORD_WEBHOOK_URL" ] || { echo "버그 제보 webhook 누락"; exit 1; }
+          NAME=meety-fe-${NEW}
+          docker pull "${IMAGE}"
+          docker rm -f "\$NAME" 2>/dev/null || true
+          docker run -d --name "\$NAME" --restart unless-stopped -p ${NEW}:3000 \
+            --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \
+            -e NODE_ENV=production -e API_BASE_URL=${API_BASE_URL} \
+            -e AUTH_COOKIE_DOMAIN=${AUTH_COOKIE_DOMAIN} -e TZ=Asia/Seoul \
+            -e BUG_REPORT_DISCORD_WEBHOOK_URL \
+            "${IMAGE}"
+          for i in \$(seq 1 60); do
+            if curl -fsS -o /dev/null "http://127.0.0.1:${NEW}/api/health"; then
+              echo "새 컨테이너 정상: \$NAME"; exit 0
+            fi
+            sleep 2
+          done
+          echo "새 컨테이너가 응답하지 않아 제거한다"
+          docker logs --tail 50 "\$NAME" || true
+          docker rm -f "\$NAME"
+          exit 1
+          EOF
+          "$RUNNER_TEMP/run-remote.sh" start.sh
+
+      # 새 포트를 등록해 healthy가 된 뒤 이전 포트를 뺀다. 이전 포트의 진행 중인 요청은 해제 대기 시간(30초) 동안 마친다.
+      - name: 트래픽 전환
+        env:
+          NEW: ${{ steps.ports.outputs.new }}
+          ACTIVE: ${{ steps.ports.outputs.active }}
+        run: |
+          aws elbv2 register-targets --target-group-arn "$TG_ARN" --targets "Id=${INSTANCE_ID},Port=${NEW}"
+          if ! aws elbv2 wait target-in-service --target-group-arn "$TG_ARN" --targets "Id=${INSTANCE_ID},Port=${NEW}"; then
+            echo "::error::새 컨테이너가 ALB health check를 통과하지 못함. 새 포트 등록을 취소한다"
+            aws elbv2 deregister-targets --target-group-arn "$TG_ARN" --targets "Id=${INSTANCE_ID},Port=${NEW}"
+            printf '#!/bin/bash\ndocker rm -f meety-fe-%s\n' "$NEW" > rollback.sh
+            "$RUNNER_TEMP/run-remote.sh" rollback.sh || true
+            exit 1
+          fi
+          echo "새 포트 ${NEW} 트래픽 수신 시작"
+          if [ -n "$ACTIVE" ]; then
+            aws elbv2 deregister-targets --target-group-arn "$TG_ARN" --targets "Id=${INSTANCE_ID},Port=${ACTIVE}"
+            aws elbv2 wait target-deregistered --target-group-arn "$TG_ARN" --targets "Id=${INSTANCE_ID},Port=${ACTIVE}"
+            echo "이전 포트 ${ACTIVE} 해제 완료"
           fi
 
-          docker compose pull frontend
-          docker compose up -d --no-deps --wait --wait-timeout 180 frontend
+      - name: 이전 컨테이너 정리
+        if: ${{ steps.ports.outputs.active != '' }}
+        env:
+          ACTIVE: ${{ steps.ports.outputs.active }}
+        run: |
+          # 이전 포트를 쓰던 컨테이너를 이름과 관계없이 찾아 지운다 (처음 수동으로 띄운 컨테이너 포함).
+          cat > cleanup.sh <<EOF
+          #!/bin/bash
+          set -euo pipefail
+          OLD=\$(docker ps -aq --filter publish=${ACTIVE})
+          [ -z "\$OLD" ] || docker rm -f \$OLD
           docker image prune -f
           EOF
+          "$RUNNER_TEMP/run-remote.sh" cleanup.sh
 
-          COMMAND_ID=$(aws ssm send-command \
-            --instance-ids "$INSTANCE_ID" \
-            --document-name "AWS-RunShellScript" \
-            --comment "deploy frontend ${IMAGE_TAG} (run ${{ github.run_id }})" \
-            --timeout-seconds 60 \
-            --parameters "$(jq -Rs '{commands: split("\n"), executionTimeout: ["600"]}' remote.sh)" \
-            --query "Command.CommandId" \
-            --output text)
-
-          echo "command_id=$COMMAND_ID" >> "$GITHUB_OUTPUT"
-          echo "SSM Command ID: $COMMAND_ID"
-
-      - name: SSM 실행 결과 대기
-        env:
-          COMMAND_ID: ${{ steps.send.outputs.command_id }}
+      - name: 배포 결과 확인
         run: |
-          # 전송 직후 invocation이 아직 없을 수 있으므로 잠시 재시도한다.
-          STATUS="Pending"
-          for i in $(seq 1 120); do
-            STATUS=$(aws ssm get-command-invocation \
-              --command-id "$COMMAND_ID" \
-              --instance-id "$INSTANCE_ID" \
-              --query "Status" \
-              --output text 2>/dev/null || echo "Pending")
-
-            case "$STATUS" in
-              Pending|InProgress|Delayed) sleep 5 ;;
-              *) break ;;
-            esac
-          done
-
-          # 서버 실행 결과를 Actions 로그에 남긴다.
-          echo "::group::서버 stdout"
-          aws ssm get-command-invocation \
-            --command-id "$COMMAND_ID" \
-            --instance-id "$INSTANCE_ID" \
-            --query "StandardOutputContent" \
-            --output text || true
-          echo "::endgroup::"
-
-          echo "::group::서버 stderr"
-          aws ssm get-command-invocation \
-            --command-id "$COMMAND_ID" \
-            --instance-id "$INSTANCE_ID" \
-            --query "StandardErrorContent" \
-            --output text || true
-          echo "::endgroup::"
-
-          echo "최종 상태: $STATUS"
-          [ "$STATUS" = "Success" ] || {
-            echo "::error::SSM 배포 실패 (status=$STATUS)"
-            exit 1
-          }
+          CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 \
+            --connect-to "meety.io.kr:443:${ALB_DNS_NAME}:443" "$SITE_HEALTH_URL")
+          echo "prod FE health: $CODE"
+          [ "$CODE" = "200" ] || { echo "::error::prod FE health 실패 ($CODE)"; exit 1; }
 
   build-v2-staging:
     name: FE V2 staging 이미지 빌드 및 게시
