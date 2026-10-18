@@ -3,6 +3,7 @@ import { DASHBOARD_INFO } from '../model/dashboard-info';
 import { DashboardInfoPopover } from './DashboardInfoPopover';
 
 interface DashboardSummaryCardProps {
+  period?: 'daily' | 'weekly';
   totalMeetings: number;
   averageDurationSeconds: number;
   overtimeMeetings: number;
@@ -13,6 +14,7 @@ interface DashboardSummaryCardProps {
 
 interface SummaryMetricProps {
   infoKey: 'averageDuration' | 'goalAchievement';
+  label?: string;
   value: string;
   suffix?: string;
   progressRate?: number;
@@ -27,6 +29,7 @@ const clampRate = (rate: number) => Math.min(100, Math.max(0, rate));
 
 const SummaryMetric = ({
   infoKey,
+  label,
   value,
   suffix,
   progressRate,
@@ -39,7 +42,7 @@ const SummaryMetric = ({
   >
     <div className="flex min-w-0 items-center">
       <span className="text-[13.5px] leading-none font-medium tracking-[-0.01em] whitespace-nowrap text-cool-600">
-        {DASHBOARD_INFO[infoKey].label}
+        {label ?? DASHBOARD_INFO[infoKey].label}
       </span>
       <DashboardInfoPopover infoKey={infoKey} />
     </div>
@@ -67,6 +70,7 @@ const SummaryMetric = ({
 );
 
 export const DashboardSummaryCard = ({
+  period = 'daily',
   totalMeetings,
   averageDurationSeconds,
   overtimeMeetings,
@@ -83,14 +87,16 @@ export const DashboardSummaryCard = ({
   return (
     <section
       aria-label="회의 지표 요약"
-      className="grid grid-cols-2 rounded-[20px] bg-white shadow-[0_2px_12px_rgba(31,53,85,0.07)]"
+      className="grid shrink-0 grid-cols-2 rounded-[20px] bg-white shadow-[0_2px_12px_rgba(31,53,85,0.07)]"
     >
       <SummaryMetric
         infoKey="averageDuration"
+        label={period === 'weekly' ? '주간 평균 회의 시간' : undefined}
         value={hasMeetings ? formatDurationSeconds(averageDurationSeconds) : EMPTY_VALUE}
       />
       <SummaryMetric
         infoKey="goalAchievement"
+        label={period === 'weekly' ? '주간 목표 달성률' : undefined}
         value={hasMeetings ? `${achievementRate}%` : EMPTY_VALUE}
         suffix={hasMeetings ? `${achievedMeetings}/${totalMeetings}개` : undefined}
         progressRate={hasMeetings ? achievementRate : undefined}
