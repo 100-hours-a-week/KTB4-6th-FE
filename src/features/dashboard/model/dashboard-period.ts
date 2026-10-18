@@ -52,6 +52,19 @@ export const getDailyDashboardRange = (date: string): DashboardDateRange => ({
   to: date,
 });
 
+export const getDashboardWeekStart = (date: string) => {
+  const weekday = toUtcDate(date).getUTCDay();
+  const daysSinceMonday = (weekday + 6) % 7;
+
+  return addDashboardDays(date, -daysSinceMonday);
+};
+
+export const getWeeklyDashboardRange = (date: string): DashboardDateRange => {
+  const from = getDashboardWeekStart(date);
+
+  return { from, to: addDashboardDays(from, 6) };
+};
+
 export const getRecentDashboardDateRange = (today: string) => ({
   min: subtractDashboardYears(today, DASHBOARD_HISTORY_YEARS),
   max: today,
