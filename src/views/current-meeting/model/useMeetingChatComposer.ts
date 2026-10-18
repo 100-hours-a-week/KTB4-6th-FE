@@ -104,6 +104,7 @@ export const useMeetingChatComposer = ({
     setQuestion: updateQuestion,
     creditBalance,
     creditCost: CHAT_CREDIT_COST,
+    awaitingMessageId,
     isProcessing,
     isCreditNoticeOpen,
     setIsCreditNoticeOpen,
