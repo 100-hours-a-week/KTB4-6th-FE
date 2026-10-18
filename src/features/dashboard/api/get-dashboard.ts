@@ -1,14 +1,14 @@
 import { apiClient } from '@/shared/api';
-import type { DashboardPeriodDays } from '../model/dashboard-period';
+import type { DashboardDateRange } from '../model/dashboard-period';
 import type { DashboardData, DashboardResponse } from '../model/types';
 
 export const getDashboard = async (
   teamId: number,
-  days: DashboardPeriodDays,
+  range: DashboardDateRange,
   signal?: AbortSignal,
 ): Promise<DashboardData> => {
   const response = await apiClient.get<DashboardResponse>(`/api/v1/teams/${teamId}/dashboard`, {
-    params: { days },
+    params: range,
     signal,
   });
   const result = response.data;

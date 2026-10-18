@@ -2,13 +2,16 @@
 
 import { useState } from 'react';
 import {
-  DEFAULT_DASHBOARD_PERIOD_DAYS,
-  type DashboardPeriodDays,
+  addDashboardDays,
+  getDailyDashboardRange,
+  getRecentDashboardDateRange,
+  getTodayInKorea,
   useDashboard,
 } from '@/features/dashboard';
 import { useTeamDetail } from '@/features/team-management';
 import { NavigationSidebar } from '@/widgets/navigation-sidebar';
 import { getDefaultRangeIndex, toSelectedRangeSummary } from '../model/target-comparison-view';
+import { DashboardDateNavigator } from './DashboardDateNavigator';
 import { DashboardHeader } from './DashboardHeader';
 import { DashboardPeriodTabs } from './DashboardPeriodTabs';
 import { DashboardErrorState, DashboardLoadingState } from './DashboardStates';
@@ -23,37 +26,53 @@ interface DashboardPageProps {
 
 export const DashboardPage = ({ teamId }: DashboardPageProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [periodDays, setPeriodDays] = useState<DashboardPeriodDays>(DEFAULT_DASHBOARD_PERIOD_DAYS);
+  const [today] = useState(getTodayInKorea);
+  const [selectedDate, setSelectedDate] = useState(today);
   const [selectedRangeIndex, setSelectedRangeIndex] = useState<number | null>(null);
+  const availableDateRange = getRecentDashboardDateRange(today);
   const { data: team } = useTeamDetail(teamId);
   const {
     data: dashboard,
     isPending: isDashboardPending,
     isFetching: isDashboardFetching,
     refetch: refetchDashboard,
-  } = useDashboard(teamId, periodDays);
-  const chart = dashboard?.chart ?? [];
-  const hasMeetings = (dashboard?.summary.totalMeetings ?? 0) > 0;
+  } = useDashboard(teamId, getDailyDashboardRange(selectedDate));
+  const dailyDashboard = dashboard?.periodDays === 1 ? dashboard : null;
+  const summary = dailyDashboard?.summary ?? null;
+  const chart = dailyDashboard?.chart ?? [];
   const activeRangeIndex = selectedRangeIndex ?? getDefaultRangeIndex(chart);
-  const selectedRangeSummary = hasMeetings ? toSelectedRangeSummary(chart[activeRangeIndex]) : null;
+  const selectedRangeSummary = summary?.totalMeetings
+    ? toSelectedRangeSummary(chart[activeRangeIndex])
+    : null;
 
-  const handlePeriodSelect = (days: DashboardPeriodDays) => {
-    setPeriodDays(days);
+  const handleDateSelect = (date: string) => {
+    setSelectedDate(date);
     setSelectedRangeIndex(null);
   };
 
   return (
     <div className="flex h-dvh min-h-[844px] flex-col bg-cool-50">
       <DashboardHeader isMenuDisabled={!team} onMenuClick={() => setIsSidebarOpen(true)} />
-      <DashboardPeriodTabs selectedDays={periodDays} onSelect={handlePeriodSelect} />
+      <DashboardPeriodTabs />
 
       <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-[22px] pt-[18px] pb-8">
-        {dashboard ? (
+        {dailyDashboard && summary ? (
           <>
             <DashboardTargetComparisonCard
-              totalMeetings={dashboard.summary.totalMeetings}
-              totalDurationSeconds={dashboard.summary.totalMeetingDurationSeconds}
+              totalMeetings={summary.totalMeetings}
+              totalDurationSeconds={summary.totalMeetingDurationSeconds}
               selectedRangeSummary={selectedRangeSummary}
+              dateNavigator={
+                <DashboardDateNavigator
+                  selectedDate={selectedDate}
+                  today={today}
+                  minDate={availableDateRange.min}
+                  maxDate={availableDateRange.max}
+                  onSelect={handleDateSelect}
+                  onPrevious={() => handleDateSelect(addDashboardDays(selectedDate, -1))}
+                  onNext={() => handleDateSelect(addDashboardDays(selectedDate, 1))}
+                />
+              }
             >
               <DashboardTargetComparisonChart
                 ranges={chart}
@@ -62,14 +81,14 @@ export const DashboardPage = ({ teamId }: DashboardPageProps) => {
               />
             </DashboardTargetComparisonCard>
             <DashboardSummaryCard
-              totalMeetings={dashboard.summary.totalMeetings}
-              totalDurationSeconds={dashboard.summary.totalMeetingDurationSeconds}
-              averageDurationSeconds={dashboard.summary.averageMeetingDurationSeconds}
-              overtimeMeetings={dashboard.summary.overtimeMeetings}
-              contextOutSeconds={dashboard.summary.totalContextOutSeconds}
-              contextOutRate={dashboard.summary.contextOutRate}
+              totalMeetings={summary.totalMeetings}
+              totalDurationSeconds={summary.totalMeetingDurationSeconds}
+              averageDurationSeconds={summary.averageMeetingDurationSeconds}
+              overtimeMeetings={summary.overtimeMeetings}
+              contextOutSeconds={summary.totalContextOutSeconds}
+              contextOutRate={summary.contextOutRate}
             />
-            <DashboardTopicsCard topics={dashboard.topics} />
+            <DashboardTopicsCard topics={dailyDashboard.topics} />
           </>
         ) : isDashboardPending ? (
           <DashboardLoadingState />
