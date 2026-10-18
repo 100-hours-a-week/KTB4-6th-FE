@@ -47,7 +47,7 @@ export const OnboardingLayout = ({
   totalSteps,
   verticallyCentered = false,
 }: OnboardingLayoutProps) => (
-  <main className="flex min-h-[844px] flex-1 flex-col bg-white px-7 pt-14 pb-9">
+  <main className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-white px-7 pt-14 pb-9">
     <div className="flex items-center gap-2">
       {backHref ? (
         <Link

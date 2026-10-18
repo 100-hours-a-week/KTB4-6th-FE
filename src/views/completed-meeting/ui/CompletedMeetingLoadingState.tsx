@@ -11,7 +11,7 @@ export const CompletedMeetingLoadingState = ({
   isPending,
   teamHomeHref,
 }: CompletedMeetingLoadingStateProps) => (
-  <div className="flex h-dvh min-h-[844px] flex-1 items-center justify-center bg-cool-50 px-6 text-center">
+  <div className="flex min-h-0 flex-1 items-center justify-center bg-cool-50 px-6 text-center">
     <div>
       {isPending && (
         <LoaderCircle

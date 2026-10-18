@@ -34,7 +34,7 @@ export const MeetingListPage = ({ teamId }: MeetingListPageProps) => {
   }, [search.submittedKeyword]);
 
   return (
-    <div className="flex h-dvh min-h-[844px] flex-col bg-cool-50">
+    <div className="flex min-h-0 flex-1 flex-col bg-cool-50">
       <MeetingListHeader
         teamName={team?.name ?? ''}
         isMenuDisabled={!team}

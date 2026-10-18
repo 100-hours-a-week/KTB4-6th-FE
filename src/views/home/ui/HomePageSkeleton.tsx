@@ -1,5 +1,5 @@
 export const HomePageSkeleton = () => (
-  <div className="flex min-h-[844px] flex-1 animate-pulse flex-col bg-cool-50">
+  <div className="flex min-h-0 flex-1 animate-pulse flex-col overflow-hidden bg-cool-50">
     <div className="flex items-center px-5 py-4">
       <div className="size-9 rounded-full bg-cool-100" />
       <div className="ml-2 h-5 w-16 rounded-md bg-cool-100" />
