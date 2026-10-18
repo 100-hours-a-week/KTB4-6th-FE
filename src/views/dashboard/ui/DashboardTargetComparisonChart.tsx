@@ -8,32 +8,26 @@ import {
   DefaultZIndexes,
   Rectangle,
   ReferenceLine,
-  XAxis,
   YAxis,
 } from 'recharts';
+import type { DashboardMeetingData } from '@/features/dashboard';
 import { cn } from '@/shared/lib';
 import {
-  formatTargetRate,
-  formatTargetRateTick,
-  getTargetDeviationDomain,
-  isRateLabelVisible,
+  formatTargetDifferenceTick,
+  getTargetDifferenceScale,
   type TargetComparisonBar,
-  type TargetComparisonRange,
   toTargetComparisonBars,
 } from '../model/target-comparison-view';
 
 interface DashboardTargetComparisonChartProps {
-  ranges: TargetComparisonRange[];
-  selectedIndex: number;
-  onSelect: (index: number) => void;
+  meetings: DashboardMeetingData[];
+  selectedMeetingId: number | null;
+  onSelect: (meetingId: number | null) => void;
 }
 
-const CHART_MARGIN = { top: 18, right: 0, bottom: 0, left: 0 };
+const CHART_MARGIN = { top: 10, right: 0, bottom: 10, left: 0 };
 const Y_AXIS_WIDTH = 44;
-const X_AXIS_HEIGHT = 42;
-const BAR_SIZE = 22;
 const BAR_RADIUS = 6;
-const RATE_LABEL_GAP = 11;
 
 const mixWithWhite = (color: string, percent: number) =>
   `color-mix(in srgb, var(${color}) ${percent}%, white)`;
@@ -41,14 +35,15 @@ const mixWithWhite = (color: string, percent: number) =>
 const BAR_COLORS = {
   over: {
     selected: mixWithWhite('--color-danger', 85),
-    default: mixWithWhite('--color-danger', 45),
+    default: mixWithWhite('--color-danger', 60),
   },
-  under: { selected: 'var(--color-brand-500)', default: mixWithWhite('--color-brand-500', 45) },
+  under: {
+    selected: 'var(--color-brand-500)',
+    default: mixWithWhite('--color-brand-500', 60),
+  },
 };
 
-const getBarValue = (bar: TargetComparisonBar) => bar.rate ?? 0;
-
-const RateTick = ({ x, y, payload }: BaseTickContentProps) => {
+const DifferenceTick = ({ x, y, payload }: BaseTickContentProps) => {
   const isTarget = payload.value === 0;
 
   return (
@@ -62,88 +57,55 @@ const RateTick = ({ x, y, payload }: BaseTickContentProps) => {
         isTarget ? 'fill-cool-600 font-semibold' : 'fill-cool-500 font-medium',
       )}
     >
-      {formatTargetRateTick(payload.value)}
+      {formatTargetDifferenceTick(payload.value)}
     </text>
   );
 };
 
-const RangeTick = ({
-  x,
-  y,
-  payload,
-  isSelected,
-}: BaseTickContentProps & { isSelected: boolean }) => (
-  <text
-    x={x}
-    y={y}
-    textAnchor="middle"
-    dominantBaseline="central"
-    className={cn('text-[12.5px]', isSelected ? 'fill-cool-900 font-semibold' : 'fill-cool-500')}
-  >
-    {payload.value}
-  </text>
-);
-
-const RateBar = ({ x, y, width, height, payload }: BarShapeProps) => {
+const DifferenceBar = ({ x, y, width, height, payload }: BarShapeProps) => {
   const bar = payload as TargetComparisonBar;
-  const { rate, isSelected } = bar;
-  const top = Math.min(y, y + height);
-  const barHeight = Math.abs(height);
-  const isOver = rate !== null && rate > 0;
-  const isUnder = rate !== null && rate < 0;
+  const { differenceMinutes, isSelected } = bar;
+  const isOver = differenceMinutes > 0;
+  const isUnder = differenceMinutes < 0;
   const colors = isOver ? BAR_COLORS.over : BAR_COLORS.under;
+  const top = Math.min(y, y + height);
+  const barHeight = Math.max(4, Math.abs(height));
+
+  if (!isOver && !isUnder) return null;
 
   return (
-    <g>
-      {(isOver || isUnder) && (
-        <Rectangle
-          x={x}
-          y={top}
-          width={width}
-          height={barHeight}
-          radius={isOver ? [BAR_RADIUS, BAR_RADIUS, 0, 0] : [0, 0, BAR_RADIUS, BAR_RADIUS]}
-          style={{ fill: isSelected ? colors.selected : colors.default }}
-        />
-      )}
-      {isRateLabelVisible(bar) && (
-        <text
-          x={x + width / 2}
-          y={isUnder ? top + barHeight + RATE_LABEL_GAP : top - RATE_LABEL_GAP}
-          textAnchor="middle"
-          dominantBaseline="central"
-          className={cn(
-            'text-[11.5px] font-semibold tabular-nums',
-            isOver ? 'fill-danger' : isUnder ? 'fill-brand-500' : 'fill-cool-500',
-          )}
-        >
-          {formatTargetRate(rate)}
-        </text>
-      )}
-    </g>
+    <Rectangle
+      x={x}
+      y={top}
+      width={width}
+      height={barHeight}
+      radius={isOver ? [BAR_RADIUS, BAR_RADIUS, 0, 0] : [0, 0, BAR_RADIUS, BAR_RADIUS]}
+      style={{ fill: isSelected ? colors.selected : colors.default }}
+    />
   );
 };
 
 export const DashboardTargetComparisonChart = ({
-  ranges,
-  selectedIndex,
+  meetings,
+  selectedMeetingId,
   onSelect,
 }: DashboardTargetComparisonChartProps) => {
-  const bars = toTargetComparisonBars(ranges, selectedIndex);
-  const [minRate, maxRate] = getTargetDeviationDomain(bars.map((bar) => bar.rate));
+  const bars = toTargetComparisonBars(meetings, selectedMeetingId);
+  const { domain, ticks } = getTargetDifferenceScale(
+    bars.map(({ differenceMinutes }) => differenceMinutes),
+  );
+  const barSize = meetings.length > 10 ? 10 : 22;
 
   return (
     <div className="relative h-full">
-      <div
-        className="absolute top-0 right-0 flex"
-        style={{ left: Y_AXIS_WIDTH, bottom: X_AXIS_HEIGHT - CHART_MARGIN.top }}
-      >
-        {bars.map((bar, index) => (
+      <div className="absolute top-0 right-0 bottom-0 z-10 flex" style={{ left: Y_AXIS_WIDTH }}>
+        {bars.map((bar) => (
           <button
-            key={bar.rangeLabel}
+            key={bar.meetingId}
             type="button"
-            aria-label={bar.rangeLabel}
+            aria-label={`${bar.title}, ${formatTargetDifferenceTick(Math.round(bar.differenceMinutes))}`}
             aria-pressed={bar.isSelected}
-            onClick={() => onSelect(index)}
+            onClick={() => onSelect(bar.isSelected ? null : bar.meetingId)}
             className={cn('min-w-0 flex-1 rounded-[10px]', bar.isSelected && 'bg-brand-50')}
           />
         ))}
@@ -157,31 +119,27 @@ export const DashboardTargetComparisonChart = ({
         aria-hidden
         style={{ position: 'relative', width: '100%', height: '100%', pointerEvents: 'none' }}
       >
-        <XAxis
-          dataKey="label"
-          height={X_AXIS_HEIGHT}
-          axisLine={false}
-          tickLine={false}
-          tickSize={0}
-          tickMargin={36}
-          interval={0}
-          tick={(props: BaseTickContentProps) => (
-            <RangeTick {...props} isSelected={props.index === selectedIndex} />
-          )}
-        />
         <YAxis
           width={Y_AXIS_WIDTH}
-          domain={[minRate, maxRate]}
-          ticks={[minRate, 0, maxRate]}
+          domain={domain}
+          ticks={ticks}
           axisLine={false}
           tickLine={false}
           tickSize={0}
           tickMargin={6}
           interval={0}
-          tick={RateTick}
+          tick={DifferenceTick}
         />
-        <ReferenceLine y={maxRate} stroke="var(--color-cool-100)" zIndex={DefaultZIndexes.grid} />
-        <ReferenceLine y={minRate} stroke="var(--color-cool-100)" zIndex={DefaultZIndexes.grid} />
+        {ticks
+          .filter((tick) => tick !== 0)
+          .map((tick) => (
+            <ReferenceLine
+              key={tick}
+              y={tick}
+              stroke="var(--color-cool-100)"
+              zIndex={DefaultZIndexes.grid}
+            />
+          ))}
         <ReferenceLine
           y={0}
           stroke="var(--color-cool-500)"
@@ -189,7 +147,7 @@ export const DashboardTargetComparisonChart = ({
           strokeDasharray="4 3"
           zIndex={DefaultZIndexes.grid}
         />
-        <Bar dataKey={getBarValue} barSize={BAR_SIZE} shape={RateBar} />
+        <Bar dataKey="differenceMinutes" barSize={barSize} minPointSize={4} shape={DifferenceBar} />
       </BarChart>
     </div>
   );

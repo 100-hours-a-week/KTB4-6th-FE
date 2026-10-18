@@ -10,7 +10,7 @@ import {
 } from '@/features/dashboard';
 import { useTeamDetail } from '@/features/team-management';
 import { NavigationSidebar } from '@/widgets/navigation-sidebar';
-import { getDefaultRangeIndex, toSelectedRangeSummary } from '../model/target-comparison-view';
+import { toSelectedMeetingSummary } from '../model/target-comparison-view';
 import { DashboardDateNavigator } from './DashboardDateNavigator';
 import { DashboardHeader } from './DashboardHeader';
 import { DashboardPeriodTabs } from './DashboardPeriodTabs';
@@ -28,7 +28,7 @@ export const DashboardPage = ({ teamId }: DashboardPageProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [today] = useState(getTodayInKorea);
   const [selectedDate, setSelectedDate] = useState(today);
-  const [selectedRangeIndex, setSelectedRangeIndex] = useState<number | null>(null);
+  const [selectedMeetingId, setSelectedMeetingId] = useState<number | null>(null);
   const availableDateRange = getRecentDashboardDateRange(today);
   const { data: team } = useTeamDetail(teamId);
   const {
@@ -39,15 +39,13 @@ export const DashboardPage = ({ teamId }: DashboardPageProps) => {
   } = useDashboard(teamId, getDailyDashboardRange(selectedDate));
   const dailyDashboard = dashboard?.periodDays === 1 ? dashboard : null;
   const summary = dailyDashboard?.summary ?? null;
-  const chart = dailyDashboard?.chart ?? [];
-  const activeRangeIndex = selectedRangeIndex ?? getDefaultRangeIndex(chart);
-  const selectedRangeSummary = summary?.totalMeetings
-    ? toSelectedRangeSummary(chart[activeRangeIndex])
-    : null;
+  const selectedMeeting =
+    dailyDashboard?.meetings.find(({ meetingId }) => meetingId === selectedMeetingId) ?? null;
+  const selectedMeetingSummary = selectedMeeting ? toSelectedMeetingSummary(selectedMeeting) : null;
 
   const handleDateSelect = (date: string) => {
     setSelectedDate(date);
-    setSelectedRangeIndex(null);
+    setSelectedMeetingId(null);
   };
 
   return (
@@ -61,7 +59,7 @@ export const DashboardPage = ({ teamId }: DashboardPageProps) => {
             <DashboardTargetComparisonCard
               totalMeetings={summary.totalMeetings}
               totalDurationSeconds={summary.totalMeetingDurationSeconds}
-              selectedRangeSummary={selectedRangeSummary}
+              selectedMeetingSummary={selectedMeetingSummary}
               dateNavigator={
                 <DashboardDateNavigator
                   selectedDate={selectedDate}
@@ -75,9 +73,9 @@ export const DashboardPage = ({ teamId }: DashboardPageProps) => {
               }
             >
               <DashboardTargetComparisonChart
-                ranges={chart}
-                selectedIndex={activeRangeIndex}
-                onSelect={setSelectedRangeIndex}
+                meetings={dailyDashboard.meetings}
+                selectedMeetingId={selectedMeetingId}
+                onSelect={setSelectedMeetingId}
               />
             </DashboardTargetComparisonCard>
             <DashboardSummaryCard
