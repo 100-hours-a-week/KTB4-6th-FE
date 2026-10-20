@@ -92,7 +92,7 @@ export const getRecordingChunksToResend = async (
 };
 
 /** chunk에 순번을 붙여 같은 순번으로 전송하고 IndexedDB에 저장한다. */
-export const appendRecordingChunk = (chunk: Blob, send: (seq: number) => void) => {
+export const appendRecordingChunk = (chunk: ArrayBuffer, send: (seq: number) => void) => {
   const cursor = chunkCursor;
   if (!cursor) return;
 

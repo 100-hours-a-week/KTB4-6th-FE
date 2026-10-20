@@ -25,7 +25,7 @@ interface MediaRecorderState {
   conversionProgress: number;
   conversionError: string | null;
   prepare: () => Promise<AudioFormat>;
-  start: (onChunk: (chunk: Blob) => void) => void;
+  start: (onChunk: (chunk: ArrayBuffer) => void) => void;
   resume: () => void;
   flush: () => Promise<void>;
   convertToMp4: (parts: Blob[], fileName: string) => Promise<ConvertedRecordingFile>;
@@ -94,7 +94,7 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
     const { capture, status } = get();
     if (!capture || status !== 'ready') return;
 
-    startPcmCapture(capture, (chunk) => onChunk(new Blob([chunk])));
+    startPcmCapture(capture, onChunk);
     set({ status: 'recording' });
   },
 

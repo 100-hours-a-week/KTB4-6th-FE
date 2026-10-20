@@ -13,7 +13,7 @@ export interface RecordingChunk {
   partIndex: number;
   status: RecordingChunkStatus;
   createdAt: number;
-  data: Blob;
+  data: ArrayBuffer;
 }
 
 interface RecordingChunkDB extends DBSchema {
@@ -87,7 +87,7 @@ export const readRecordingChunkParts = async (recordingSessionId: number): Promi
   const db = await getDb();
   const chunks = await db.getAll(STORE_NAME, sessionRange(recordingSessionId));
 
-  const parts: Blob[][] = [];
+  const parts: BlobPart[][] = [];
   let currentPartIndex: number | null = null;
   for (const chunk of chunks) {
     if (chunk.partIndex !== currentPartIndex) {

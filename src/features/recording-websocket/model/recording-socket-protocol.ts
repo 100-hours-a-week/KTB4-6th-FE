@@ -46,10 +46,11 @@ export const parseSocketMessage = (data: unknown): RecordingSocketMessage | null
 };
 
 /** [순번 8바이트, big-endian unsigned][오디오 바이트] */
-export const createAudioFrame = (chunk: Blob, seq: number) => {
-  const header = new ArrayBuffer(SEQ_HEADER_BYTES);
-  new DataView(header).setBigUint64(0, BigInt(seq), false);
-  return new Blob([header, chunk]);
+export const createAudioFrame = (chunk: ArrayBuffer, seq: number) => {
+  const frame = new Uint8Array(SEQ_HEADER_BYTES + chunk.byteLength);
+  new DataView(frame.buffer).setBigUint64(0, BigInt(seq), false);
+  frame.set(new Uint8Array(chunk), SEQ_HEADER_BYTES);
+  return frame.buffer;
 };
 
 export const createRecoveryFinishedMessage = (lastSequence: number) =>
