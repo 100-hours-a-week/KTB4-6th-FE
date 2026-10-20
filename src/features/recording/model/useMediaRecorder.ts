@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 import type { AudioFormat } from '@/entities/recording';
 import { mergeRecordingPartsToMp4, type ConvertedRecordingFile } from './convert-recording-to-mp4';
+import { UnsupportedRecordingBrowserError } from './errors';
 import { createPcmCapture, type PcmCapture } from './pcm-capture';
 
 const supportedFormats: { mimeType: string; audioFormat: AudioFormat }[] = [
@@ -55,7 +56,7 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
       typeof MediaRecorder === 'undefined' ||
       !MediaRecorder.isTypeSupported
     ) {
-      return Promise.reject(new Error('이 브라우저에서는 마이크 녹음을 사용할 수 없습니다.'));
+      return Promise.reject(new UnsupportedRecordingBrowserError());
     }
 
     const format = supportedFormats.find(({ mimeType }) => MediaRecorder.isTypeSupported(mimeType));
