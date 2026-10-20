@@ -4,6 +4,7 @@ import { UnsupportedRecordingBrowserError } from './errors';
 export const PCM_AUDIO_FORMAT: AudioFormat = 'pcm_s16le';
 
 const PCM_SAMPLE_RATE = 16_000;
+const PCM_BYTES_PER_SAMPLE = 2;
 const PCM_CHUNK_SAMPLES = 1_600;
 const PCM_CAPTURE_WORKLET_URL = '/worklets/pcm-capture-processor.js';
 const PCM_CAPTURE_PROCESSOR_NAME = 'pcm-capture';
@@ -18,6 +19,8 @@ export interface PcmCapture {
   source: MediaStreamAudioSourceNode;
   node: AudioWorkletNode;
 }
+
+export const countPcmSamples = (chunk: ArrayBuffer) => chunk.byteLength / PCM_BYTES_PER_SAMPLE;
 
 export const createPcmCapture = async (stream: MediaStream): Promise<PcmCapture> => {
   if (typeof AudioContext === 'undefined' || typeof AudioWorkletNode === 'undefined') {
