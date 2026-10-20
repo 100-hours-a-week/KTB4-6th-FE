@@ -10,13 +10,9 @@ import {
   releasePcmCapture,
   resumePcmCapture,
   startPcmCapture,
+  PCM_AUDIO_FORMAT,
   type PcmCapture,
 } from './pcm-capture';
-
-const supportedFormats: { mimeType: string; audioFormat: AudioFormat }[] = [
-  { mimeType: 'audio/webm;codecs=opus', audioFormat: 'webm_opus' },
-  { mimeType: 'audio/mp4;codecs=mp4a.40.2', audioFormat: 'mp4_aac' },
-];
 
 type MediaRecorderStatus = 'idle' | 'requesting' | 'ready' | 'recording' | 'paused';
 type RecordingConversionStatus = 'idle' | 'loading' | 'converting' | 'success' | 'error';
@@ -52,17 +48,8 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
     if (capture && audioFormat) return Promise.resolve(audioFormat);
     if (pendingPreparation?.version === preparationVersion) return pendingPreparation.promise;
 
-    if (
-      !navigator.mediaDevices?.getUserMedia ||
-      typeof MediaRecorder === 'undefined' ||
-      !MediaRecorder.isTypeSupported
-    ) {
+    if (!navigator.mediaDevices?.getUserMedia) {
       return Promise.reject(new UnsupportedRecordingBrowserError());
-    }
-
-    const format = supportedFormats.find(({ mimeType }) => MediaRecorder.isTypeSupported(mimeType));
-    if (!format) {
-      return Promise.reject(new Error('지원하는 오디오 녹음 형식이 없습니다.'));
     }
 
     const version = ++preparationVersion;
@@ -84,8 +71,8 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
           throw new Error('마이크 준비가 취소되었습니다.');
         }
 
-        set({ capture, audioFormat: format.audioFormat, status: 'ready' });
-        return format.audioFormat;
+        set({ capture, audioFormat: PCM_AUDIO_FORMAT, status: 'ready' });
+        return PCM_AUDIO_FORMAT;
       } catch (error) {
         stream.getTracks().forEach((track) => track.stop());
         throw error;
