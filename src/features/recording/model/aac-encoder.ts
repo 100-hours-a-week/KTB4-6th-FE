@@ -1,8 +1,13 @@
 import { UnsupportedRecordingBrowserError } from './errors';
+import { PCM_SAMPLE_RATE } from './pcm-capture';
+
+const AAC_SAMPLE_RATE = 48_000;
+const UPSAMPLE_FACTOR = AAC_SAMPLE_RATE / PCM_SAMPLE_RATE;
+const INT16_SCALE = 32_768;
 
 export const AAC_ENCODER_CONFIG: AudioEncoderConfig = {
   codec: 'mp4a.40.2',
-  sampleRate: 48_000,
+  sampleRate: AAC_SAMPLE_RATE,
   numberOfChannels: 1,
   bitrate: 48_000,
 };
@@ -57,6 +62,21 @@ const checkAacEncodingSupported = async () => {
   } catch {
     return false;
   }
+};
+
+export const upsamplePcmChunk = (chunk: ArrayBuffer) => {
+  const input = new Int16Array(chunk);
+  const output = new Float32Array(input.length * UPSAMPLE_FACTOR);
+
+  for (let i = 0; i < input.length; i++) {
+    const current = input[i] / INT16_SCALE;
+    const next = (input[i + 1] ?? input[i]) / INT16_SCALE;
+    for (let step = 0; step < UPSAMPLE_FACTOR; step++) {
+      output[i * UPSAMPLE_FACTOR + step] = current + ((next - current) * step) / UPSAMPLE_FACTOR;
+    }
+  }
+
+  return output;
 };
 
 export const ensureAacEncodingSupported = () => {
