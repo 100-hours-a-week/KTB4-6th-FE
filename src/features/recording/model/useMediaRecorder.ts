@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import type { AudioFormat } from '@/entities/recording';
 import { mergeRecordingPartsToMp4, type ConvertedRecordingFile } from './convert-recording-to-mp4';
 import { UnsupportedRecordingBrowserError } from './errors';
-import { createPcmCapture, type PcmCapture } from './pcm-capture';
+import { createPcmCapture, flushPcmCapture, type PcmCapture } from './pcm-capture';
 
 const supportedFormats: { mimeType: string; audioFormat: AudioFormat }[] = [
   { mimeType: 'audio/webm;codecs=opus', audioFormat: 'webm_opus' },
@@ -140,46 +140,15 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
   },
 
   flush: async () => {
-    const { recorder } = get();
-    if (!recorder || recorder.state === 'inactive') {
+    const { capture, status } = get();
+    if (!capture || (status !== 'recording' && status !== 'paused')) {
       throw new Error('마무리할 브라우저 녹음이 없습니다.');
     }
 
-    const waitForEvent = (eventName: 'pause' | 'dataavailable', action: () => void) =>
-      new Promise<void>((resolve, reject) => {
-        const cleanup = () => {
-          recorder.removeEventListener(eventName, onExpected);
-          recorder.removeEventListener('error', onFailure);
-          recorder.removeEventListener('stop', onFailure);
-        };
-        const onExpected = () => {
-          cleanup();
-          resolve();
-        };
-        const onFailure = () => {
-          cleanup();
-          reject(new Error('브라우저 녹음 데이터를 마무리하지 못했습니다.'));
-        };
-
-        recorder.addEventListener(eventName, onExpected);
-        recorder.addEventListener('error', onFailure);
-        recorder.addEventListener('stop', onFailure);
-        try {
-          action();
-        } catch (error) {
-          cleanup();
-          reject(error);
-        }
-      });
-
     set({ isFlushing: true });
     try {
-      if (recorder.state === 'recording') {
-        await waitForEvent('pause', () => recorder.pause());
-        set({ status: 'paused' });
-      }
-
-      await waitForEvent('dataavailable', () => recorder.requestData());
+      await flushPcmCapture(capture);
+      set({ status: 'paused' });
     } finally {
       set({ isFlushing: false });
     }
