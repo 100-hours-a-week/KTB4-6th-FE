@@ -39,7 +39,7 @@ type RecordingSocketMessageListener = (
 interface RecordingWebSocketContextValue {
   statuses: Record<number, RecordingWebSocketStatus>;
   connect: (recordingSessionId: number, audioFormat: AudioFormat) => void;
-  sendAudioChunk: (recordingSessionId: number, chunk: Blob, seq: number) => void;
+  sendAudioChunk: (recordingSessionId: number, chunk: ArrayBuffer, seq: number) => void;
   sendRecoveryFinished: (recordingSessionId: number, lastSequence: number) => void;
   waitForAudioSent: (recordingSessionId: number, timeoutMs: number) => Promise<void>;
   disconnect: (recordingSessionId: number) => void;
@@ -156,10 +156,13 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
     };
   }, []);
 
-  const sendAudioChunk = useCallback((recordingSessionId: number, chunk: Blob, seq: number) => {
-    const socket = sockets.current.get(recordingSessionId);
-    if (socket?.readyState === WebSocket.OPEN) socket.send(createAudioFrame(chunk, seq));
-  }, []);
+  const sendAudioChunk = useCallback(
+    (recordingSessionId: number, chunk: ArrayBuffer, seq: number) => {
+      const socket = sockets.current.get(recordingSessionId);
+      if (socket?.readyState === WebSocket.OPEN) socket.send(createAudioFrame(chunk, seq));
+    },
+    [],
+  );
 
   const sendRecoveryFinished = useCallback((recordingSessionId: number, lastSequence: number) => {
     const socket = sockets.current.get(recordingSessionId);

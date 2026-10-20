@@ -1,19 +1,16 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
+import { countPcmSamples } from './pcm-capture';
 
-/**
- * BE가 chunk를 받았다고 확인(ACK)했는지.
- * 보냈어도 연결이 끊기면 BE에 닿지 않을 수 있어서, 전송 여부가 아니라 수신 확인 여부로 구분한다.
- * 저장할 때는 항상 pending이고, ACK를 받으면 acked로 바꾼다.
- */
 export type RecordingChunkStatus = 'pending' | 'acked';
 
 export interface RecordingChunk {
   recordingSessionId: number;
   seq: number;
-  partIndex: number;
+  partIndex?: number;
+  startSample: number;
   status: RecordingChunkStatus;
   createdAt: number;
-  data: Blob;
+  data: ArrayBuffer;
 }
 
 interface RecordingChunkDB extends DBSchema {
@@ -39,8 +36,6 @@ const getDb = () => {
         });
         store.createIndex('bySessionStatus', ['recordingSessionId', 'status']);
       },
-      // 다른 탭이 새 버전으로 열려고 하면 이 연결이 업그레이드를 막지 않도록 닫는다.
-      // 다음 접근 때 새 버전으로 다시 연다.
       blocking() {
         const current = dbPromise;
         dbPromise = null;
@@ -58,7 +53,6 @@ const getDb = () => {
   return dbPromise;
 };
 
-/** 이 세션의 chunk 전체를 가리키는 키 범위. */
 const sessionRange = (recordingSessionId: number) =>
   IDBKeyRange.bound([recordingSessionId, -Infinity], [recordingSessionId, Infinity]);
 
@@ -69,26 +63,26 @@ export const putRecordingChunk = async (chunk: RecordingChunk) => {
   await db.put(STORE_NAME, chunk);
 };
 
-/**
- * 세션 마지막 chunk를 뒤에서부터 하나만 읽어 다음 seq·partIndex 반환, 없으면 (1, 0)
- */
 export const getNextRecordingChunkPosition = async (recordingSessionId: number) => {
   const db = await getDb();
   const cursor = await db
     .transaction(STORE_NAME)
     .store.openCursor(sessionRange(recordingSessionId), 'prev');
 
-  if (!cursor) return { seq: 1, partIndex: 0 };
-  return { seq: cursor.value.seq + 1, partIndex: cursor.value.partIndex + 1 };
+  if (!cursor) return { seq: 1, startSample: 0 };
+  const lastChunk = cursor.value;
+  return {
+    seq: lastChunk.seq + 1,
+    startSample: lastChunk.startSample + countPcmSamples(lastChunk.data),
+  };
 };
 
-/** 이 세션의 chunk를 순번대로 읽어, 녹음 객체(part)별로 이어 붙인 Blob 배열로 반환한다. */
 export const readRecordingChunkParts = async (recordingSessionId: number): Promise<Blob[]> => {
   const db = await getDb();
   const chunks = await db.getAll(STORE_NAME, sessionRange(recordingSessionId));
 
-  const parts: Blob[][] = [];
-  let currentPartIndex: number | null = null;
+  const parts: BlobPart[][] = [];
+  let currentPartIndex: number | null | undefined = null;
   for (const chunk of chunks) {
     if (chunk.partIndex !== currentPartIndex) {
       parts.push([]);
@@ -100,13 +94,11 @@ export const readRecordingChunkParts = async (recordingSessionId: number): Promi
   return parts.map((partChunks) => new Blob(partChunks));
 };
 
-/** 이 세션에서 BE 수신 확인을 받지 못한 chunk를 순번대로 반환한다. 재전송 대상이다. */
 export const getPendingRecordingChunks = async (recordingSessionId: number) => {
   const db = await getDb();
   return db.getAllFromIndex(STORE_NAME, 'bySessionStatus', [recordingSessionId, 'pending']);
 };
 
-/** 이 세션에서 seq 이하의 수신 미확인 chunk를 수신 확인(acked)으로 바꾼다. */
 export const markRecordingChunksAcked = async (recordingSessionId: number, seq: number) => {
   const db = await getDb();
   const tx = db.transaction(STORE_NAME, 'readwrite');
@@ -124,11 +116,6 @@ export const deleteRecordingChunks = async (recordingSessionId: number) => {
   await db.delete(STORE_NAME, sessionRange(recordingSessionId));
 };
 
-/**
- * 마지막 chunk가 maxAgeMs보다 오래된 세션의 chunk를 지운다.
- * 업로드까지 끝내지 못한 채 남은 세션을 치우는 용도라, 진행 중일 수 있는 세션은 건드리지 않도록
- * 녹음 최대 시간보다 충분히 긴 기준을 넘긴다.
- */
 export const deleteStaleRecordingChunks = async (maxAgeMs: number, now = Date.now()) => {
   const db = await getDb();
   const tx = db.transaction(STORE_NAME, 'readwrite');
