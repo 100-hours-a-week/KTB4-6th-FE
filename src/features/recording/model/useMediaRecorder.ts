@@ -23,16 +23,13 @@ type RecordingConversionStatus = 'idle' | 'loading' | 'converting' | 'success' |
 
 interface MediaRecorderState {
   status: MediaRecorderStatus;
-  recorder: MediaRecorder | null;
   capture: PcmCapture | null;
   audioFormat: AudioFormat | null;
-  isFlushing: boolean;
   conversionStatus: RecordingConversionStatus;
   conversionProgress: number;
   conversionError: string | null;
   prepare: () => Promise<AudioFormat>;
   start: (onChunk: (chunk: Blob) => void) => void;
-  pause: () => void;
   resume: () => void;
   flush: () => Promise<void>;
   convertToMp4: (parts: Blob[], fileName: string) => Promise<ConvertedRecordingFile>;
@@ -44,10 +41,8 @@ let preparationVersion = 0;
 
 export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
   status: 'idle',
-  recorder: null,
   capture: null,
   audioFormat: null,
-  isFlushing: false,
   conversionStatus: 'idle',
   conversionProgress: 0,
   conversionError: null,
@@ -116,15 +111,6 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
     set({ status: 'recording' });
   },
 
-  pause: () => {
-    const { recorder } = get();
-    if (!recorder || recorder.state !== 'recording') {
-      throw new Error('일시정지할 브라우저 녹음이 없습니다.');
-    }
-    recorder.pause();
-    set({ status: 'paused' });
-  },
-
   resume: () => {
     const { capture, status } = get();
     if (!capture || status !== 'paused') {
@@ -140,13 +126,8 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
       throw new Error('마무리할 브라우저 녹음이 없습니다.');
     }
 
-    set({ isFlushing: true });
-    try {
-      await flushPcmCapture(capture);
-      set({ status: 'paused' });
-    } finally {
-      set({ isFlushing: false });
-    }
+    await flushPcmCapture(capture);
+    set({ status: 'paused' });
   },
 
   convertToMp4: async (parts, fileName) => {
@@ -172,10 +153,8 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
     pendingPreparation = null;
     const { capture } = get();
     set({
-      recorder: null,
       capture: null,
       audioFormat: null,
-      isFlushing: false,
       status: 'idle',
       conversionStatus: 'idle',
       conversionProgress: 0,
