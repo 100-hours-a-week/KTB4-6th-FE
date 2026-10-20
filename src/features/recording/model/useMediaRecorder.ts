@@ -8,6 +8,7 @@ import {
   createPcmCapture,
   flushPcmCapture,
   releasePcmCapture,
+  resumePcmCapture,
   startPcmCapture,
   type PcmCapture,
 } from './pcm-capture';
@@ -125,11 +126,11 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
   },
 
   resume: () => {
-    const { recorder } = get();
-    if (!recorder || recorder.state !== 'paused') {
+    const { capture, status } = get();
+    if (!capture || status !== 'paused') {
       throw new Error('재개할 브라우저 녹음이 없습니다.');
     }
-    recorder.resume();
+    resumePcmCapture(capture);
     set({ status: 'recording' });
   },
 

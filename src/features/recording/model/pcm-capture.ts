@@ -84,6 +84,10 @@ export const flushPcmCapture = ({ node }: PcmCapture) =>
     node.port.postMessage({ type: 'flush' });
   });
 
+export const resumePcmCapture = ({ node }: PcmCapture) => {
+  node.port.postMessage({ type: 'resume' });
+};
+
 export const releasePcmCapture = ({ stream, context, source, node }: PcmCapture) => {
   node.port.onmessage = null;
   node.port.close();
