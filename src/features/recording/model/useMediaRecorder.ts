@@ -8,6 +8,7 @@ import {
   createPcmCapture,
   flushPcmCapture,
   releasePcmCapture,
+  startPcmCapture,
   type PcmCapture,
 } from './pcm-capture';
 
@@ -15,7 +16,6 @@ const supportedFormats: { mimeType: string; audioFormat: AudioFormat }[] = [
   { mimeType: 'audio/webm;codecs=opus', audioFormat: 'webm_opus' },
   { mimeType: 'audio/mp4;codecs=mp4a.40.2', audioFormat: 'mp4_aac' },
 ];
-const AUDIO_CHUNK_INTERVAL_MS = 20;
 
 type MediaRecorderStatus = 'idle' | 'requesting' | 'ready' | 'recording' | 'paused';
 type RecordingConversionStatus = 'idle' | 'loading' | 'converting' | 'success' | 'error';
@@ -108,21 +108,10 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
   },
 
   start: (onChunk) => {
-    const { recorder } = get();
-    if (!recorder || recorder.state !== 'inactive') return;
+    const { capture, status } = get();
+    if (!capture || status !== 'ready') return;
 
-    recorder.ondataavailable = (event) => {
-      if (event.data.size > 0 && (recorder.state === 'recording' || get().isFlushing)) {
-        onChunk(event.data);
-      }
-    };
-
-    try {
-      recorder.start(AUDIO_CHUNK_INTERVAL_MS);
-    } catch (error) {
-      recorder.ondataavailable = null;
-      throw error;
-    }
+    startPcmCapture(capture, (chunk) => onChunk(new Blob([chunk])));
     set({ status: 'recording' });
   },
 

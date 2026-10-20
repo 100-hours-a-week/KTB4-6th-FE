@@ -7,6 +7,8 @@ const PCM_CAPTURE_PROCESSOR_NAME = 'pcm-capture';
 const PCM_RESUME_TIMEOUT_MS = 3_000;
 const PCM_FLUSH_TIMEOUT_MS = 3_000;
 
+type PcmCaptureMessage = { type: 'chunk'; chunk: ArrayBuffer } | { type: 'flushed' };
+
 export interface PcmCapture {
   stream: MediaStream;
   context: AudioContext;
@@ -49,6 +51,16 @@ export const createPcmCapture = async (stream: MediaStream): Promise<PcmCapture>
   }
 };
 
+export const startPcmCapture = (
+  { source, node }: PcmCapture,
+  onChunk: (chunk: ArrayBuffer) => void,
+) => {
+  node.port.onmessage = ({ data }: MessageEvent<PcmCaptureMessage>) => {
+    if (data.type === 'chunk') onChunk(data.chunk);
+  };
+  source.connect(node);
+};
+
 export const flushPcmCapture = ({ node }: PcmCapture) =>
   new Promise<void>((resolve, reject) => {
     const cleanup = () => {
@@ -56,7 +68,7 @@ export const flushPcmCapture = ({ node }: PcmCapture) =>
       node.port.removeEventListener('message', onMessage);
       node.removeEventListener('processorerror', onFailure);
     };
-    const onMessage = ({ data }: MessageEvent<{ type: string }>) => {
+    const onMessage = ({ data }: MessageEvent<PcmCaptureMessage>) => {
       if (data.type !== 'flushed') return;
       cleanup();
       resolve();
