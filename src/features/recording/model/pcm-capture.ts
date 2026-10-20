@@ -4,6 +4,7 @@ const PCM_SAMPLE_RATE = 16_000;
 const PCM_CHUNK_SAMPLES = 1_600;
 const PCM_CAPTURE_WORKLET_URL = '/worklets/pcm-capture-processor.js';
 const PCM_CAPTURE_PROCESSOR_NAME = 'pcm-capture';
+const PCM_RESUME_TIMEOUT_MS = 3_000;
 const PCM_FLUSH_TIMEOUT_MS = 3_000;
 
 export interface PcmCapture {
@@ -27,6 +28,17 @@ export const createPcmCapture = async (stream: MediaStream): Promise<PcmCapture>
       numberOfOutputs: 0,
       processorOptions: { chunkSamples: PCM_CHUNK_SAMPLES },
     });
+
+    if (context.state === 'suspended') {
+      await Promise.race([
+        context.resume(),
+        new Promise((resolve) => window.setTimeout(resolve, PCM_RESUME_TIMEOUT_MS)),
+      ]);
+    }
+    if (context.state !== 'running') {
+      throw new Error('오디오 입력을 시작하지 못했습니다.');
+    }
+
     return { stream, context, source, node };
   } catch (error) {
     void context?.close();
