@@ -18,7 +18,7 @@ export const useRecordingObjectLostAutoEnd = ({
   isCompleted,
   isPausedByUser,
 }: UseRecordingObjectLostAutoEndParams) => {
-  const recorder = useMediaRecorder((state) => state.recorder);
+  const recorderStatus = useMediaRecorder((state) => state.status);
   const recordingSessionId = useRecordingSessionStore(
     (state) => state.activeRecording?.recordingSessionId,
   );
@@ -31,7 +31,7 @@ export const useRecordingObjectLostAutoEnd = ({
     !isCompleted &&
     isRecorder &&
     isActivelyRecording &&
-    recorder === null &&
+    (recorderStatus === 'idle' || recorderStatus === 'requesting') &&
     !isPausedByUser &&
     !isRecordingElsewhere;
 

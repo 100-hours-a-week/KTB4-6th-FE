@@ -40,9 +40,9 @@ export const useCompleteRecordingFlow = ({
     }
 
     setOperation('finishing');
-    const recorder = useMediaRecorder.getState().recorder;
-    const wasRecording = recorder?.state === 'recording';
-    const isRecorderAlive = recorder !== null && recorder.state !== 'inactive';
+    const recorderStatus = useMediaRecorder.getState().status;
+    const wasRecording = recorderStatus === 'recording';
+    const isRecorderAlive = recorderStatus === 'recording' || recorderStatus === 'paused';
 
     if (!isRecorderAlive) {
       releaseMicrophone();
@@ -65,11 +65,7 @@ export const useCompleteRecordingFlow = ({
       const uploadCompleted =
         currentUpload?.recordingSessionId === recordingSessionId && currentUpload.isCompleted;
 
-      if (
-        !uploadCompleted &&
-        wasRecording &&
-        useMediaRecorder.getState().recorder?.state === 'paused'
-      ) {
+      if (!uploadCompleted && wasRecording && useMediaRecorder.getState().status === 'paused') {
         try {
           resumeBrowserRecording();
         } catch {
