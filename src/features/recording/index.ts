@@ -1,5 +1,5 @@
 export { useCompleteRecording } from './model/useCompleteRecording';
-export { isInsufficientCreditError } from './model/errors';
+export { isInsufficientCreditError, isUnsupportedRecordingBrowserError } from './model/errors';
 export { useMediaRecorder } from './model/useMediaRecorder';
 export {
   acknowledgeRecordingChunks,

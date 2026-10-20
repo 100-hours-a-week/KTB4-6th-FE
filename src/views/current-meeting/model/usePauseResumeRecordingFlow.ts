@@ -38,14 +38,13 @@ export const usePauseResumeRecordingFlow = ({
       return;
 
     const shouldPause = recorderStatus === 'recording';
-    const recorder = useMediaRecorder.getState().recorder;
-    if (shouldPause && recorder?.state !== 'recording') {
+    if (shouldPause && useMediaRecorder.getState().status !== 'recording') {
       showToast('브라우저 녹음 상태를 확인할 수 없습니다.', 'danger');
       return;
     }
 
     const restoreBrowserRecording = () => {
-      if (useMediaRecorder.getState().recorder?.state !== 'paused') return;
+      if (useMediaRecorder.getState().status !== 'paused') return;
       try {
         resumeBrowserRecording();
       } catch {

@@ -3,27 +3,33 @@
 import { create } from 'zustand';
 import type { AudioFormat } from '@/entities/recording';
 import { mergeRecordingPartsToMp4, type ConvertedRecordingFile } from './convert-recording-to-mp4';
+import { UnsupportedRecordingBrowserError } from './errors';
+import {
+  createPcmCapture,
+  flushPcmCapture,
+  releasePcmCapture,
+  resumePcmCapture,
+  startPcmCapture,
+  type PcmCapture,
+} from './pcm-capture';
 
 const supportedFormats: { mimeType: string; audioFormat: AudioFormat }[] = [
   { mimeType: 'audio/webm;codecs=opus', audioFormat: 'webm_opus' },
   { mimeType: 'audio/mp4;codecs=mp4a.40.2', audioFormat: 'mp4_aac' },
 ];
-const AUDIO_CHUNK_INTERVAL_MS = 20;
 
 type MediaRecorderStatus = 'idle' | 'requesting' | 'ready' | 'recording' | 'paused';
 type RecordingConversionStatus = 'idle' | 'loading' | 'converting' | 'success' | 'error';
 
 interface MediaRecorderState {
   status: MediaRecorderStatus;
-  recorder: MediaRecorder | null;
+  capture: PcmCapture | null;
   audioFormat: AudioFormat | null;
-  isFlushing: boolean;
   conversionStatus: RecordingConversionStatus;
   conversionProgress: number;
   conversionError: string | null;
   prepare: () => Promise<AudioFormat>;
   start: (onChunk: (chunk: Blob) => void) => void;
-  pause: () => void;
   resume: () => void;
   flush: () => Promise<void>;
   convertToMp4: (parts: Blob[], fileName: string) => Promise<ConvertedRecordingFile>;
@@ -35,16 +41,15 @@ let preparationVersion = 0;
 
 export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
   status: 'idle',
-  recorder: null,
+  capture: null,
   audioFormat: null,
-  isFlushing: false,
   conversionStatus: 'idle',
   conversionProgress: 0,
   conversionError: null,
 
   prepare: () => {
-    const { recorder, audioFormat } = get();
-    if (recorder && audioFormat) return Promise.resolve(audioFormat);
+    const { capture, audioFormat } = get();
+    if (capture && audioFormat) return Promise.resolve(audioFormat);
     if (pendingPreparation?.version === preparationVersion) return pendingPreparation.promise;
 
     if (
@@ -52,7 +57,7 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
       typeof MediaRecorder === 'undefined' ||
       !MediaRecorder.isTypeSupported
     ) {
-      return Promise.reject(new Error('이 브라우저에서는 마이크 녹음을 사용할 수 없습니다.'));
+      return Promise.reject(new UnsupportedRecordingBrowserError());
     }
 
     const format = supportedFormats.find(({ mimeType }) => MediaRecorder.isTypeSupported(mimeType));
@@ -72,8 +77,14 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
       }
 
       try {
-        const recorder = new MediaRecorder(stream, { mimeType: format.mimeType });
-        set({ recorder, audioFormat: format.audioFormat, status: 'ready' });
+        const capture = await createPcmCapture(stream);
+
+        if (version !== preparationVersion) {
+          void capture.context.close();
+          throw new Error('마이크 준비가 취소되었습니다.');
+        }
+
+        set({ capture, audioFormat: format.audioFormat, status: 'ready' });
         return format.audioFormat;
       } catch (error) {
         stream.getTracks().forEach((track) => track.stop());
@@ -93,86 +104,30 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
   },
 
   start: (onChunk) => {
-    const { recorder } = get();
-    if (!recorder || recorder.state !== 'inactive') return;
+    const { capture, status } = get();
+    if (!capture || status !== 'ready') return;
 
-    recorder.ondataavailable = (event) => {
-      if (event.data.size > 0 && (recorder.state === 'recording' || get().isFlushing)) {
-        onChunk(event.data);
-      }
-    };
-
-    try {
-      recorder.start(AUDIO_CHUNK_INTERVAL_MS);
-    } catch (error) {
-      recorder.ondataavailable = null;
-      throw error;
-    }
+    startPcmCapture(capture, (chunk) => onChunk(new Blob([chunk])));
     set({ status: 'recording' });
   },
 
-  pause: () => {
-    const { recorder } = get();
-    if (!recorder || recorder.state !== 'recording') {
-      throw new Error('일시정지할 브라우저 녹음이 없습니다.');
-    }
-    recorder.pause();
-    set({ status: 'paused' });
-  },
-
   resume: () => {
-    const { recorder } = get();
-    if (!recorder || recorder.state !== 'paused') {
+    const { capture, status } = get();
+    if (!capture || status !== 'paused') {
       throw new Error('재개할 브라우저 녹음이 없습니다.');
     }
-    recorder.resume();
+    resumePcmCapture(capture);
     set({ status: 'recording' });
   },
 
   flush: async () => {
-    const { recorder } = get();
-    if (!recorder || recorder.state === 'inactive') {
+    const { capture, status } = get();
+    if (!capture || (status !== 'recording' && status !== 'paused')) {
       throw new Error('마무리할 브라우저 녹음이 없습니다.');
     }
 
-    const waitForEvent = (eventName: 'pause' | 'dataavailable', action: () => void) =>
-      new Promise<void>((resolve, reject) => {
-        const cleanup = () => {
-          recorder.removeEventListener(eventName, onExpected);
-          recorder.removeEventListener('error', onFailure);
-          recorder.removeEventListener('stop', onFailure);
-        };
-        const onExpected = () => {
-          cleanup();
-          resolve();
-        };
-        const onFailure = () => {
-          cleanup();
-          reject(new Error('브라우저 녹음 데이터를 마무리하지 못했습니다.'));
-        };
-
-        recorder.addEventListener(eventName, onExpected);
-        recorder.addEventListener('error', onFailure);
-        recorder.addEventListener('stop', onFailure);
-        try {
-          action();
-        } catch (error) {
-          cleanup();
-          reject(error);
-        }
-      });
-
-    set({ isFlushing: true });
-    try {
-      if (recorder.state === 'recording') {
-        await waitForEvent('pause', () => recorder.pause());
-        set({ status: 'paused' });
-      }
-
-      await waitForEvent('dataavailable', () => recorder.requestData());
-    } finally {
-      set({ isFlushing: false });
-    }
+    await flushPcmCapture(capture);
+    set({ status: 'paused' });
   },
 
   convertToMp4: async (parts, fileName) => {
@@ -196,24 +151,16 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
   release: () => {
     preparationVersion += 1;
     pendingPreparation = null;
-    const { recorder } = get();
+    const { capture } = get();
     set({
-      recorder: null,
+      capture: null,
       audioFormat: null,
-      isFlushing: false,
       status: 'idle',
       conversionStatus: 'idle',
       conversionProgress: 0,
       conversionError: null,
     });
 
-    if (recorder) {
-      try {
-        recorder.ondataavailable = null;
-        if (recorder.state !== 'inactive') recorder.stop();
-      } finally {
-        recorder.stream.getTracks().forEach((track) => track.stop());
-      }
-    }
+    if (capture) releasePcmCapture(capture);
   },
 }));
