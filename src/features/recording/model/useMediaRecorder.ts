@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 import type { AudioFormat } from '@/entities/recording';
 import { mergeRecordingPartsToMp4, type ConvertedRecordingFile } from './convert-recording-to-mp4';
+import { createPcmCapture, type PcmCapture } from './pcm-capture';
 
 const supportedFormats: { mimeType: string; audioFormat: AudioFormat }[] = [
   { mimeType: 'audio/webm;codecs=opus', audioFormat: 'webm_opus' },
@@ -16,6 +17,7 @@ type RecordingConversionStatus = 'idle' | 'loading' | 'converting' | 'success' |
 interface MediaRecorderState {
   status: MediaRecorderStatus;
   recorder: MediaRecorder | null;
+  capture: PcmCapture | null;
   audioFormat: AudioFormat | null;
   isFlushing: boolean;
   conversionStatus: RecordingConversionStatus;
@@ -36,6 +38,7 @@ let preparationVersion = 0;
 export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
   status: 'idle',
   recorder: null,
+  capture: null,
   audioFormat: null,
   isFlushing: false,
   conversionStatus: 'idle',
@@ -43,8 +46,8 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
   conversionError: null,
 
   prepare: () => {
-    const { recorder, audioFormat } = get();
-    if (recorder && audioFormat) return Promise.resolve(audioFormat);
+    const { capture, audioFormat } = get();
+    if (capture && audioFormat) return Promise.resolve(audioFormat);
     if (pendingPreparation?.version === preparationVersion) return pendingPreparation.promise;
 
     if (
@@ -72,8 +75,14 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
       }
 
       try {
-        const recorder = new MediaRecorder(stream, { mimeType: format.mimeType });
-        set({ recorder, audioFormat: format.audioFormat, status: 'ready' });
+        const capture = await createPcmCapture(stream);
+
+        if (version !== preparationVersion) {
+          void capture.context.close();
+          throw new Error('마이크 준비가 취소되었습니다.');
+        }
+
+        set({ capture, audioFormat: format.audioFormat, status: 'ready' });
         return format.audioFormat;
       } catch (error) {
         stream.getTracks().forEach((track) => track.stop());
