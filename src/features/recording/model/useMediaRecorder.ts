@@ -4,7 +4,12 @@ import { create } from 'zustand';
 import type { AudioFormat } from '@/entities/recording';
 import { mergeRecordingPartsToMp4, type ConvertedRecordingFile } from './convert-recording-to-mp4';
 import { UnsupportedRecordingBrowserError } from './errors';
-import { createPcmCapture, flushPcmCapture, type PcmCapture } from './pcm-capture';
+import {
+  createPcmCapture,
+  flushPcmCapture,
+  releasePcmCapture,
+  type PcmCapture,
+} from './pcm-capture';
 
 const supportedFormats: { mimeType: string; audioFormat: AudioFormat }[] = [
   { mimeType: 'audio/webm;codecs=opus', audioFormat: 'webm_opus' },
@@ -175,9 +180,10 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
   release: () => {
     preparationVersion += 1;
     pendingPreparation = null;
-    const { recorder } = get();
+    const { capture } = get();
     set({
       recorder: null,
+      capture: null,
       audioFormat: null,
       isFlushing: false,
       status: 'idle',
@@ -186,13 +192,6 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
       conversionError: null,
     });
 
-    if (recorder) {
-      try {
-        recorder.ondataavailable = null;
-        if (recorder.state !== 'inactive') recorder.stop();
-      } finally {
-        recorder.stream.getTracks().forEach((track) => track.stop());
-      }
-    }
+    if (capture) releasePcmCapture(capture);
   },
 }));

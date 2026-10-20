@@ -59,3 +59,11 @@ export const flushPcmCapture = ({ node }: PcmCapture) =>
     node.addEventListener('processorerror', onFailure);
     node.port.postMessage({ type: 'flush' });
   });
+
+export const releasePcmCapture = ({ stream, context, source, node }: PcmCapture) => {
+  node.port.onmessage = null;
+  node.port.close();
+  source.disconnect();
+  stream.getTracks().forEach((track) => track.stop());
+  void context.close().catch(() => {});
+};
