@@ -9,13 +9,19 @@ import {
   UPSAMPLE_FACTOR,
   upsamplePcmChunk,
 } from './aac-encoder';
-import { flushEncodedFrames, saveEncodedFrame, saveEncodingMeta } from './encoded-frame-writer';
+import {
+  flushEncodedFrames,
+  saveEncodedFrame,
+  saveEncodingMeta,
+  toEncodedFrame,
+} from './encoded-frame-writer';
 import {
   deleteEncodedRecording,
   getEncodedFramesEndUs,
   getEncodingMeta,
 } from './encoded-recording-store';
 import { findRecordingChunkSeqAt, readRecordingChunksFrom } from './recording-chunk-store';
+import type { EncodedFrame } from './recording-db';
 import { markRecordingStorageFailure } from './recording-storage';
 
 const RECOVERY_MARGIN_SAMPLES = 10 * AAC_FRAME_SAMPLES;
@@ -115,36 +121,49 @@ const discardMismatchedEncoding = async (recordingSessionId: number) => {
   await deleteEncodedRecording(recordingSessionId);
 };
 
+const getResumePoint = async (recordingSessionId: number) => {
+  await discardMismatchedEncoding(recordingSessionId);
+  const endSample = toAacSample(await getEncodedFramesEndUs(recordingSessionId));
+  const resumeSample = Math.max(0, endSample - RECOVERY_MARGIN_SAMPLES);
+  const seq = await findRecordingChunkSeqAt(
+    recordingSessionId,
+    Math.floor(resumeSample / UPSAMPLE_FACTOR),
+  );
+  return { endSample, resumeSample, seq };
+};
+
+const feedStoredPcm = async (
+  recordingSessionId: number,
+  encoder: AudioEncoder,
+  fromSeq: number,
+  resumeSample: number,
+  untilSeq: number,
+) => {
+  let seq: number | null = fromSeq;
+  while (seq !== null) {
+    const chunks = await readRecordingChunksFrom(
+      recordingSessionId,
+      seq,
+      untilSeq,
+      RECOVERY_READ_BATCH_SIZE,
+    );
+    for (const chunk of chunks) {
+      const chunkStartSample = chunk.startSample * UPSAMPLE_FACTOR;
+      const offset = Math.max(0, resumeSample - chunkStartSample);
+      const data = upsamplePcmChunk(chunk.data).subarray(offset);
+      if (data.length > 0) encodeAacSamples(encoder, data, chunkStartSample + offset);
+    }
+    seq = chunks.length === RECOVERY_READ_BATCH_SIZE ? chunks[chunks.length - 1].seq + 1 : null;
+  }
+};
+
 const recoverNow = async (recordingSessionId: number, untilSeq: number) => {
   try {
-    await discardMismatchedEncoding(recordingSessionId);
-    const endSample = toAacSample(await getEncodedFramesEndUs(recordingSessionId));
-    const resumeSample = Math.max(0, endSample - RECOVERY_MARGIN_SAMPLES);
-    let seq = await findRecordingChunkSeqAt(
-      recordingSessionId,
-      Math.floor(resumeSample / UPSAMPLE_FACTOR),
-    );
+    const { endSample, resumeSample, seq } = await getResumePoint(recordingSessionId);
     if (seq === null) return;
 
-    createSessionEncoder(recordingSessionId, endSample);
-
-    while (seq !== null) {
-      const chunks = await readRecordingChunksFrom(
-        recordingSessionId,
-        seq,
-        untilSeq,
-        RECOVERY_READ_BATCH_SIZE,
-      );
-      for (const chunk of chunks) {
-        const chunkStartSample = chunk.startSample * UPSAMPLE_FACTOR;
-        const offset = Math.max(0, resumeSample - chunkStartSample);
-        const data = upsamplePcmChunk(chunk.data).subarray(offset);
-        if (data.length > 0) {
-          encodeAacSamples(getSessionEncoder(recordingSessionId), data, chunkStartSample + offset);
-        }
-      }
-      seq = chunks.length === RECOVERY_READ_BATCH_SIZE ? chunks[chunks.length - 1].seq + 1 : null;
-    }
+    const encoder = createSessionEncoder(recordingSessionId, endSample);
+    await feedStoredPcm(recordingSessionId, encoder, seq, resumeSample, untilSeq);
   } catch (error) {
     reportEncodingFailure(recordingSessionId, error);
   }
@@ -155,19 +174,36 @@ export const recoverRecordingEncoding = (recordingSessionId: number, untilSeq: n
 
 export const finishRecordingEncoding = async (recordingSessionId: number) => {
   await pendingEncodingTask;
-  if (!getLiveSessionEncoder(recordingSessionId)) {
-    await recoverNow(recordingSessionId, Number.POSITIVE_INFINITY);
-  }
-
-  const encoder = getLiveSessionEncoder(recordingSessionId);
-  if (encoder) {
-    try {
-      await encoder.flush();
-    } catch (error) {
-      reportEncodingFailure(recordingSessionId, error);
-    }
-  }
   await flushEncodedFrames();
+
+  const tailFrames: EncodedFrame[] = [];
+  const onFailure = (error: unknown) => reportEncodingFailure(recordingSessionId, error);
+  try {
+    const { endSample, resumeSample, seq } = await getResumePoint(recordingSessionId);
+    if (seq === null) return tailFrames;
+
+    const encoder = new AudioEncoder({
+      output: (chunk, metadata) => {
+        if (metadata?.decoderConfig) {
+          saveEncodingMeta(recordingSessionId, metadata.decoderConfig, onFailure);
+        }
+        if (toAacSample(chunk.timestamp) < endSample) return;
+        tailFrames.push(toEncodedFrame(recordingSessionId, chunk));
+      },
+      error: onFailure,
+    });
+    try {
+      encoder.configure(AAC_ENCODER_CONFIG);
+      await feedStoredPcm(recordingSessionId, encoder, seq, resumeSample, Number.POSITIVE_INFINITY);
+      await encoder.flush();
+    } finally {
+      closeAacEncoder(encoder);
+    }
+    await flushEncodedFrames();
+  } catch (error) {
+    onFailure(error);
+  }
+  return tailFrames;
 };
 
 export const closeRecordingEncoding = (recordingSessionId: number) => {

@@ -5,12 +5,17 @@ import {
   Mp4OutputFormat,
   Output,
 } from 'mediabunny';
+import { toAacSample } from './aac-encoder';
 import { getEncodingMeta, readEncodedFramesFrom } from './encoded-recording-store';
+import type { EncodedFrame } from './recording-db';
 
 const MP4_READ_BATCH_SIZE = 2_000;
 const US_PER_SECOND = 1_000_000;
 
-export const buildRecordingMp4 = async (recordingSessionId: number) => {
+export const buildRecordingMp4 = async (
+  recordingSessionId: number,
+  tailFrames: EncodedFrame[] = [],
+) => {
   const meta = await getEncodingMeta(recordingSessionId);
   if (!meta) throw new Error('녹음 파일 정보를 찾을 수 없습니다.');
 
@@ -27,7 +32,19 @@ export const buildRecordingMp4 = async (recordingSessionId: number) => {
     description: meta.description,
   };
   let frameCount = 0;
+  let storedEndSample = 0;
   let fromTimestampUs = Number.NEGATIVE_INFINITY;
+
+  const addFrame = async (frame: EncodedFrame) => {
+    const packet = new EncodedPacket(
+      new Uint8Array(frame.data),
+      'key',
+      frame.timestampUs / US_PER_SECOND,
+      frame.durationUs / US_PER_SECOND,
+    );
+    await source.add(packet, frameCount === 0 ? { decoderConfig } : undefined);
+    frameCount += 1;
+  };
 
   try {
     for (;;) {
@@ -37,17 +54,14 @@ export const buildRecordingMp4 = async (recordingSessionId: number) => {
         MP4_READ_BATCH_SIZE,
       );
       for (const frame of frames) {
-        const packet = new EncodedPacket(
-          new Uint8Array(frame.data),
-          'key',
-          frame.timestampUs / US_PER_SECOND,
-          frame.durationUs / US_PER_SECOND,
-        );
-        await source.add(packet, frameCount === 0 ? { decoderConfig } : undefined);
-        frameCount += 1;
+        await addFrame(frame);
+        storedEndSample = toAacSample(frame.timestampUs + frame.durationUs);
       }
       if (frames.length < MP4_READ_BATCH_SIZE) break;
       fromTimestampUs = frames[frames.length - 1].timestampUs + 1;
+    }
+    for (const frame of tailFrames) {
+      if (toAacSample(frame.timestampUs) >= storedEndSample) await addFrame(frame);
     }
     if (frameCount === 0) throw new Error('저장된 녹음 파일이 없습니다.');
 

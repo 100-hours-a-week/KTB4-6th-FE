@@ -30,19 +30,26 @@ export const saveEncodingMeta = (
   pendingFrameWrite = pendingFrameWrite.then(() => putEncodingMeta(meta).catch(onFailure));
 };
 
+export const toEncodedFrame = (
+  recordingSessionId: number,
+  chunk: EncodedAudioChunk,
+): EncodedFrame => {
+  const data = new ArrayBuffer(chunk.byteLength);
+  chunk.copyTo(data);
+  return {
+    recordingSessionId,
+    timestampUs: chunk.timestamp,
+    durationUs: chunk.duration ?? 0,
+    data,
+  };
+};
+
 export const saveEncodedFrame = (
   recordingSessionId: number,
   chunk: EncodedAudioChunk,
   onFailure: WriteFailureHandler,
 ) => {
-  const data = new ArrayBuffer(chunk.byteLength);
-  chunk.copyTo(data);
-  queuedFrames.push({
-    recordingSessionId,
-    timestampUs: chunk.timestamp,
-    durationUs: chunk.duration ?? 0,
-    data,
-  });
+  queuedFrames.push(toEncodedFrame(recordingSessionId, chunk));
   if (queuedFrames.length > 1) return;
 
   pendingFrameWrite = pendingFrameWrite.then(() => {

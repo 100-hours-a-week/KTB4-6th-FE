@@ -32,10 +32,10 @@ export const useUploadPendingRecordingParts = () => {
     try {
       if (!isIndexedDbSupported()) throw new Error('저장된 녹음 파일이 없습니다.');
       await flushRecordingChunks();
-      await finishRecordingEncoding(recordingSessionId);
+      const tailFrames = await finishRecordingEncoding(recordingSessionId);
 
       stage = 'build';
-      const file = await buildRecordingMp4(recordingSessionId);
+      const file = await buildRecordingMp4(recordingSessionId, tailFrames);
       const durationMs = await getRecordedDurationMs(recordingSessionId);
 
       stage = 'upload';
