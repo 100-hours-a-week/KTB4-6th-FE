@@ -130,12 +130,13 @@ export const findRecordingChunkSeqAt = async (recordingSessionId: number, sample
 export const readRecordingChunksFrom = async (
   recordingSessionId: number,
   fromSeq: number,
+  untilSeq: number,
   count: number,
 ) => {
   const db = await getDb();
   return db.getAll(
     STORE_NAME,
-    IDBKeyRange.bound([recordingSessionId, fromSeq], [recordingSessionId, Infinity]),
+    IDBKeyRange.bound([recordingSessionId, fromSeq], [recordingSessionId, untilSeq], false, true),
     count,
   );
 };

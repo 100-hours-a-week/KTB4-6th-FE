@@ -60,7 +60,7 @@ export const prepareChunkCursor = (recordingSessionId: number, lastProcessedSequ
         seq: Math.max(position.seq, minSeq),
         startSample: position.startSample,
       };
-      if (isIndexedDbSupported()) void recoverRecordingEncoding(recordingSessionId);
+      if (isIndexedDbSupported()) void recoverRecordingEncoding(recordingSessionId, position.seq);
     } catch (error) {
       chunkCursor = { recordingSessionId, seq: minSeq, startSample: 0 };
       reportChunkSaveFailure(recordingSessionId, error);

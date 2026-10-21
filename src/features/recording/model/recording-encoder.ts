@@ -20,6 +20,7 @@ const RECOVERY_READ_BATCH_SIZE = 50;
 
 let sessionEncoder: { recordingSessionId: number; encoder: AudioEncoder } | null = null;
 let reportedFailureSessionId: number | null = null;
+let pendingEncodingTask: Promise<void> | null = null;
 
 const reportEncodingFailure = (recordingSessionId: number, error: unknown) => {
   if (reportedFailureSessionId === recordingSessionId) return;
@@ -58,11 +59,16 @@ const getSessionEncoder = (recordingSessionId: number) =>
     ? sessionEncoder.encoder
     : createSessionEncoder(recordingSessionId);
 
-export const encodeRecordingChunk = (
-  recordingSessionId: number,
-  chunk: ArrayBuffer,
-  startSample: number,
-) => {
+const runAfterPendingTask = (task: () => void | Promise<void>) => {
+  const next = (pendingEncodingTask ?? Promise.resolve()).then(task);
+  pendingEncodingTask = next;
+  void next.finally(() => {
+    if (pendingEncodingTask === next) pendingEncodingTask = null;
+  });
+  return next;
+};
+
+const encodeChunkNow = (recordingSessionId: number, chunk: ArrayBuffer, startSample: number) => {
   try {
     encodeAacSamples(
       getSessionEncoder(recordingSessionId),
@@ -74,7 +80,19 @@ export const encodeRecordingChunk = (
   }
 };
 
-export const recoverRecordingEncoding = async (recordingSessionId: number) => {
+export const encodeRecordingChunk = (
+  recordingSessionId: number,
+  chunk: ArrayBuffer,
+  startSample: number,
+) => {
+  if (pendingEncodingTask) {
+    void runAfterPendingTask(() => encodeChunkNow(recordingSessionId, chunk, startSample));
+    return;
+  }
+  encodeChunkNow(recordingSessionId, chunk, startSample);
+};
+
+const recoverNow = async (recordingSessionId: number, untilSeq: number) => {
   try {
     const endSample = toAacSample(await getEncodedFramesEndUs(recordingSessionId));
     const resumeSample = Math.max(0, endSample - RECOVERY_MARGIN_SAMPLES);
@@ -90,6 +108,7 @@ export const recoverRecordingEncoding = async (recordingSessionId: number) => {
       const chunks = await readRecordingChunksFrom(
         recordingSessionId,
         seq,
+        untilSeq,
         RECOVERY_READ_BATCH_SIZE,
       );
       for (const chunk of chunks) {
@@ -106,3 +125,6 @@ export const recoverRecordingEncoding = async (recordingSessionId: number) => {
     reportEncodingFailure(recordingSessionId, error);
   }
 };
+
+export const recoverRecordingEncoding = (recordingSessionId: number, untilSeq: number) =>
+  runAfterPendingTask(() => recoverNow(recordingSessionId, untilSeq));
