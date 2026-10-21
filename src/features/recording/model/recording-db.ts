@@ -5,7 +5,6 @@ export type RecordingChunkStatus = 'pending' | 'acked';
 export interface RecordingChunk {
   recordingSessionId: number;
   seq: number;
-  partIndex?: number;
   startSample: number;
   status: RecordingChunkStatus;
   createdAt: number;

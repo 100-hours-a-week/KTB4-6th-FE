@@ -1,51 +1,21 @@
 'use client';
 
-import { captureException, isOpfsSupported } from '@/shared/lib';
-import { flushRecordingChunks } from './useRecordingChunkBuffer';
-import { readOpfsPartFilesInOrder, removeOpfsPartFiles } from './opfs-recording-parts';
-import { deleteRecordingChunks, readRecordingChunkParts } from './recording-chunk-store';
+import { captureException } from '@/shared/lib';
+import { PCM_SAMPLE_RATE } from './pcm-capture';
+import { deleteRecordingChunks, getNextRecordingChunkPosition } from './recording-chunk-store';
 import { isIndexedDbSupported } from './recording-db';
 import { finishRecordingEncoding } from './recording-encoder';
-import { useMediaRecorder } from './useMediaRecorder';
+import { buildRecordingMp4 } from './recording-mp4';
+import { flushRecordingChunks } from './useRecordingChunkBuffer';
 import { useRecordingSessionStore } from './useRecordingSessionStore';
 import { useUploadRecordingFile } from './useUploadRecordingFile';
 
-const WEBM_EBML_HEADER = [0x1a, 0x45, 0xdf, 0xa3];
-const WEBM_CLUSTER_ID = [0x1f, 0x43, 0xb6, 0x75];
-const WEBM_CLUSTER_SEARCH_BYTES = 64 * 1024;
-
-const startsWith = (bytes: Uint8Array, pattern: number[]) =>
-  pattern.every((value, index) => bytes[index] === value);
-
-const includesSequence = (bytes: Uint8Array, pattern: number[]) => {
-  for (let start = 0; start <= bytes.length - pattern.length; start += 1) {
-    if (pattern.every((value, index) => bytes[start + index] === value)) return true;
-  }
-  return false;
-};
-
-const isMergeableRecordingPart = async (part: Blob) => {
-  if (part.size === 0) return false;
-
-  const head = new Uint8Array(
-    await part.slice(0, Math.min(part.size, WEBM_CLUSTER_SEARCH_BYTES)).arrayBuffer(),
-  );
-  if (!startsWith(head, WEBM_EBML_HEADER.slice(0, head.length))) return true;
-
-  return startsWith(head, WEBM_EBML_HEADER) && includesSequence(head, WEBM_CLUSTER_ID);
-};
-
-const readLegacyOpfsParts = async (recordingSessionId: number): Promise<Blob[]> => {
-  if (!isOpfsSupported()) return [];
-  try {
-    return await readOpfsPartFilesInOrder(recordingSessionId);
-  } catch {
-    return [];
-  }
+const getRecordedDurationMs = async (recordingSessionId: number) => {
+  const { startSample: totalSamples } = await getNextRecordingChunkPosition(recordingSessionId);
+  return Math.round((totalSamples / PCM_SAMPLE_RATE) * 1000);
 };
 
 export const useUploadPendingRecordingParts = () => {
-  const convertToMp4 = useMediaRecorder((state) => state.convertToMp4);
   const uploadRecordingFile = useUploadRecordingFile();
   const setPendingUpload = useRecordingSessionStore((state) => state.setPendingUpload);
   const markPendingUploadCompleted = useRecordingSessionStore(
@@ -56,26 +26,22 @@ export const useUploadPendingRecordingParts = () => {
     const currentUpload = useRecordingSessionStore.getState().pendingUpload;
     const reusableUpload =
       currentUpload?.recordingSessionId === recordingSessionId ? currentUpload : null;
-    let stage: 'read' | 'convert' | 'upload' = 'read';
+    let stage: 'read' | 'build' | 'upload' = 'read';
 
     try {
+      if (!isIndexedDbSupported()) throw new Error('저장된 녹음 파일이 없습니다.');
       await flushRecordingChunks();
-      if (isIndexedDbSupported()) await finishRecordingEncoding(recordingSessionId);
-      const allParts = [
-        ...(await readLegacyOpfsParts(recordingSessionId)),
-        ...(isIndexedDbSupported() ? await readRecordingChunkParts(recordingSessionId) : []),
-      ];
-      const mergeable = await Promise.all(allParts.map(isMergeableRecordingPart));
-      const parts = allParts.filter((_, index) => mergeable[index]);
-      if (parts.length === 0) throw new Error('저장된 녹음 파일이 없습니다.');
+      await finishRecordingEncoding(recordingSessionId);
 
-      stage = 'convert';
-      const convertedRecording = await convertToMp4(parts, `recording-${recordingSessionId}.mp4`);
+      stage = 'build';
+      const file = await buildRecordingMp4(recordingSessionId);
+      const durationMs = await getRecordedDurationMs(recordingSessionId);
 
       stage = 'upload';
       await uploadRecordingFile.mutateAsync({
         recordingSessionId,
-        ...convertedRecording,
+        file,
+        durationMs,
         uploadTarget: reusableUpload ?? undefined,
         onUploadTargetCreated: (target) =>
           setPendingUpload({
@@ -98,11 +64,6 @@ export const useUploadPendingRecordingParts = () => {
     }
 
     markPendingUploadCompleted(recordingSessionId);
-    await Promise.all([
-      isOpfsSupported() ? removeOpfsPartFiles(recordingSessionId).catch(() => {}) : undefined,
-      isIndexedDbSupported()
-        ? deleteRecordingChunks(recordingSessionId).catch(() => {})
-        : undefined,
-    ]);
+    await deleteRecordingChunks(recordingSessionId).catch(() => {});
   };
 };
