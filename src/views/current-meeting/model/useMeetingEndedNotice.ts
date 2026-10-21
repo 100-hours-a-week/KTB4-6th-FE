@@ -27,7 +27,7 @@ export const useMeetingEndedNotice = ({
   const queryClient = useQueryClient();
   const [wasLive, setWasLive] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
-  const isEndedByServer = useRecordingEndedByServer(meetingId);
+  const serverEnd = useRecordingEndedByServer(meetingId);
 
   if (isMeetingLoaded && !hasCompleted && !wasLive) setWasLive(true);
 
@@ -47,5 +47,5 @@ export const useMeetingEndedNotice = ({
     router.replace(getTeamHomePath(teamId));
   };
 
-  return { isMeetingEndedNoticeOpen, isEndedByServer, goToResult, goHome };
+  return { isMeetingEndedNoticeOpen, serverEnd, goToResult, goHome };
 };

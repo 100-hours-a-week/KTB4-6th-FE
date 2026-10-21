@@ -3,10 +3,11 @@
 import { AlertDialog } from '@base-ui/react/alert-dialog';
 import { Check } from 'lucide-react';
 import { useAppFrameElement } from '@/shared/lib';
+import type { RecordingServerEnd } from '../model/useRecordingEndedByServer';
 
 interface MeetingEndedDialogProps {
   isOpen: boolean;
-  isEndedByServer: boolean;
+  serverEnd: RecordingServerEnd | null;
   onConfirm: () => void;
   onGoHome: () => void;
 }
@@ -14,7 +15,7 @@ interface MeetingEndedDialogProps {
 /** 회의가 종료됐음을 알리고 회의 결과 화면 또는 홈으로 이동하게 한다. 이동 버튼으로만 닫힌다. */
 export const MeetingEndedDialog = ({
   isOpen,
-  isEndedByServer,
+  serverEnd,
   onConfirm,
   onGoHome,
 }: MeetingEndedDialogProps) => {
@@ -39,11 +40,15 @@ export const MeetingEndedDialog = ({
             회의가 종료되었습니다
           </AlertDialog.Title>
           <AlertDialog.Description className="mt-2 text-sm leading-6 text-cool-500">
-            {isEndedByServer ? (
+            {serverEnd ? (
               <>
                 서버 또는 네트워크가 불안정해 녹음이 종료되었습니다.
-                <br />
-                지금까지 녹음된 내용은 저장됩니다.
+                {serverEnd === 'recorder' && (
+                  <>
+                    <br />
+                    지금까지 녹음된 내용은 저장됩니다.
+                  </>
+                )}
               </>
             ) : (
               <>
