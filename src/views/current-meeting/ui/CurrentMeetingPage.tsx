@@ -17,6 +17,7 @@ import { useMeetingInfoEdit } from '../model/useMeetingInfoEdit';
 import { useRecordingObjectLostAutoEnd } from '../model/useRecordingObjectLostAutoEnd';
 import { useRecordingStartedNotice } from '../model/useRecordingStartedNotice';
 import { useRecordingStatusSync } from '../model/useRecordingStatusSync';
+import { useRecordingStorageNotice } from '../model/useRecordingStorageNotice';
 import { useTargetTimeReachedNotice } from '../model/useTargetTimeReachedNotice';
 import { CurrentMeetingDialogs } from './CurrentMeetingDialogs';
 import { CurrentMeetingHeader } from './CurrentMeetingHeader';
@@ -80,6 +81,7 @@ export const CurrentMeetingPage = ({
       !recording.isCompleted &&
       !recording.isServerCompleted,
   });
+  const recordingStorageNotice = useRecordingStorageNotice(meetingId);
   const meetingInfoEdit = useMeetingInfoEdit({ meetingId, meeting: recording.meeting });
   const { isOpen: isRecordingObjectLostNoticeOpen, isResuming: isResumingRecording } =
     useRecordingObjectLostAutoEnd({
@@ -129,6 +131,7 @@ export const CurrentMeetingPage = ({
     meetingEndedNotice,
     meetingInfoEdit,
     recordingStartedNotice,
+    recordingStorageNotice,
     navigateToTranscriptSegment,
     openSidebar: () => setIsSidebarOpen(true),
   };
