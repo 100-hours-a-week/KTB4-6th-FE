@@ -50,6 +50,7 @@ interface RecordingWebSocketContextValue {
   sendRecoveryFinished: (recordingSessionId: number, lastSequence: number) => void;
   waitForAudioSent: (recordingSessionId: number, timeoutMs: number) => Promise<void>;
   disconnect: (recordingSessionId: number) => void;
+  isEndedByServer: (recordingSessionId: number) => boolean;
   addMessageListener: (listener: RecordingSocketMessageListener) => () => void;
   waitForRecoveryMessage: (
     recordingSessionId: number,
@@ -86,6 +87,11 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
     socket.onmessage = null;
     socket.close();
   }, []);
+
+  const isEndedByServer = useCallback(
+    (recordingSessionId: number) => failedSessionIds.current.has(recordingSessionId),
+    [],
+  );
 
   const disconnect = useCallback(
     (recordingSessionId: number) => {
@@ -245,6 +251,7 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
       sendRecoveryFinished,
       waitForAudioSent,
       disconnect,
+      isEndedByServer,
       addMessageListener,
       waitForRecoveryMessage,
     }),
@@ -255,6 +262,7 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
       sendRecoveryFinished,
       waitForAudioSent,
       disconnect,
+      isEndedByServer,
       addMessageListener,
       waitForRecoveryMessage,
     ],

@@ -25,17 +25,20 @@ export const useRecordingObjectLostAutoEnd = ({
   const isResumingStream = useRecordingSessionStore((state) => state.isResumingStream);
   const { statuses } = useRecordingWebSocket();
   // 다른 탭·기기가 녹음을 가져간 거라면 이 탭의 녹음 객체가 없는 게 정상이다.
-  const isRecordingElsewhere =
-    recordingSessionId !== undefined && statuses[recordingSessionId] === 'superseded';
+  const socketStatus = recordingSessionId === undefined ? undefined : statuses[recordingSessionId];
+  const isRecordingElsewhere = socketStatus === 'superseded';
+  const isEndedByServer = socketStatus === 'failed';
   const isOpen =
     !isCompleted &&
     isRecorder &&
     isActivelyRecording &&
     (recorderStatus === 'idle' || recorderStatus === 'requesting') &&
     !isPausedByUser &&
-    !isRecordingElsewhere;
+    !isRecordingElsewhere &&
+    !isEndedByServer;
 
-  const isResumingOpen = !isCompleted && isRecorder && isActivelyRecording && isResumingStream;
+  const isResumingOpen =
+    !isCompleted && isRecorder && isActivelyRecording && isResumingStream && !isEndedByServer;
 
   return { isOpen: isOpen || isResumingOpen, isResuming: isResumingOpen };
 };
