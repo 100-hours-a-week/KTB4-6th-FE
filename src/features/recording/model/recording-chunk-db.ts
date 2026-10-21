@@ -107,6 +107,16 @@ export const putEncodingMeta = async (meta: EncodingMeta) => {
   await db.put(ENCODING_META_STORE_NAME, meta);
 };
 
+export const getEncodedFramesEndUs = async (recordingSessionId: number) => {
+  const db = await getDb();
+  const cursor = await db
+    .transaction(ENCODED_FRAME_STORE_NAME)
+    .store.openCursor(sessionRange(recordingSessionId), 'prev');
+
+  if (!cursor) return 0;
+  return cursor.value.timestampUs + cursor.value.durationUs;
+};
+
 export const getNextRecordingChunkPosition = async (recordingSessionId: number) => {
   const db = await getDb();
   const cursor = await db
