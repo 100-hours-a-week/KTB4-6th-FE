@@ -66,6 +66,7 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
   const messageListeners = useRef(new Set<RecordingSocketMessageListener>());
   const recoveryInbox = useRef(createRecoveryMessageInbox());
   const failedSessionIds = useRef(new Set<number>());
+  const aiRecoveringSessionIds = useRef(new Set<number>());
   const [statuses, setStatuses] = useState<Record<number, RecordingWebSocketStatus>>({});
 
   const waitForRecoveryMessage = useCallback(
@@ -125,7 +126,6 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
         else throw new Error('지원하지 않는 WebSocket 주소입니다.');
         url.searchParams.set('audioFormat', audioFormat);
 
-        // 브라우저가 전송 가능한 쿠키를 핸드셰이크에 자동으로 포함한다.
         socket = new WebSocket(url);
       } catch (error) {
         captureException(error, {
@@ -150,6 +150,9 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
         if (sockets.current.get(recordingSessionId) !== socket) return;
         const message = parseSocketMessage(event.data);
         if (!message) return;
+        if (message.type === 'recording.recovering') {
+          aiRecoveringSessionIds.current.add(recordingSessionId);
+        }
         if (message.type === 'recording.error') {
           failedSessionIds.current.add(recordingSessionId);
           closeSocket(recordingSessionId);
@@ -188,6 +191,7 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
 
   const sendAudioChunk = useCallback(
     (recordingSessionId: number, chunk: ArrayBuffer, seq: number) => {
+      if (aiRecoveringSessionIds.current.has(recordingSessionId)) return;
       const socket = sockets.current.get(recordingSessionId);
       if (socket?.readyState === WebSocket.OPEN) socket.send(createAudioFrame(chunk, seq));
     },
