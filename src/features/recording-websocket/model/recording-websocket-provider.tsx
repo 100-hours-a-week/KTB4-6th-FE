@@ -29,7 +29,14 @@ import { reportSocketFailure } from './report-socket-failure';
 const SEND_BUFFER_POLL_INTERVAL_MS = 50;
 
 export type RecordingWebSocketStatus =
-  'idle' | 'unconfigured' | 'connecting' | 'connected' | 'error' | 'closed' | 'superseded';
+  | 'idle'
+  | 'unconfigured'
+  | 'connecting'
+  | 'connected'
+  | 'error'
+  | 'closed'
+  | 'superseded'
+  | 'failed';
 
 type RecordingSocketMessageListener = (
   recordingSessionId: number,
@@ -57,6 +64,7 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
   const sockets = useRef(new Map<number, WebSocket>());
   const messageListeners = useRef(new Set<RecordingSocketMessageListener>());
   const recoveryInbox = useRef(createRecoveryMessageInbox());
+  const failedSessionIds = useRef(new Set<number>());
   const [statuses, setStatuses] = useState<Record<number, RecordingWebSocketStatus>>({});
 
   const waitForRecoveryMessage = useCallback(
@@ -67,94 +75,110 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
     [],
   );
 
-  const disconnect = useCallback((recordingSessionId: number) => {
+  const closeSocket = useCallback((recordingSessionId: number) => {
     recoveryInbox.current.clear(recordingSessionId);
     const socket = sockets.current.get(recordingSessionId);
-    if (socket) {
-      sockets.current.delete(recordingSessionId);
-      socket.onopen = null;
-      socket.onerror = null;
-      socket.onclose = null;
-      socket.onmessage = null;
-      socket.close();
-    }
-    setStatuses((current) => ({ ...current, [recordingSessionId]: 'idle' }));
+    if (!socket) return;
+    sockets.current.delete(recordingSessionId);
+    socket.onopen = null;
+    socket.onerror = null;
+    socket.onclose = null;
+    socket.onmessage = null;
+    socket.close();
   }, []);
 
-  const connect = useCallback((recordingSessionId: number, audioFormat: AudioFormat) => {
-    if (sockets.current.has(recordingSessionId)) return;
-    recoveryInbox.current.clear(recordingSessionId);
+  const disconnect = useCallback(
+    (recordingSessionId: number) => {
+      closeSocket(recordingSessionId);
+      const status = failedSessionIds.current.has(recordingSessionId) ? 'failed' : 'idle';
+      setStatuses((current) => ({ ...current, [recordingSessionId]: status }));
+    },
+    [closeSocket],
+  );
 
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-    if (!baseUrl) {
-      setStatuses((current) => ({ ...current, [recordingSessionId]: 'unconfigured' }));
-      return;
-    }
-
-    let socket: WebSocket;
-    try {
-      const url = new URL(
-        `/ws/v1/recordings/${encodeURIComponent(recordingSessionId)}/audio`,
-        baseUrl,
-      );
-      if (url.protocol === 'http:') url.protocol = 'ws:';
-      else if (url.protocol === 'https:') url.protocol = 'wss:';
-      else throw new Error('지원하지 않는 WebSocket 주소입니다.');
-      url.searchParams.set('audioFormat', audioFormat);
-
-      // 브라우저가 전송 가능한 쿠키를 핸드셰이크에 자동으로 포함한다.
-      socket = new WebSocket(url);
-    } catch (error) {
-      captureException(error, {
-        tags: { feature: 'recording-websocket', 'recording.session_id': recordingSessionId },
-      });
-      setStatuses((current) => ({ ...current, [recordingSessionId]: 'error' }));
-      return;
-    }
-
-    sockets.current.set(recordingSessionId, socket);
-    setStatuses((current) => ({ ...current, [recordingSessionId]: 'connecting' }));
-
-    let opened = false;
-
-    socket.onopen = () => {
-      if (sockets.current.get(recordingSessionId) !== socket) return;
-      opened = true;
-      setStatuses((current) => ({ ...current, [recordingSessionId]: 'connected' }));
-    };
-
-    socket.onmessage = (event: MessageEvent) => {
-      if (sockets.current.get(recordingSessionId) !== socket) return;
-      const message = parseSocketMessage(event.data);
-      if (!message) return;
-      messageListeners.current.forEach((listener) => listener(recordingSessionId, message));
-      if (isRecoveryMessage(message)) recoveryInbox.current.deliver(recordingSessionId, message);
-    };
-
-    socket.onerror = () => {
-      if (sockets.current.get(recordingSessionId) !== socket) return;
-      sockets.current.delete(recordingSessionId);
-      recoveryInbox.current.clear(recordingSessionId);
-      socket.close();
-      setStatuses((current) => ({ ...current, [recordingSessionId]: 'error' }));
-      reportSocketFailure('녹음 WebSocket 오류', recordingSessionId, opened);
-    };
-
-    socket.onclose = (event) => {
-      if (sockets.current.get(recordingSessionId) !== socket) return;
-      sockets.current.delete(recordingSessionId);
+  const connect = useCallback(
+    (recordingSessionId: number, audioFormat: AudioFormat) => {
+      if (sockets.current.has(recordingSessionId)) return;
+      if (failedSessionIds.current.has(recordingSessionId)) return;
       recoveryInbox.current.clear(recordingSessionId);
 
-      if (event.code === CLOSE_CODE_COMPLETED || event.code === CLOSE_CODE_SUPERSEDED) {
-        const status = event.code === CLOSE_CODE_COMPLETED ? 'closed' : 'superseded';
-        setStatuses((current) => ({ ...current, [recordingSessionId]: status }));
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+      if (!baseUrl) {
+        setStatuses((current) => ({ ...current, [recordingSessionId]: 'unconfigured' }));
         return;
       }
 
-      setStatuses((current) => ({ ...current, [recordingSessionId]: 'error' }));
-      reportSocketFailure('녹음 WebSocket 연결 종료', recordingSessionId, opened, event);
-    };
-  }, []);
+      let socket: WebSocket;
+      try {
+        const url = new URL(
+          `/ws/v1/recordings/${encodeURIComponent(recordingSessionId)}/audio`,
+          baseUrl,
+        );
+        if (url.protocol === 'http:') url.protocol = 'ws:';
+        else if (url.protocol === 'https:') url.protocol = 'wss:';
+        else throw new Error('지원하지 않는 WebSocket 주소입니다.');
+        url.searchParams.set('audioFormat', audioFormat);
+
+        // 브라우저가 전송 가능한 쿠키를 핸드셰이크에 자동으로 포함한다.
+        socket = new WebSocket(url);
+      } catch (error) {
+        captureException(error, {
+          tags: { feature: 'recording-websocket', 'recording.session_id': recordingSessionId },
+        });
+        setStatuses((current) => ({ ...current, [recordingSessionId]: 'error' }));
+        return;
+      }
+
+      sockets.current.set(recordingSessionId, socket);
+      setStatuses((current) => ({ ...current, [recordingSessionId]: 'connecting' }));
+
+      let opened = false;
+
+      socket.onopen = () => {
+        if (sockets.current.get(recordingSessionId) !== socket) return;
+        opened = true;
+        setStatuses((current) => ({ ...current, [recordingSessionId]: 'connected' }));
+      };
+
+      socket.onmessage = (event: MessageEvent) => {
+        if (sockets.current.get(recordingSessionId) !== socket) return;
+        const message = parseSocketMessage(event.data);
+        if (!message) return;
+        if (message.type === 'recording.error') {
+          failedSessionIds.current.add(recordingSessionId);
+          closeSocket(recordingSessionId);
+          setStatuses((current) => ({ ...current, [recordingSessionId]: 'failed' }));
+        }
+        messageListeners.current.forEach((listener) => listener(recordingSessionId, message));
+        if (isRecoveryMessage(message)) recoveryInbox.current.deliver(recordingSessionId, message);
+      };
+
+      socket.onerror = () => {
+        if (sockets.current.get(recordingSessionId) !== socket) return;
+        sockets.current.delete(recordingSessionId);
+        recoveryInbox.current.clear(recordingSessionId);
+        socket.close();
+        setStatuses((current) => ({ ...current, [recordingSessionId]: 'error' }));
+        reportSocketFailure('녹음 WebSocket 오류', recordingSessionId, opened);
+      };
+
+      socket.onclose = (event) => {
+        if (sockets.current.get(recordingSessionId) !== socket) return;
+        sockets.current.delete(recordingSessionId);
+        recoveryInbox.current.clear(recordingSessionId);
+
+        if (event.code === CLOSE_CODE_COMPLETED || event.code === CLOSE_CODE_SUPERSEDED) {
+          const status = event.code === CLOSE_CODE_COMPLETED ? 'closed' : 'superseded';
+          setStatuses((current) => ({ ...current, [recordingSessionId]: status }));
+          return;
+        }
+
+        setStatuses((current) => ({ ...current, [recordingSessionId]: 'error' }));
+        reportSocketFailure('녹음 WebSocket 연결 종료', recordingSessionId, opened, event);
+      };
+    },
+    [closeSocket],
+  );
 
   const sendAudioChunk = useCallback(
     (recordingSessionId: number, chunk: ArrayBuffer, seq: number) => {

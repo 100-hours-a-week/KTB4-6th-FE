@@ -1,7 +1,8 @@
 export type RecordingSocketMessage =
   | { type: 'ack'; seq: number }
   | { type: 'recovery.start'; lastProcessedSequence: number }
-  | { type: 'stream.ready' };
+  | { type: 'stream.ready' }
+  | { type: 'recording.error'; code: string; message: string | null };
 
 export type RecoveryMessageType = 'recovery.start' | 'stream.ready';
 export type RecoveryMessage = Extract<RecordingSocketMessage, { type: RecoveryMessageType }>;
@@ -40,6 +41,14 @@ export const parseSocketMessage = (data: unknown): RecordingSocketMessage | null
         : null;
     case 'stream.ready':
       return { type: 'stream.ready' };
+    case 'recording.error':
+      return typeof message.code === 'string'
+        ? {
+            type: 'recording.error',
+            code: message.code,
+            message: typeof message.message === 'string' ? message.message : null,
+          }
+        : null;
     default:
       return null;
   }
