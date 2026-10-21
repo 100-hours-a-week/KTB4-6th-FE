@@ -73,10 +73,9 @@ export const useCompleteRecordingFlow = ({
         }
       }
       showToast(
-        useMediaRecorder.getState().conversionError ??
-          (uploadCompleted
-            ? '회의를 종료하지 못했습니다. 다시 시도해주세요.'
-            : '녹음 파일을 업로드하지 못했습니다. 다시 시도해주세요.'),
+        uploadCompleted
+          ? '회의를 종료하지 못했습니다. 다시 시도해주세요.'
+          : '녹음 파일을 업로드하지 못했습니다. 다시 시도해주세요.',
         'danger',
       );
       setOperation('idle');

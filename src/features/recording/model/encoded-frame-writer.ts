@@ -20,13 +20,28 @@ export const saveEncodingMeta = (
 ) => {
   if (!config.description) return;
 
-  void putEncodingMeta({
+  const meta = {
     recordingSessionId,
     codec: config.codec,
     sampleRate: config.sampleRate,
     numberOfChannels: config.numberOfChannels,
     description: copyToArrayBuffer(config.description),
-  }).catch(onFailure);
+  };
+  pendingFrameWrite = pendingFrameWrite.then(() => putEncodingMeta(meta).catch(onFailure));
+};
+
+export const toEncodedFrame = (
+  recordingSessionId: number,
+  chunk: EncodedAudioChunk,
+): EncodedFrame => {
+  const data = new ArrayBuffer(chunk.byteLength);
+  chunk.copyTo(data);
+  return {
+    recordingSessionId,
+    timestampUs: chunk.timestamp,
+    durationUs: chunk.duration ?? 0,
+    data,
+  };
 };
 
 export const saveEncodedFrame = (
@@ -34,14 +49,7 @@ export const saveEncodedFrame = (
   chunk: EncodedAudioChunk,
   onFailure: WriteFailureHandler,
 ) => {
-  const data = new ArrayBuffer(chunk.byteLength);
-  chunk.copyTo(data);
-  queuedFrames.push({
-    recordingSessionId,
-    timestampUs: chunk.timestamp,
-    durationUs: chunk.duration ?? 0,
-    data,
-  });
+  queuedFrames.push(toEncodedFrame(recordingSessionId, chunk));
   if (queuedFrames.length > 1) return;
 
   pendingFrameWrite = pendingFrameWrite.then(() => {
@@ -50,3 +58,5 @@ export const saveEncodedFrame = (
     return putEncodedFrames(frames).catch(onFailure);
   });
 };
+
+export const flushEncodedFrames = () => pendingFrameWrite;

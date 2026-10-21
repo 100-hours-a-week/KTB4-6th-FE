@@ -3,7 +3,6 @@
 import { create } from 'zustand';
 import type { AudioFormat } from '@/entities/recording';
 import { ensureAacEncodingSupported } from './aac-encoder';
-import { mergeRecordingPartsToMp4, type ConvertedRecordingFile } from './convert-recording-to-mp4';
 import { UnsupportedRecordingBrowserError } from './errors';
 import {
   createPcmCapture,
@@ -16,20 +15,15 @@ import {
 } from './pcm-capture';
 
 type MediaRecorderStatus = 'idle' | 'requesting' | 'ready' | 'recording' | 'paused';
-type RecordingConversionStatus = 'idle' | 'loading' | 'converting' | 'success' | 'error';
 
 interface MediaRecorderState {
   status: MediaRecorderStatus;
   capture: PcmCapture | null;
   audioFormat: AudioFormat | null;
-  conversionStatus: RecordingConversionStatus;
-  conversionProgress: number;
-  conversionError: string | null;
   prepare: () => Promise<AudioFormat>;
   start: (onChunk: (chunk: ArrayBuffer) => void) => void;
   resume: () => void;
   flush: () => Promise<void>;
-  convertToMp4: (parts: Blob[], fileName: string) => Promise<ConvertedRecordingFile>;
   release: () => void;
 }
 
@@ -40,9 +34,6 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
   status: 'idle',
   capture: null,
   audioFormat: null,
-  conversionStatus: 'idle',
-  conversionProgress: 0,
-  conversionError: null,
 
   prepare: () => {
     const { capture, audioFormat } = get();
@@ -121,24 +112,6 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
     set({ status: 'paused' });
   },
 
-  convertToMp4: async (parts, fileName) => {
-    set({ conversionStatus: 'loading', conversionProgress: 0, conversionError: null });
-
-    try {
-      const convertedFile = await mergeRecordingPartsToMp4(parts, {
-        fileName,
-        onReady: () => set({ conversionStatus: 'converting' }),
-        onProgress: (conversionProgress) => set({ conversionProgress }),
-      });
-      set({ conversionStatus: 'success', conversionProgress: 1 });
-      return convertedFile;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : '녹음 파일 변환에 실패했습니다.';
-      set({ conversionStatus: 'error', conversionError: message });
-      throw error;
-    }
-  },
-
   release: () => {
     preparationVersion += 1;
     pendingPreparation = null;
@@ -147,9 +120,6 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
       capture: null,
       audioFormat: null,
       status: 'idle',
-      conversionStatus: 'idle',
-      conversionProgress: 0,
-      conversionError: null,
     });
 
     if (capture) releasePcmCapture(capture);

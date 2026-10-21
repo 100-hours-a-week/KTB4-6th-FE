@@ -23,6 +23,19 @@ export const getEncodedFramesEndUs = async (recordingSessionId: number) => {
   return cursor.value.timestampUs + cursor.value.durationUs;
 };
 
+export const readEncodedFramesFrom = async (
+  recordingSessionId: number,
+  fromTimestampUs: number,
+  count: number,
+) => {
+  const db = await getRecordingDb();
+  return db.getAll(
+    ENCODED_FRAME_STORE_NAME,
+    IDBKeyRange.bound([recordingSessionId, fromTimestampUs], [recordingSessionId, Infinity]),
+    count,
+  );
+};
+
 export const putEncodingMeta = async (meta: EncodingMeta) => {
   const db = await getRecordingDb();
   await db.put(ENCODING_META_STORE_NAME, meta);

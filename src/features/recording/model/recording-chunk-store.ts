@@ -66,23 +66,6 @@ export const readRecordingChunksFrom = async (
   );
 };
 
-export const readRecordingChunkParts = async (recordingSessionId: number): Promise<Blob[]> => {
-  const db = await getRecordingDb();
-  const chunks = await db.getAll(CHUNK_STORE_NAME, sessionRange(recordingSessionId));
-
-  const parts: BlobPart[][] = [];
-  let currentPartIndex: number | null | undefined = null;
-  for (const chunk of chunks) {
-    if (chunk.partIndex !== currentPartIndex) {
-      parts.push([]);
-      currentPartIndex = chunk.partIndex;
-    }
-    parts[parts.length - 1].push(chunk.data);
-  }
-
-  return parts.map((partChunks) => new Blob(partChunks));
-};
-
 export const deleteRecordingChunks = async (recordingSessionId: number) => {
   const db = await getRecordingDb();
   await db.delete(CHUNK_STORE_NAME, sessionRange(recordingSessionId));
