@@ -4,6 +4,7 @@ import { useRecordingChunkBuffer, useRecordingSessionStore } from '@/features/re
 import { useRecordingWebSocket } from '@/features/recording-websocket';
 import { useRecordingAckSync } from './use-recording-ack-sync';
 import { useRecordingConnectionRecovery } from './use-recording-connection-recovery';
+import { useRecordingServerEnd } from './use-recording-server-end';
 import { useRecordingStreamStart } from './use-recording-stream-start';
 
 export function RecordingSessionManager() {
@@ -14,6 +15,7 @@ export function RecordingSessionManager() {
 
   useRecordingChunkBuffer();
   useRecordingAckSync();
+  useRecordingServerEnd();
   const { resetAttempts } = useRecordingConnectionRecovery({
     meetingId: activeRecording?.meetingId,
     recordingSessionId,

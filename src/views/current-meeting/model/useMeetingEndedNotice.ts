@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { getTeamHomePath, homeKeys } from '@/features/home';
 import { meetingKeys } from '@/features/meeting';
 import { getCurrentMeetingQueryKey } from '@/features/meeting-sse';
+import { useRecordingEndedByServer } from './useRecordingEndedByServer';
 
 const COMPLETED_MEETING_TAB = 'summary';
 
@@ -26,6 +27,7 @@ export const useMeetingEndedNotice = ({
   const queryClient = useQueryClient();
   const [wasLive, setWasLive] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
+  const isEndedByServer = useRecordingEndedByServer(meetingId);
 
   if (isMeetingLoaded && !hasCompleted && !wasLive) setWasLive(true);
 
@@ -45,5 +47,5 @@ export const useMeetingEndedNotice = ({
     router.replace(getTeamHomePath(teamId));
   };
 
-  return { isMeetingEndedNoticeOpen, goToResult, goHome };
+  return { isMeetingEndedNoticeOpen, isEndedByServer, goToResult, goHome };
 };

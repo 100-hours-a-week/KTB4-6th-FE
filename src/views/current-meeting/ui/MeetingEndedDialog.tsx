@@ -6,12 +6,18 @@ import { useAppFrameElement } from '@/shared/lib';
 
 interface MeetingEndedDialogProps {
   isOpen: boolean;
+  isEndedByServer: boolean;
   onConfirm: () => void;
   onGoHome: () => void;
 }
 
 /** 회의가 종료됐음을 알리고 회의 결과 화면 또는 홈으로 이동하게 한다. 이동 버튼으로만 닫힌다. */
-export const MeetingEndedDialog = ({ isOpen, onConfirm, onGoHome }: MeetingEndedDialogProps) => {
+export const MeetingEndedDialog = ({
+  isOpen,
+  isEndedByServer,
+  onConfirm,
+  onGoHome,
+}: MeetingEndedDialogProps) => {
   const frame = useAppFrameElement();
 
   return (
@@ -33,9 +39,19 @@ export const MeetingEndedDialog = ({ isOpen, onConfirm, onGoHome }: MeetingEnded
             회의가 종료되었습니다
           </AlertDialog.Title>
           <AlertDialog.Description className="mt-2 text-sm leading-6 text-cool-500">
-            회의 진행자가 회의를 종료했습니다.
-            <br />
-            회의 내용을 정리하고 있습니다.
+            {isEndedByServer ? (
+              <>
+                서버 또는 네트워크가 불안정해 녹음이 종료되었습니다.
+                <br />
+                지금까지 녹음된 내용은 저장됩니다.
+              </>
+            ) : (
+              <>
+                회의 진행자가 회의를 종료했습니다.
+                <br />
+                회의 내용을 정리하고 있습니다.
+              </>
+            )}
           </AlertDialog.Description>
           <button
             type="button"
