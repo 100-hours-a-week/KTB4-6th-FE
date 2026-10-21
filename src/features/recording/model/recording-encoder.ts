@@ -12,11 +12,10 @@ import {
 import { saveEncodedFrame, saveEncodingMeta } from './encoded-frame-writer';
 import {
   deleteEncodedRecording,
-  findRecordingChunkSeqAt,
   getEncodedFramesEndUs,
   getEncodingMeta,
-  readRecordingChunksFrom,
-} from './recording-chunk-db';
+} from './encoded-recording-store';
+import { findRecordingChunkSeqAt, readRecordingChunksFrom } from './recording-chunk-store';
 
 const RECOVERY_MARGIN_SAMPLES = 10 * AAC_FRAME_SAMPLES;
 const RECOVERY_READ_BATCH_SIZE = 50;

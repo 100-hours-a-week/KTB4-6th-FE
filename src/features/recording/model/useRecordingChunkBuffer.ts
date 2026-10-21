@@ -5,13 +5,12 @@ import { captureException } from '@/shared/lib';
 import { encodeRecordingChunk, recoverRecordingEncoding } from './recording-encoder';
 import { countPcmSamples } from './pcm-capture';
 import {
-  deleteStaleRecordingChunks,
   getNextRecordingChunkPosition,
   getPendingRecordingChunks,
-  isIndexedDbSupported,
   markRecordingChunksAcked,
   putRecordingChunk,
-} from './recording-chunk-db';
+} from './recording-chunk-store';
+import { deleteStaleRecordingChunks, isIndexedDbSupported } from './recording-db';
 
 interface ChunkCursor {
   recordingSessionId: number;

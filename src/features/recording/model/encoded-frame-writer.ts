@@ -1,4 +1,5 @@
-import { putEncodedFrames, putEncodingMeta, type EncodedFrame } from './recording-chunk-db';
+import { putEncodedFrames, putEncodingMeta } from './encoded-recording-store';
+import type { EncodedFrame } from './recording-db';
 
 type WriteFailureHandler = (error: unknown) => void;
 

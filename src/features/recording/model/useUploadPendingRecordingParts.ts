@@ -3,11 +3,8 @@
 import { captureException, isOpfsSupported } from '@/shared/lib';
 import { flushRecordingChunks } from './useRecordingChunkBuffer';
 import { readOpfsPartFilesInOrder, removeOpfsPartFiles } from './opfs-recording-parts';
-import {
-  deleteRecordingChunks,
-  isIndexedDbSupported,
-  readRecordingChunkParts,
-} from './recording-chunk-db';
+import { deleteRecordingChunks, readRecordingChunkParts } from './recording-chunk-store';
+import { isIndexedDbSupported } from './recording-db';
 import { useMediaRecorder } from './useMediaRecorder';
 import { useRecordingSessionStore } from './useRecordingSessionStore';
 import { useUploadRecordingFile } from './useUploadRecordingFile';
