@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { captureException } from '@/shared/lib';
-import { encodeRecordingChunk } from './aac-encoder';
+import { encodeRecordingChunk, recoverRecordingEncoding } from './aac-encoder';
 import { countPcmSamples } from './pcm-capture';
 import {
   deleteStaleRecordingChunks,
@@ -60,6 +60,7 @@ export const prepareChunkCursor = (recordingSessionId: number, lastProcessedSequ
         seq: Math.max(position.seq, minSeq),
         startSample: position.startSample,
       };
+      if (isIndexedDbSupported()) void recoverRecordingEncoding(recordingSessionId);
     } catch (error) {
       chunkCursor = { recordingSessionId, seq: minSeq, startSample: 0 };
       reportChunkSaveFailure(recordingSessionId, error);

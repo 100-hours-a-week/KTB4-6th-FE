@@ -117,6 +117,29 @@ export const getEncodedFramesEndUs = async (recordingSessionId: number) => {
   return cursor.value.timestampUs + cursor.value.durationUs;
 };
 
+export const findRecordingChunkSeqAt = async (recordingSessionId: number, sample: number) => {
+  const db = await getDb();
+  let cursor = await db
+    .transaction(STORE_NAME)
+    .store.openCursor(sessionRange(recordingSessionId), 'prev');
+
+  while (cursor && cursor.value.startSample > sample) cursor = await cursor.continue();
+  return cursor?.value.seq ?? null;
+};
+
+export const readRecordingChunksFrom = async (
+  recordingSessionId: number,
+  fromSeq: number,
+  count: number,
+) => {
+  const db = await getDb();
+  return db.getAll(
+    STORE_NAME,
+    IDBKeyRange.bound([recordingSessionId, fromSeq], [recordingSessionId, Infinity]),
+    count,
+  );
+};
+
 export const getNextRecordingChunkPosition = async (recordingSessionId: number) => {
   const db = await getDb();
   const cursor = await db

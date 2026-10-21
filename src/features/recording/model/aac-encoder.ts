@@ -1,12 +1,22 @@
 import { captureException } from '@/shared/lib';
 import { UnsupportedRecordingBrowserError } from './errors';
 import { PCM_SAMPLE_RATE } from './pcm-capture';
-import { putEncodedFrames, putEncodingMeta, type EncodedFrame } from './recording-chunk-db';
+import {
+  findRecordingChunkSeqAt,
+  getEncodedFramesEndUs,
+  putEncodedFrames,
+  putEncodingMeta,
+  readRecordingChunksFrom,
+  type EncodedFrame,
+} from './recording-chunk-db';
 
 const AAC_SAMPLE_RATE = 48_000;
 const UPSAMPLE_FACTOR = AAC_SAMPLE_RATE / PCM_SAMPLE_RATE;
 const INT16_SCALE = 32_768;
-const PCM_SAMPLE_DURATION_US = 1_000_000 / PCM_SAMPLE_RATE;
+const AAC_SAMPLE_DURATION_US = 1_000_000 / AAC_SAMPLE_RATE;
+const AAC_FRAME_SAMPLES = 1_024;
+const RECOVERY_MARGIN_SAMPLES = 10 * AAC_FRAME_SAMPLES;
+const RECOVERY_READ_BATCH_SIZE = 50;
 
 export const AAC_ENCODER_CONFIG: AudioEncoderConfig = {
   codec: 'mp4a.40.2',
@@ -170,25 +180,69 @@ const getSessionEncoder = (recordingSessionId: number) => {
   return encoder;
 };
 
+const encodeSamples = (
+  encoder: AudioEncoder,
+  data: Float32Array<ArrayBuffer>,
+  startSample: number,
+) => {
+  const audioData = new AudioData({
+    format: 'f32',
+    sampleRate: AAC_SAMPLE_RATE,
+    numberOfChannels: AAC_ENCODER_CONFIG.numberOfChannels,
+    numberOfFrames: data.length,
+    timestamp: Math.round(startSample * AAC_SAMPLE_DURATION_US),
+    data,
+  });
+  try {
+    encoder.encode(audioData);
+  } finally {
+    audioData.close();
+  }
+};
+
 export const encodeRecordingChunk = (
   recordingSessionId: number,
   chunk: ArrayBuffer,
   startSample: number,
 ) => {
   try {
-    const data = upsamplePcmChunk(chunk);
-    const audioData = new AudioData({
-      format: 'f32',
-      sampleRate: AAC_SAMPLE_RATE,
-      numberOfChannels: 1,
-      numberOfFrames: data.length,
-      timestamp: Math.round(startSample * PCM_SAMPLE_DURATION_US),
-      data,
-    });
-    try {
-      getSessionEncoder(recordingSessionId).encode(audioData);
-    } finally {
-      audioData.close();
+    encodeSamples(
+      getSessionEncoder(recordingSessionId),
+      upsamplePcmChunk(chunk),
+      startSample * UPSAMPLE_FACTOR,
+    );
+  } catch (error) {
+    reportEncodingFailure(recordingSessionId, error);
+  }
+};
+
+export const recoverRecordingEncoding = async (recordingSessionId: number) => {
+  try {
+    const endUs = await getEncodedFramesEndUs(recordingSessionId);
+    const resumeSample = Math.max(
+      0,
+      Math.round(endUs / AAC_SAMPLE_DURATION_US) - RECOVERY_MARGIN_SAMPLES,
+    );
+    let seq = await findRecordingChunkSeqAt(
+      recordingSessionId,
+      Math.floor(resumeSample / UPSAMPLE_FACTOR),
+    );
+
+    while (seq !== null) {
+      const chunks = await readRecordingChunksFrom(
+        recordingSessionId,
+        seq,
+        RECOVERY_READ_BATCH_SIZE,
+      );
+      for (const chunk of chunks) {
+        const chunkStartSample = chunk.startSample * UPSAMPLE_FACTOR;
+        const offset = Math.max(0, resumeSample - chunkStartSample);
+        const data = upsamplePcmChunk(chunk.data).subarray(offset);
+        if (data.length > 0) {
+          encodeSamples(getSessionEncoder(recordingSessionId), data, chunkStartSample + offset);
+        }
+      }
+      seq = chunks.length === RECOVERY_READ_BATCH_SIZE ? chunks[chunks.length - 1].seq + 1 : null;
     }
   } catch (error) {
     reportEncodingFailure(recordingSessionId, error);
