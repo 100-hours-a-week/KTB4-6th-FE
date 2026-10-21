@@ -159,18 +159,12 @@ const saveEncodedFrame = (recordingSessionId: number, chunk: EncodedAudioChunk) 
   });
 };
 
-const getSessionEncoder = (recordingSessionId: number) => {
-  if (
-    sessionEncoder?.recordingSessionId === recordingSessionId &&
-    sessionEncoder.encoder.state === 'configured'
-  ) {
-    return sessionEncoder.encoder;
-  }
-
+const createSessionEncoder = (recordingSessionId: number, keepFromSample = 0) => {
   if (sessionEncoder) closeEncoder(sessionEncoder.encoder);
   const encoder = new AudioEncoder({
     output: (chunk, metadata) => {
       if (metadata?.decoderConfig) saveEncodingMeta(recordingSessionId, metadata.decoderConfig);
+      if (Math.round(chunk.timestamp / AAC_SAMPLE_DURATION_US) < keepFromSample) return;
       saveEncodedFrame(recordingSessionId, chunk);
     },
     error: (error) => reportEncodingFailure(recordingSessionId, error),
@@ -179,6 +173,12 @@ const getSessionEncoder = (recordingSessionId: number) => {
   sessionEncoder = { recordingSessionId, encoder };
   return encoder;
 };
+
+const getSessionEncoder = (recordingSessionId: number) =>
+  sessionEncoder?.recordingSessionId === recordingSessionId &&
+  sessionEncoder.encoder.state === 'configured'
+    ? sessionEncoder.encoder
+    : createSessionEncoder(recordingSessionId);
 
 const encodeSamples = (
   encoder: AudioEncoder,
@@ -218,15 +218,17 @@ export const encodeRecordingChunk = (
 
 export const recoverRecordingEncoding = async (recordingSessionId: number) => {
   try {
-    const endUs = await getEncodedFramesEndUs(recordingSessionId);
-    const resumeSample = Math.max(
-      0,
-      Math.round(endUs / AAC_SAMPLE_DURATION_US) - RECOVERY_MARGIN_SAMPLES,
+    const endSample = Math.round(
+      (await getEncodedFramesEndUs(recordingSessionId)) / AAC_SAMPLE_DURATION_US,
     );
+    const resumeSample = Math.max(0, endSample - RECOVERY_MARGIN_SAMPLES);
     let seq = await findRecordingChunkSeqAt(
       recordingSessionId,
       Math.floor(resumeSample / UPSAMPLE_FACTOR),
     );
+    if (seq === null) return;
+
+    createSessionEncoder(recordingSessionId, endSample);
 
     while (seq !== null) {
       const chunks = await readRecordingChunksFrom(
