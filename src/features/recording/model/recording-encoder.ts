@@ -4,14 +4,17 @@ import {
   AAC_FRAME_SAMPLES,
   closeAacEncoder,
   encodeAacSamples,
+  isSameAacEncoding,
   toAacSample,
   UPSAMPLE_FACTOR,
   upsamplePcmChunk,
 } from './aac-encoder';
 import { saveEncodedFrame, saveEncodingMeta } from './encoded-frame-writer';
 import {
+  deleteEncodedRecording,
   findRecordingChunkSeqAt,
   getEncodedFramesEndUs,
+  getEncodingMeta,
   readRecordingChunksFrom,
 } from './recording-chunk-db';
 
@@ -92,8 +95,22 @@ export const encodeRecordingChunk = (
   encodeChunkNow(recordingSessionId, chunk, startSample);
 };
 
+const discardMismatchedEncoding = async (recordingSessionId: number) => {
+  const meta = await getEncodingMeta(recordingSessionId);
+  if (!meta || isSameAacEncoding(meta)) return;
+
+  reportEncodingFailure(
+    recordingSessionId,
+    new Error(
+      `저장된 인코딩 설정(${meta.codec}, ${meta.sampleRate}Hz, ${meta.numberOfChannels}ch)이 현재 설정과 달라 처음부터 다시 인코딩합니다.`,
+    ),
+  );
+  await deleteEncodedRecording(recordingSessionId);
+};
+
 const recoverNow = async (recordingSessionId: number, untilSeq: number) => {
   try {
+    await discardMismatchedEncoding(recordingSessionId);
     const endSample = toAacSample(await getEncodedFramesEndUs(recordingSessionId));
     const resumeSample = Math.max(0, endSample - RECOVERY_MARGIN_SAMPLES);
     let seq = await findRecordingChunkSeqAt(

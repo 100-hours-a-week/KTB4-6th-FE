@@ -107,6 +107,21 @@ export const putEncodingMeta = async (meta: EncodingMeta) => {
   await db.put(ENCODING_META_STORE_NAME, meta);
 };
 
+export const getEncodingMeta = async (recordingSessionId: number) => {
+  const db = await getDb();
+  return db.get(ENCODING_META_STORE_NAME, recordingSessionId);
+};
+
+export const deleteEncodedRecording = async (recordingSessionId: number) => {
+  const db = await getDb();
+  const tx = db.transaction([ENCODED_FRAME_STORE_NAME, ENCODING_META_STORE_NAME], 'readwrite');
+  await Promise.all([
+    tx.objectStore(ENCODED_FRAME_STORE_NAME).delete(sessionRange(recordingSessionId)),
+    tx.objectStore(ENCODING_META_STORE_NAME).delete(recordingSessionId),
+    tx.done,
+  ]);
+};
+
 export const getEncodedFramesEndUs = async (recordingSessionId: number) => {
   const db = await getDb();
   const cursor = await db

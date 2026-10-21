@@ -20,6 +20,15 @@ const AAC_SUPPORT_CHECK_TIMEOUT_MS = 3_000;
 
 let aacSupportCheck: Promise<void> | null = null;
 
+export const isSameAacEncoding = (config: {
+  codec: string;
+  sampleRate: number;
+  numberOfChannels: number;
+}) =>
+  config.codec === AAC_ENCODER_CONFIG.codec &&
+  config.sampleRate === AAC_ENCODER_CONFIG.sampleRate &&
+  config.numberOfChannels === AAC_ENCODER_CONFIG.numberOfChannels;
+
 export const toAacSample = (timestampUs: number) =>
   Math.round(timestampUs / AAC_SAMPLE_DURATION_US);
 
