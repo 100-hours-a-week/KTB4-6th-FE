@@ -1,7 +1,7 @@
 import { captureException } from '@/shared/lib';
 import { UnsupportedRecordingBrowserError } from './errors';
 import { PCM_SAMPLE_RATE } from './pcm-capture';
-import { putEncodedFrames, type EncodedFrame } from './recording-chunk-db';
+import { putEncodedFrames, putEncodingMeta, type EncodedFrame } from './recording-chunk-db';
 
 const AAC_SAMPLE_RATE = 48_000;
 const UPSAMPLE_FACTOR = AAC_SAMPLE_RATE / PCM_SAMPLE_RATE;
@@ -108,6 +108,27 @@ const reportEncodingFailure = (recordingSessionId: number, error: unknown) => {
   });
 };
 
+const copyToArrayBuffer = (source: AllowSharedBufferSource) => {
+  const bytes = ArrayBuffer.isView(source)
+    ? new Uint8Array(source.buffer, source.byteOffset, source.byteLength)
+    : new Uint8Array(source);
+  return bytes.slice().buffer;
+};
+
+const saveEncodingMeta = (recordingSessionId: number, config: AudioDecoderConfig) => {
+  if (!config.description) return;
+
+  void putEncodingMeta({
+    recordingSessionId,
+    codec: config.codec,
+    sampleRate: config.sampleRate,
+    numberOfChannels: config.numberOfChannels,
+    description: copyToArrayBuffer(config.description),
+  }).catch((error: unknown) => {
+    reportEncodingFailure(recordingSessionId, error);
+  });
+};
+
 const saveEncodedFrame = (recordingSessionId: number, chunk: EncodedAudioChunk) => {
   const data = new ArrayBuffer(chunk.byteLength);
   chunk.copyTo(data);
@@ -138,7 +159,10 @@ const getSessionEncoder = (recordingSessionId: number) => {
 
   if (sessionEncoder) closeEncoder(sessionEncoder.encoder);
   const encoder = new AudioEncoder({
-    output: (chunk) => saveEncodedFrame(recordingSessionId, chunk),
+    output: (chunk, metadata) => {
+      if (metadata?.decoderConfig) saveEncodingMeta(recordingSessionId, metadata.decoderConfig);
+      saveEncodedFrame(recordingSessionId, chunk);
+    },
     error: (error) => reportEncodingFailure(recordingSessionId, error),
   });
   encoder.configure(AAC_ENCODER_CONFIG);

@@ -20,6 +20,14 @@ export interface EncodedFrame {
   data: ArrayBuffer;
 }
 
+export interface EncodingMeta {
+  recordingSessionId: number;
+  codec: string;
+  sampleRate: number;
+  numberOfChannels: number;
+  description: ArrayBuffer;
+}
+
 interface RecordingChunkDB extends DBSchema {
   chunks: {
     key: [number, number];
@@ -30,12 +38,17 @@ interface RecordingChunkDB extends DBSchema {
     key: [number, number];
     value: EncodedFrame;
   };
+  encodingMeta: {
+    key: number;
+    value: EncodingMeta;
+  };
 }
 
 const DB_NAME = 'meety-recording';
 const DB_VERSION = 2;
 const STORE_NAME = 'chunks';
 const ENCODED_FRAME_STORE_NAME = 'encodedFrames';
+const ENCODING_META_STORE_NAME = 'encodingMeta';
 
 let dbPromise: Promise<IDBPDatabase<RecordingChunkDB>> | null = null;
 
@@ -53,6 +66,7 @@ const getDb = () => {
           db.createObjectStore(ENCODED_FRAME_STORE_NAME, {
             keyPath: ['recordingSessionId', 'timestampUs'],
           });
+          db.createObjectStore(ENCODING_META_STORE_NAME, { keyPath: 'recordingSessionId' });
         }
       },
       blocking() {
@@ -86,6 +100,11 @@ export const putEncodedFrames = async (frames: EncodedFrame[]) => {
   const db = await getDb();
   const tx = db.transaction(ENCODED_FRAME_STORE_NAME, 'readwrite');
   await Promise.all([...frames.map((frame) => tx.store.put(frame)), tx.done]);
+};
+
+export const putEncodingMeta = async (meta: EncodingMeta) => {
+  const db = await getDb();
+  await db.put(ENCODING_META_STORE_NAME, meta);
 };
 
 export const getNextRecordingChunkPosition = async (recordingSessionId: number) => {
@@ -143,7 +162,10 @@ export const deleteRecordingChunks = async (recordingSessionId: number) => {
 
 export const deleteStaleRecordingChunks = async (maxAgeMs: number, now = Date.now()) => {
   const db = await getDb();
-  const tx = db.transaction([STORE_NAME, ENCODED_FRAME_STORE_NAME], 'readwrite');
+  const tx = db.transaction(
+    [STORE_NAME, ENCODED_FRAME_STORE_NAME, ENCODING_META_STORE_NAME],
+    'readwrite',
+  );
   const chunkStore = tx.objectStore(STORE_NAME);
 
   let sessionCursor = await chunkStore.openKeyCursor();
@@ -153,6 +175,7 @@ export const deleteStaleRecordingChunks = async (maxAgeMs: number, now = Date.no
     if (lastChunk && now - lastChunk.value.createdAt > maxAgeMs) {
       await chunkStore.delete(sessionRange(recordingSessionId));
       await tx.objectStore(ENCODED_FRAME_STORE_NAME).delete(sessionRange(recordingSessionId));
+      await tx.objectStore(ENCODING_META_STORE_NAME).delete(recordingSessionId);
     }
     sessionCursor = await chunkStore.openKeyCursor(
       IDBKeyRange.lowerBound([recordingSessionId, Infinity], true),
