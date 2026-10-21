@@ -15,6 +15,19 @@ const UPLOAD_RETRY_DELAY_MS = 2000;
 
 const wait = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
+const waitForIdleOperation = () =>
+  new Promise<void>((resolve) => {
+    if (useRecordingSessionStore.getState().operation === 'idle') {
+      resolve();
+      return;
+    }
+    const unsubscribe = useRecordingSessionStore.subscribe((state) => {
+      if (state.operation !== 'idle') return;
+      unsubscribe();
+      resolve();
+    });
+  });
+
 export const useRecordingServerEnd = () => {
   const queryClient = useQueryClient();
   const { addMessageListener } = useRecordingWebSocket();
@@ -37,10 +50,14 @@ export const useRecordingServerEnd = () => {
   };
 
   const handleServerEnd = useEffectEvent(async (recordingSessionId: number) => {
-    const { activeRecording } = useRecordingSessionStore.getState();
-    if (activeRecording?.recordingSessionId !== recordingSessionId) return;
     if (handledSessionIds.current.has(recordingSessionId)) return;
     handledSessionIds.current.add(recordingSessionId);
+
+    await waitForIdleOperation();
+    const { activeRecording, pendingUpload } = useRecordingSessionStore.getState();
+    if (activeRecording?.recordingSessionId !== recordingSessionId) return;
+    const isUploadCompleted =
+      pendingUpload?.recordingSessionId === recordingSessionId && pendingUpload.isCompleted;
 
     setOperation('finishing');
     try {
@@ -49,7 +66,7 @@ export const useRecordingServerEnd = () => {
         await flushBrowserRecording().catch(() => {});
       }
       releaseMicrophone();
-      await uploadWithRetry(recordingSessionId);
+      if (!isUploadCompleted) await uploadWithRetry(recordingSessionId);
     } finally {
       await queryClient
         .invalidateQueries({ queryKey: getCurrentMeetingQueryKey(activeRecording.meetingId) })
