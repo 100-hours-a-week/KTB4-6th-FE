@@ -14,8 +14,8 @@ interface RecoverRecordingStreamParams {
   getChunksToResend: (
     recordingSessionId: number,
     lastProcessedSequence: number,
-  ) => Promise<{ seq: number; data: Blob }[]>;
-  sendAudioChunk: (recordingSessionId: number, chunk: Blob, seq: number) => void;
+  ) => Promise<{ seq: number; data: ArrayBuffer }[]>;
+  sendAudioChunk: (recordingSessionId: number, chunk: ArrayBuffer, seq: number) => void;
   sendRecoveryFinished: (recordingSessionId: number, lastSequence: number) => void;
   /** 이전 녹음이 있어 이어서 녹음해야 할 때(첫 연결이 아닐 때) 한 번 호출된다. */
   onResuming?: () => void;
