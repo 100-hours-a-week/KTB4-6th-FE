@@ -1,10 +1,11 @@
 'use client';
 
 import { captureException } from '@/shared/lib';
+import { deleteEncodedRecording } from './encoded-recording-store';
 import { PCM_SAMPLE_RATE } from './pcm-capture';
 import { deleteRecordingChunks, getNextRecordingChunkPosition } from './recording-chunk-store';
 import { isIndexedDbSupported } from './recording-db';
-import { finishRecordingEncoding } from './recording-encoder';
+import { closeRecordingEncoding, finishRecordingEncoding } from './recording-encoder';
 import { buildRecordingMp4 } from './recording-mp4';
 import { flushRecordingChunks } from './useRecordingChunkBuffer';
 import { useRecordingSessionStore } from './useRecordingSessionStore';
@@ -64,6 +65,10 @@ export const useUploadPendingRecordingParts = () => {
     }
 
     markPendingUploadCompleted(recordingSessionId);
-    await deleteRecordingChunks(recordingSessionId).catch(() => {});
+    closeRecordingEncoding(recordingSessionId);
+    await Promise.all([
+      deleteRecordingChunks(recordingSessionId).catch(() => {}),
+      deleteEncodedRecording(recordingSessionId).catch(() => {}),
+    ]);
   };
 };

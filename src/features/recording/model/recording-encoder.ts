@@ -169,3 +169,9 @@ export const finishRecordingEncoding = async (recordingSessionId: number) => {
   }
   await flushEncodedFrames();
 };
+
+export const closeRecordingEncoding = (recordingSessionId: number) => {
+  if (sessionEncoder?.recordingSessionId !== recordingSessionId) return;
+  closeAacEncoder(sessionEncoder.encoder);
+  sessionEncoder = null;
+};
