@@ -16,6 +16,7 @@ import {
   getEncodingMeta,
 } from './encoded-recording-store';
 import { findRecordingChunkSeqAt, readRecordingChunksFrom } from './recording-chunk-store';
+import { markRecordingStorageFailure } from './recording-storage';
 
 const RECOVERY_MARGIN_SAMPLES = 10 * AAC_FRAME_SAMPLES;
 const RECOVERY_READ_BATCH_SIZE = 50;
@@ -40,13 +41,17 @@ const reportEncodingFailure = (recordingSessionId: number, error: unknown) => {
 const createSessionEncoder = (recordingSessionId: number, keepFromSample = 0) => {
   if (sessionEncoder) closeAacEncoder(sessionEncoder.encoder);
   const onFailure = (error: unknown) => reportEncodingFailure(recordingSessionId, error);
+  const onWriteFailure = (error: unknown) => {
+    markRecordingStorageFailure(recordingSessionId);
+    onFailure(error);
+  };
   const encoder = new AudioEncoder({
     output: (chunk, metadata) => {
       if (metadata?.decoderConfig) {
-        saveEncodingMeta(recordingSessionId, metadata.decoderConfig, onFailure);
+        saveEncodingMeta(recordingSessionId, metadata.decoderConfig, onWriteFailure);
       }
       if (toAacSample(chunk.timestamp) < keepFromSample) return;
-      saveEncodedFrame(recordingSessionId, chunk, onFailure);
+      saveEncodedFrame(recordingSessionId, chunk, onWriteFailure);
     },
     error: onFailure,
   });

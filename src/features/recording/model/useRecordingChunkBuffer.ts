@@ -11,6 +11,7 @@ import {
   putRecordingChunk,
 } from './recording-chunk-store';
 import { deleteStaleRecordingChunks, isIndexedDbSupported } from './recording-db';
+import { markRecordingStorageFailure } from './recording-storage';
 
 interface ChunkCursor {
   recordingSessionId: number;
@@ -103,6 +104,7 @@ export const appendRecordingChunk = (chunk: ArrayBuffer, send: (seq: number) => 
   };
   pendingChunkWrite = pendingChunkWrite.then(() =>
     putRecordingChunk(record).catch((error: unknown) => {
+      markRecordingStorageFailure(record.recordingSessionId);
       reportChunkSaveFailure(record.recordingSessionId, error);
     }),
   );
