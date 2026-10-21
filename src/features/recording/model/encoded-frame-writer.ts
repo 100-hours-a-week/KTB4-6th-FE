@@ -20,13 +20,14 @@ export const saveEncodingMeta = (
 ) => {
   if (!config.description) return;
 
-  void putEncodingMeta({
+  const meta = {
     recordingSessionId,
     codec: config.codec,
     sampleRate: config.sampleRate,
     numberOfChannels: config.numberOfChannels,
     description: copyToArrayBuffer(config.description),
-  }).catch(onFailure);
+  };
+  pendingFrameWrite = pendingFrameWrite.then(() => putEncodingMeta(meta).catch(onFailure));
 };
 
 export const saveEncodedFrame = (
@@ -50,3 +51,5 @@ export const saveEncodedFrame = (
     return putEncodedFrames(frames).catch(onFailure);
   });
 };
+
+export const flushEncodedFrames = () => pendingFrameWrite;

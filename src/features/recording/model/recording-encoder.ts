@@ -9,7 +9,7 @@ import {
   UPSAMPLE_FACTOR,
   upsamplePcmChunk,
 } from './aac-encoder';
-import { saveEncodedFrame, saveEncodingMeta } from './encoded-frame-writer';
+import { flushEncodedFrames, saveEncodedFrame, saveEncodingMeta } from './encoded-frame-writer';
 import {
   deleteEncodedRecording,
   getEncodedFramesEndUs,
@@ -60,11 +60,14 @@ const createSessionEncoder = (recordingSessionId: number, keepFromSample = 0) =>
   return encoder;
 };
 
-const getSessionEncoder = (recordingSessionId: number) =>
+const getLiveSessionEncoder = (recordingSessionId: number) =>
   sessionEncoder?.recordingSessionId === recordingSessionId &&
   sessionEncoder.encoder.state === 'configured'
     ? sessionEncoder.encoder
-    : createSessionEncoder(recordingSessionId);
+    : null;
+
+const getSessionEncoder = (recordingSessionId: number) =>
+  getLiveSessionEncoder(recordingSessionId) ?? createSessionEncoder(recordingSessionId);
 
 const runAfterPendingTask = (task: () => void | Promise<void>) => {
   const next = (pendingEncodingTask ?? Promise.resolve()).then(task);
@@ -149,3 +152,20 @@ const recoverNow = async (recordingSessionId: number, untilSeq: number) => {
 
 export const recoverRecordingEncoding = (recordingSessionId: number, untilSeq: number) =>
   runAfterPendingTask(() => recoverNow(recordingSessionId, untilSeq));
+
+export const finishRecordingEncoding = async (recordingSessionId: number) => {
+  await pendingEncodingTask;
+  if (!getLiveSessionEncoder(recordingSessionId)) {
+    await recoverNow(recordingSessionId, Number.POSITIVE_INFINITY);
+  }
+
+  const encoder = getLiveSessionEncoder(recordingSessionId);
+  if (encoder) {
+    try {
+      await encoder.flush();
+    } catch (error) {
+      reportEncodingFailure(recordingSessionId, error);
+    }
+  }
+  await flushEncodedFrames();
+};
