@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { captureException } from '@/shared/lib';
-import { encodeRecordingChunk, recoverRecordingEncoding } from './aac-encoder';
+import { encodeRecordingChunk, recoverRecordingEncoding } from './recording-encoder';
 import { countPcmSamples } from './pcm-capture';
 import {
   deleteStaleRecordingChunks,
