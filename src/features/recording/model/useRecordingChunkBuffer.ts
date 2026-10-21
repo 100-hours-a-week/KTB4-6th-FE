@@ -2,16 +2,16 @@
 
 import { useEffect } from 'react';
 import { captureException } from '@/shared/lib';
-import { encodeRecordingChunk } from './aac-encoder';
+import { encodeRecordingChunk, recoverRecordingEncoding } from './recording-encoder';
 import { countPcmSamples } from './pcm-capture';
 import {
-  deleteStaleRecordingChunks,
   getNextRecordingChunkPosition,
   getPendingRecordingChunks,
-  isIndexedDbSupported,
   markRecordingChunksAcked,
   putRecordingChunk,
-} from './recording-chunk-db';
+} from './recording-chunk-store';
+import { deleteStaleRecordingChunks, isIndexedDbSupported } from './recording-db';
+import { markRecordingStorageFailure } from './recording-storage';
 
 interface ChunkCursor {
   recordingSessionId: number;
@@ -60,6 +60,7 @@ export const prepareChunkCursor = (recordingSessionId: number, lastProcessedSequ
         seq: Math.max(position.seq, minSeq),
         startSample: position.startSample,
       };
+      if (isIndexedDbSupported()) void recoverRecordingEncoding(recordingSessionId, position.seq);
     } catch (error) {
       chunkCursor = { recordingSessionId, seq: minSeq, startSample: 0 };
       reportChunkSaveFailure(recordingSessionId, error);
@@ -103,6 +104,7 @@ export const appendRecordingChunk = (chunk: ArrayBuffer, send: (seq: number) => 
   };
   pendingChunkWrite = pendingChunkWrite.then(() =>
     putRecordingChunk(record).catch((error: unknown) => {
+      markRecordingStorageFailure(record.recordingSessionId);
       reportChunkSaveFailure(record.recordingSessionId, error);
     }),
   );

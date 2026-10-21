@@ -1,12 +1,12 @@
-import { captureException } from '@/shared/lib';
 import { UnsupportedRecordingBrowserError } from './errors';
 import { PCM_SAMPLE_RATE } from './pcm-capture';
-import { putEncodedFrames, putEncodingMeta, type EncodedFrame } from './recording-chunk-db';
 
 const AAC_SAMPLE_RATE = 48_000;
-const UPSAMPLE_FACTOR = AAC_SAMPLE_RATE / PCM_SAMPLE_RATE;
 const INT16_SCALE = 32_768;
-const PCM_SAMPLE_DURATION_US = 1_000_000 / PCM_SAMPLE_RATE;
+const AAC_SAMPLE_DURATION_US = 1_000_000 / AAC_SAMPLE_RATE;
+
+export const UPSAMPLE_FACTOR = AAC_SAMPLE_RATE / PCM_SAMPLE_RATE;
+export const AAC_FRAME_SAMPLES = 1_024;
 
 export const AAC_ENCODER_CONFIG: AudioEncoderConfig = {
   codec: 'mp4a.40.2',
@@ -19,12 +19,20 @@ const AAC_SUPPORT_CHECK_FRAMES = 4_800;
 const AAC_SUPPORT_CHECK_TIMEOUT_MS = 3_000;
 
 let aacSupportCheck: Promise<void> | null = null;
-let sessionEncoder: { recordingSessionId: number; encoder: AudioEncoder } | null = null;
-let reportedFailureSessionId: number | null = null;
-let queuedFrames: EncodedFrame[] = [];
-let pendingFrameWrite: Promise<void> = Promise.resolve();
 
-const closeEncoder = (encoder: AudioEncoder) => {
+export const isSameAacEncoding = (config: {
+  codec: string;
+  sampleRate: number;
+  numberOfChannels: number;
+}) =>
+  config.codec === AAC_ENCODER_CONFIG.codec &&
+  config.sampleRate === AAC_ENCODER_CONFIG.sampleRate &&
+  config.numberOfChannels === AAC_ENCODER_CONFIG.numberOfChannels;
+
+export const toAacSample = (timestampUs: number) =>
+  Math.round(timestampUs / AAC_SAMPLE_DURATION_US);
+
+export const closeAacEncoder = (encoder: AudioEncoder) => {
   if (encoder.state !== 'closed') encoder.close();
 };
 
@@ -36,7 +44,7 @@ const encodeSilence = async () => {
     },
     error: () => {},
   });
-  const timeoutId = window.setTimeout(() => closeEncoder(encoder), AAC_SUPPORT_CHECK_TIMEOUT_MS);
+  const timeoutId = window.setTimeout(() => closeAacEncoder(encoder), AAC_SUPPORT_CHECK_TIMEOUT_MS);
 
   try {
     encoder.configure(AAC_ENCODER_CONFIG);
@@ -56,7 +64,7 @@ const encodeSilence = async () => {
     return false;
   } finally {
     window.clearTimeout(timeoutId);
-    closeEncoder(encoder);
+    closeAacEncoder(encoder);
   }
 };
 
@@ -69,6 +77,15 @@ const checkAacEncodingSupported = async () => {
   } catch {
     return false;
   }
+};
+
+export const ensureAacEncodingSupported = () => {
+  aacSupportCheck ??= checkAacEncodingSupported().then((supported) => {
+    if (supported) return;
+    aacSupportCheck = null;
+    throw new UnsupportedRecordingBrowserError();
+  });
+  return aacSupportCheck;
 };
 
 export const upsamplePcmChunk = (chunk: ArrayBuffer) => {
@@ -86,111 +103,22 @@ export const upsamplePcmChunk = (chunk: ArrayBuffer) => {
   return output;
 };
 
-export const ensureAacEncodingSupported = () => {
-  aacSupportCheck ??= checkAacEncodingSupported().then((supported) => {
-    if (supported) return;
-    aacSupportCheck = null;
-    throw new UnsupportedRecordingBrowserError();
-  });
-  return aacSupportCheck;
-};
-
-const reportEncodingFailure = (recordingSessionId: number, error: unknown) => {
-  if (reportedFailureSessionId === recordingSessionId) return;
-  reportedFailureSessionId = recordingSessionId;
-
-  captureException(error, {
-    tags: {
-      feature: 'recording-encoding',
-      'recording.session_id': recordingSessionId,
-      ...(error instanceof DOMException && { 'encoding.error': error.name }),
-    },
-  });
-};
-
-const copyToArrayBuffer = (source: AllowSharedBufferSource) => {
-  const bytes = ArrayBuffer.isView(source)
-    ? new Uint8Array(source.buffer, source.byteOffset, source.byteLength)
-    : new Uint8Array(source);
-  return bytes.slice().buffer;
-};
-
-const saveEncodingMeta = (recordingSessionId: number, config: AudioDecoderConfig) => {
-  if (!config.description) return;
-
-  void putEncodingMeta({
-    recordingSessionId,
-    codec: config.codec,
-    sampleRate: config.sampleRate,
-    numberOfChannels: config.numberOfChannels,
-    description: copyToArrayBuffer(config.description),
-  }).catch((error: unknown) => {
-    reportEncodingFailure(recordingSessionId, error);
-  });
-};
-
-const saveEncodedFrame = (recordingSessionId: number, chunk: EncodedAudioChunk) => {
-  const data = new ArrayBuffer(chunk.byteLength);
-  chunk.copyTo(data);
-  queuedFrames.push({
-    recordingSessionId,
-    timestampUs: chunk.timestamp,
-    durationUs: chunk.duration ?? 0,
-    data,
-  });
-  if (queuedFrames.length > 1) return;
-
-  pendingFrameWrite = pendingFrameWrite.then(() => {
-    const frames = queuedFrames;
-    queuedFrames = [];
-    return putEncodedFrames(frames).catch((error: unknown) => {
-      reportEncodingFailure(recordingSessionId, error);
-    });
-  });
-};
-
-const getSessionEncoder = (recordingSessionId: number) => {
-  if (
-    sessionEncoder?.recordingSessionId === recordingSessionId &&
-    sessionEncoder.encoder.state === 'configured'
-  ) {
-    return sessionEncoder.encoder;
-  }
-
-  if (sessionEncoder) closeEncoder(sessionEncoder.encoder);
-  const encoder = new AudioEncoder({
-    output: (chunk, metadata) => {
-      if (metadata?.decoderConfig) saveEncodingMeta(recordingSessionId, metadata.decoderConfig);
-      saveEncodedFrame(recordingSessionId, chunk);
-    },
-    error: (error) => reportEncodingFailure(recordingSessionId, error),
-  });
-  encoder.configure(AAC_ENCODER_CONFIG);
-  sessionEncoder = { recordingSessionId, encoder };
-  return encoder;
-};
-
-export const encodeRecordingChunk = (
-  recordingSessionId: number,
-  chunk: ArrayBuffer,
+export const encodeAacSamples = (
+  encoder: AudioEncoder,
+  data: Float32Array<ArrayBuffer>,
   startSample: number,
 ) => {
+  const audioData = new AudioData({
+    format: 'f32',
+    sampleRate: AAC_SAMPLE_RATE,
+    numberOfChannels: AAC_ENCODER_CONFIG.numberOfChannels,
+    numberOfFrames: data.length,
+    timestamp: Math.round(startSample * AAC_SAMPLE_DURATION_US),
+    data,
+  });
   try {
-    const data = upsamplePcmChunk(chunk);
-    const audioData = new AudioData({
-      format: 'f32',
-      sampleRate: AAC_SAMPLE_RATE,
-      numberOfChannels: 1,
-      numberOfFrames: data.length,
-      timestamp: Math.round(startSample * PCM_SAMPLE_DURATION_US),
-      data,
-    });
-    try {
-      getSessionEncoder(recordingSessionId).encode(audioData);
-    } finally {
-      audioData.close();
-    }
-  } catch (error) {
-    reportEncodingFailure(recordingSessionId, error);
+    encoder.encode(audioData);
+  } finally {
+    audioData.close();
   }
 };
