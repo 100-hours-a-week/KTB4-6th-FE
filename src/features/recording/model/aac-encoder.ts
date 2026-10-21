@@ -1,9 +1,11 @@
+import { captureException } from '@/shared/lib';
 import { UnsupportedRecordingBrowserError } from './errors';
 import { PCM_SAMPLE_RATE } from './pcm-capture';
 
 const AAC_SAMPLE_RATE = 48_000;
 const UPSAMPLE_FACTOR = AAC_SAMPLE_RATE / PCM_SAMPLE_RATE;
 const INT16_SCALE = 32_768;
+const PCM_SAMPLE_DURATION_US = 1_000_000 / PCM_SAMPLE_RATE;
 
 export const AAC_ENCODER_CONFIG: AudioEncoderConfig = {
   codec: 'mp4a.40.2',
@@ -16,6 +18,8 @@ const AAC_SUPPORT_CHECK_FRAMES = 4_800;
 const AAC_SUPPORT_CHECK_TIMEOUT_MS = 3_000;
 
 let aacSupportCheck: Promise<void> | null = null;
+let sessionEncoder: { recordingSessionId: number; encoder: AudioEncoder } | null = null;
+let reportedFailureSessionId: number | null = null;
 
 const closeEncoder = (encoder: AudioEncoder) => {
   if (encoder.state !== 'closed') encoder.close();
@@ -86,4 +90,60 @@ export const ensureAacEncodingSupported = () => {
     throw new UnsupportedRecordingBrowserError();
   });
   return aacSupportCheck;
+};
+
+const reportEncodingFailure = (recordingSessionId: number, error: unknown) => {
+  if (reportedFailureSessionId === recordingSessionId) return;
+  reportedFailureSessionId = recordingSessionId;
+
+  captureException(error, {
+    tags: {
+      feature: 'recording-encoding',
+      'recording.session_id': recordingSessionId,
+      ...(error instanceof DOMException && { 'encoding.error': error.name }),
+    },
+  });
+};
+
+const getSessionEncoder = (recordingSessionId: number) => {
+  if (
+    sessionEncoder?.recordingSessionId === recordingSessionId &&
+    sessionEncoder.encoder.state === 'configured'
+  ) {
+    return sessionEncoder.encoder;
+  }
+
+  if (sessionEncoder) closeEncoder(sessionEncoder.encoder);
+  const encoder = new AudioEncoder({
+    output: () => {},
+    error: (error) => reportEncodingFailure(recordingSessionId, error),
+  });
+  encoder.configure(AAC_ENCODER_CONFIG);
+  sessionEncoder = { recordingSessionId, encoder };
+  return encoder;
+};
+
+export const encodeRecordingChunk = (
+  recordingSessionId: number,
+  chunk: ArrayBuffer,
+  startSample: number,
+) => {
+  try {
+    const data = upsamplePcmChunk(chunk);
+    const audioData = new AudioData({
+      format: 'f32',
+      sampleRate: AAC_SAMPLE_RATE,
+      numberOfChannels: 1,
+      numberOfFrames: data.length,
+      timestamp: Math.round(startSample * PCM_SAMPLE_DURATION_US),
+      data,
+    });
+    try {
+      getSessionEncoder(recordingSessionId).encode(audioData);
+    } finally {
+      audioData.close();
+    }
+  } catch (error) {
+    reportEncodingFailure(recordingSessionId, error);
+  }
 };

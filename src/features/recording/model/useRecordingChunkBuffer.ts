@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { captureException } from '@/shared/lib';
+import { encodeRecordingChunk } from './aac-encoder';
 import { countPcmSamples } from './pcm-capture';
 import {
   deleteStaleRecordingChunks,
@@ -105,6 +106,7 @@ export const appendRecordingChunk = (chunk: ArrayBuffer, send: (seq: number) => 
       reportChunkSaveFailure(record.recordingSessionId, error);
     }),
   );
+  encodeRecordingChunk(record.recordingSessionId, chunk, startSample);
 };
 
 export const acknowledgeRecordingChunks = (recordingSessionId: number, seq: number) => {
