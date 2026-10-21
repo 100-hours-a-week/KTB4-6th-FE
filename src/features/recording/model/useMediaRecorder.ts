@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import type { AudioFormat } from '@/entities/recording';
+import { ensureAacEncodingSupported } from './aac-encoder';
 import { mergeRecordingPartsToMp4, type ConvertedRecordingFile } from './convert-recording-to-mp4';
 import { UnsupportedRecordingBrowserError } from './errors';
 import {
@@ -56,6 +57,9 @@ export const useMediaRecorder = create<MediaRecorderState>((set, get) => ({
     set({ status: 'requesting' });
 
     const promise = (async () => {
+      await ensureAacEncodingSupported();
+      if (version !== preparationVersion) throw new Error('마이크 준비가 취소되었습니다.');
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
       if (version !== preparationVersion) {
