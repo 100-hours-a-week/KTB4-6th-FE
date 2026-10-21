@@ -13,28 +13,47 @@ export interface RecordingChunk {
   data: ArrayBuffer;
 }
 
+export interface EncodedFrame {
+  recordingSessionId: number;
+  timestampUs: number;
+  durationUs: number;
+  data: ArrayBuffer;
+}
+
 interface RecordingChunkDB extends DBSchema {
   chunks: {
     key: [number, number];
     value: RecordingChunk;
     indexes: { bySessionStatus: [number, RecordingChunkStatus] };
   };
+  encodedFrames: {
+    key: [number, number];
+    value: EncodedFrame;
+  };
 }
 
 const DB_NAME = 'meety-recording';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = 'chunks';
+const ENCODED_FRAME_STORE_NAME = 'encodedFrames';
 
 let dbPromise: Promise<IDBPDatabase<RecordingChunkDB>> | null = null;
 
 const getDb = () => {
   if (!dbPromise) {
     dbPromise = openDB<RecordingChunkDB>(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        const store = db.createObjectStore(STORE_NAME, {
-          keyPath: ['recordingSessionId', 'seq'],
-        });
-        store.createIndex('bySessionStatus', ['recordingSessionId', 'status']);
+      upgrade(db, oldVersion) {
+        if (oldVersion < 1) {
+          const store = db.createObjectStore(STORE_NAME, {
+            keyPath: ['recordingSessionId', 'seq'],
+          });
+          store.createIndex('bySessionStatus', ['recordingSessionId', 'status']);
+        }
+        if (oldVersion < 2) {
+          db.createObjectStore(ENCODED_FRAME_STORE_NAME, {
+            keyPath: ['recordingSessionId', 'timestampUs'],
+          });
+        }
       },
       blocking() {
         const current = dbPromise;
@@ -61,6 +80,12 @@ export const isIndexedDbSupported = () => typeof indexedDB !== 'undefined';
 export const putRecordingChunk = async (chunk: RecordingChunk) => {
   const db = await getDb();
   await db.put(STORE_NAME, chunk);
+};
+
+export const putEncodedFrames = async (frames: EncodedFrame[]) => {
+  const db = await getDb();
+  const tx = db.transaction(ENCODED_FRAME_STORE_NAME, 'readwrite');
+  await Promise.all([...frames.map((frame) => tx.store.put(frame)), tx.done]);
 };
 
 export const getNextRecordingChunkPosition = async (recordingSessionId: number) => {
@@ -118,16 +143,18 @@ export const deleteRecordingChunks = async (recordingSessionId: number) => {
 
 export const deleteStaleRecordingChunks = async (maxAgeMs: number, now = Date.now()) => {
   const db = await getDb();
-  const tx = db.transaction(STORE_NAME, 'readwrite');
+  const tx = db.transaction([STORE_NAME, ENCODED_FRAME_STORE_NAME], 'readwrite');
+  const chunkStore = tx.objectStore(STORE_NAME);
 
-  let sessionCursor = await tx.store.openKeyCursor();
+  let sessionCursor = await chunkStore.openKeyCursor();
   while (sessionCursor) {
     const [recordingSessionId] = sessionCursor.key;
-    const lastChunk = await tx.store.openCursor(sessionRange(recordingSessionId), 'prev');
+    const lastChunk = await chunkStore.openCursor(sessionRange(recordingSessionId), 'prev');
     if (lastChunk && now - lastChunk.value.createdAt > maxAgeMs) {
-      await tx.store.delete(sessionRange(recordingSessionId));
+      await chunkStore.delete(sessionRange(recordingSessionId));
+      await tx.objectStore(ENCODED_FRAME_STORE_NAME).delete(sessionRange(recordingSessionId));
     }
-    sessionCursor = await tx.store.openKeyCursor(
+    sessionCursor = await chunkStore.openKeyCursor(
       IDBKeyRange.lowerBound([recordingSessionId, Infinity], true),
     );
   }

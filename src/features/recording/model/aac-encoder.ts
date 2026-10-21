@@ -1,6 +1,7 @@
 import { captureException } from '@/shared/lib';
 import { UnsupportedRecordingBrowserError } from './errors';
 import { PCM_SAMPLE_RATE } from './pcm-capture';
+import { putEncodedFrames, type EncodedFrame } from './recording-chunk-db';
 
 const AAC_SAMPLE_RATE = 48_000;
 const UPSAMPLE_FACTOR = AAC_SAMPLE_RATE / PCM_SAMPLE_RATE;
@@ -20,6 +21,8 @@ const AAC_SUPPORT_CHECK_TIMEOUT_MS = 3_000;
 let aacSupportCheck: Promise<void> | null = null;
 let sessionEncoder: { recordingSessionId: number; encoder: AudioEncoder } | null = null;
 let reportedFailureSessionId: number | null = null;
+let queuedFrames: EncodedFrame[] = [];
+let pendingFrameWrite: Promise<void> = Promise.resolve();
 
 const closeEncoder = (encoder: AudioEncoder) => {
   if (encoder.state !== 'closed') encoder.close();
@@ -105,6 +108,26 @@ const reportEncodingFailure = (recordingSessionId: number, error: unknown) => {
   });
 };
 
+const saveEncodedFrame = (recordingSessionId: number, chunk: EncodedAudioChunk) => {
+  const data = new ArrayBuffer(chunk.byteLength);
+  chunk.copyTo(data);
+  queuedFrames.push({
+    recordingSessionId,
+    timestampUs: chunk.timestamp,
+    durationUs: chunk.duration ?? 0,
+    data,
+  });
+  if (queuedFrames.length > 1) return;
+
+  pendingFrameWrite = pendingFrameWrite.then(() => {
+    const frames = queuedFrames;
+    queuedFrames = [];
+    return putEncodedFrames(frames).catch((error: unknown) => {
+      reportEncodingFailure(recordingSessionId, error);
+    });
+  });
+};
+
 const getSessionEncoder = (recordingSessionId: number) => {
   if (
     sessionEncoder?.recordingSessionId === recordingSessionId &&
@@ -115,7 +138,7 @@ const getSessionEncoder = (recordingSessionId: number) => {
 
   if (sessionEncoder) closeEncoder(sessionEncoder.encoder);
   const encoder = new AudioEncoder({
-    output: () => {},
+    output: (chunk) => saveEncodedFrame(recordingSessionId, chunk),
     error: (error) => reportEncodingFailure(recordingSessionId, error),
   });
   encoder.configure(AAC_ENCODER_CONFIG);
