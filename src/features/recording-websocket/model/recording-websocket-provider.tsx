@@ -12,11 +12,17 @@ import {
 } from 'react';
 import { captureException } from '@/shared/lib';
 import type { AudioFormat } from '@/entities/recording';
+import { createRecordingSessionFlags } from './recording-session-flags';
+import {
+  closeSocketQuietly,
+  createRecordingSocketUrl,
+  sendAudioFrame,
+  sendRecoveryFinishedMessage,
+  waitForSendBufferDrained,
+} from './recording-socket';
 import {
   CLOSE_CODE_COMPLETED,
   CLOSE_CODE_SUPERSEDED,
-  createAudioFrame,
-  createRecoveryFinishedMessage,
   isRecoveryMessage,
   parseSocketMessage,
   type RecordingSocketMessage,
@@ -25,8 +31,6 @@ import {
 } from './recording-socket-protocol';
 import { createRecoveryMessageInbox } from './recovery-message-inbox';
 import { reportSocketFailure } from './report-socket-failure';
-
-const SEND_BUFFER_POLL_INTERVAL_MS = 50;
 
 export type RecordingWebSocketStatus =
   | 'idle'
@@ -67,9 +71,7 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
   const sockets = useRef(new Map<number, WebSocket>());
   const messageListeners = useRef(new Set<RecordingSocketMessageListener>());
   const recoveryInbox = useRef(createRecoveryMessageInbox());
-  const failedSessionIds = useRef(new Set<number>());
-  const aiRecoveringSessionIds = useRef(new Set<number>());
-  const sendPausedSessionIds = useRef(new Set<number>());
+  const sessionFlags = useRef(createRecordingSessionFlags());
   const [statuses, setStatuses] = useState<Record<number, RecordingWebSocketStatus>>({});
 
   const waitForRecoveryMessage = useCallback(
@@ -85,22 +87,18 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
     const socket = sockets.current.get(recordingSessionId);
     if (!socket) return;
     sockets.current.delete(recordingSessionId);
-    socket.onopen = null;
-    socket.onerror = null;
-    socket.onclose = null;
-    socket.onmessage = null;
-    socket.close();
+    closeSocketQuietly(socket);
   }, []);
 
   const isEndedByServer = useCallback(
-    (recordingSessionId: number) => failedSessionIds.current.has(recordingSessionId),
+    (recordingSessionId: number) => sessionFlags.current.isEndedByServer(recordingSessionId),
     [],
   );
 
   const disconnect = useCallback(
     (recordingSessionId: number) => {
       closeSocket(recordingSessionId);
-      const status = failedSessionIds.current.has(recordingSessionId) ? 'failed' : 'idle';
+      const status = sessionFlags.current.isEndedByServer(recordingSessionId) ? 'failed' : 'idle';
       setStatuses((current) => ({ ...current, [recordingSessionId]: status }));
     },
     [closeSocket],
@@ -109,7 +107,7 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
   const connect = useCallback(
     (recordingSessionId: number, audioFormat: AudioFormat) => {
       if (sockets.current.has(recordingSessionId)) return;
-      if (failedSessionIds.current.has(recordingSessionId)) return;
+      if (sessionFlags.current.isEndedByServer(recordingSessionId)) return;
       recoveryInbox.current.clear(recordingSessionId);
 
       const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -120,16 +118,7 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
 
       let socket: WebSocket;
       try {
-        const url = new URL(
-          `/ws/v1/recordings/${encodeURIComponent(recordingSessionId)}/audio`,
-          baseUrl,
-        );
-        if (url.protocol === 'http:') url.protocol = 'ws:';
-        else if (url.protocol === 'https:') url.protocol = 'wss:';
-        else throw new Error('지원하지 않는 WebSocket 주소입니다.');
-        url.searchParams.set('audioFormat', audioFormat);
-
-        socket = new WebSocket(url);
+        socket = new WebSocket(createRecordingSocketUrl(baseUrl, recordingSessionId, audioFormat));
       } catch (error) {
         captureException(error, {
           tags: { feature: 'recording-websocket', 'recording.session_id': recordingSessionId },
@@ -153,15 +142,8 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
         if (sockets.current.get(recordingSessionId) !== socket) return;
         const message = parseSocketMessage(event.data);
         if (!message) return;
-        if (message.type === 'recording.recovering') {
-          aiRecoveringSessionIds.current.add(recordingSessionId);
-          sendPausedSessionIds.current.add(recordingSessionId);
-        }
-        if (message.type === 'recording.replay.request') {
-          sendPausedSessionIds.current.add(recordingSessionId);
-        }
+        sessionFlags.current.applyMessage(recordingSessionId, message);
         if (message.type === 'recording.error') {
-          failedSessionIds.current.add(recordingSessionId);
           closeSocket(recordingSessionId);
           setStatuses((current) => ({ ...current, [recordingSessionId]: 'failed' }));
         }
@@ -198,63 +180,37 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
 
   const sendAudioChunk = useCallback(
     (recordingSessionId: number, chunk: ArrayBuffer, seq: number) => {
-      if (sendPausedSessionIds.current.has(recordingSessionId)) return;
-      const socket = sockets.current.get(recordingSessionId);
-      if (socket?.readyState === WebSocket.OPEN) socket.send(createAudioFrame(chunk, seq));
+      if (sessionFlags.current.isSendPaused(recordingSessionId)) return;
+      sendAudioFrame(sockets.current.get(recordingSessionId), chunk, seq);
     },
     [],
   );
 
   const sendReplayedAudioChunk = useCallback(
     (recordingSessionId: number, chunk: ArrayBuffer, seq: number) => {
-      const socket = sockets.current.get(recordingSessionId);
-      if (socket?.readyState === WebSocket.OPEN) socket.send(createAudioFrame(chunk, seq));
+      sendAudioFrame(sockets.current.get(recordingSessionId), chunk, seq);
     },
     [],
   );
 
   const resumeSending = useCallback((recordingSessionId: number) => {
-    sendPausedSessionIds.current.delete(recordingSessionId);
+    sessionFlags.current.resumeSending(recordingSessionId);
   }, []);
 
   const sendRecoveryFinished = useCallback((recordingSessionId: number, lastSequence: number) => {
-    const socket = sockets.current.get(recordingSessionId);
-    if (socket?.readyState === WebSocket.OPEN) {
-      socket.send(createRecoveryFinishedMessage(lastSequence));
-    }
+    sendRecoveryFinishedMessage(sockets.current.get(recordingSessionId), lastSequence);
   }, []);
 
   const waitForAudioSent = useCallback(
     (recordingSessionId: number, timeoutMs: number) =>
-      new Promise<void>((resolve) => {
-        const deadline = Date.now() + timeoutMs;
-        const check = () => {
-          const socket = sockets.current.get(recordingSessionId);
-          if (
-            socket?.readyState !== WebSocket.OPEN ||
-            socket.bufferedAmount === 0 ||
-            Date.now() >= deadline
-          ) {
-            resolve();
-            return;
-          }
-          window.setTimeout(check, SEND_BUFFER_POLL_INTERVAL_MS);
-        };
-        check();
-      }),
+      waitForSendBufferDrained(() => sockets.current.get(recordingSessionId), timeoutMs),
     [],
   );
 
   useEffect(() => {
     const activeSockets = sockets.current;
     return () => {
-      activeSockets.forEach((socket) => {
-        socket.onopen = null;
-        socket.onerror = null;
-        socket.onclose = null;
-        socket.onmessage = null;
-        socket.close();
-      });
+      activeSockets.forEach(closeSocketQuietly);
       activeSockets.clear();
     };
   }, []);
