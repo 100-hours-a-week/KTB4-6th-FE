@@ -84,6 +84,7 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
 
   const closeSocket = useCallback((recordingSessionId: number) => {
     recoveryInbox.current.clear(recordingSessionId);
+    sessionFlags.current.resetAiRecovery(recordingSessionId);
     const socket = sockets.current.get(recordingSessionId);
     if (!socket) return;
     sockets.current.delete(recordingSessionId);
@@ -109,6 +110,7 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
       if (sockets.current.has(recordingSessionId)) return;
       if (sessionFlags.current.isEndedByServer(recordingSessionId)) return;
       recoveryInbox.current.clear(recordingSessionId);
+      sessionFlags.current.resetAiRecovery(recordingSessionId);
 
       const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
       if (!baseUrl) {
@@ -155,6 +157,7 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
         if (sockets.current.get(recordingSessionId) !== socket) return;
         sockets.current.delete(recordingSessionId);
         recoveryInbox.current.clear(recordingSessionId);
+        sessionFlags.current.resetAiRecovery(recordingSessionId);
         socket.close();
         setStatuses((current) => ({ ...current, [recordingSessionId]: 'error' }));
         reportSocketFailure('녹음 WebSocket 오류', recordingSessionId, opened);
@@ -164,6 +167,7 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
         if (sockets.current.get(recordingSessionId) !== socket) return;
         sockets.current.delete(recordingSessionId);
         recoveryInbox.current.clear(recordingSessionId);
+        sessionFlags.current.resetAiRecovery(recordingSessionId);
 
         if (event.code === CLOSE_CODE_COMPLETED || event.code === CLOSE_CODE_SUPERSEDED) {
           const status = event.code === CLOSE_CODE_COMPLETED ? 'closed' : 'superseded';

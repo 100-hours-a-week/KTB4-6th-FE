@@ -33,5 +33,9 @@ export const createRecordingSessionFlags = () => {
     resumeSending: (recordingSessionId: number) => {
       sendPaused.delete(recordingSessionId);
     },
+    resetAiRecovery: (recordingSessionId: number) => {
+      aiRecovering.delete(recordingSessionId);
+      sendPaused.delete(recordingSessionId);
+    },
   };
 };

@@ -7,7 +7,8 @@ import { captureException } from '@/shared/lib';
 import { replayRecordingChunks } from './replay-recording-chunks';
 
 export const useRecordingAiReplay = () => {
-  const { addMessageListener, sendReplayedAudioChunk, resumeSending } = useRecordingWebSocket();
+  const { statuses, addMessageListener, sendReplayedAudioChunk, resumeSending } =
+    useRecordingWebSocket();
   const replayRunIds = useRef(new Map<number, number>());
   const replayingSessionIds = useRef(new Set<number>());
 
@@ -36,6 +37,17 @@ export const useRecordingAiReplay = () => {
       if (!isCancelled()) replayingSessionIds.current.delete(recordingSessionId);
     }
   });
+
+  useEffect(() => {
+    replayingSessionIds.current.forEach((recordingSessionId) => {
+      if (statuses[recordingSessionId] === 'connected') return;
+      replayRunIds.current.set(
+        recordingSessionId,
+        (replayRunIds.current.get(recordingSessionId) ?? 0) + 1,
+      );
+      replayingSessionIds.current.delete(recordingSessionId);
+    });
+  }, [statuses]);
 
   useEffect(
     () =>
