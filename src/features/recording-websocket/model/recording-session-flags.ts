@@ -14,6 +14,9 @@ export const createRecordingSessionFlags = () => {
       case 'recording.replay.request':
         sendPaused.add(recordingSessionId);
         break;
+      case 'recording.recovery.completed':
+        aiRecovering.delete(recordingSessionId);
+        break;
       case 'recording.error':
         endedByServer.add(recordingSessionId);
         break;
