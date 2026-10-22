@@ -6,6 +6,7 @@ import { encodeRecordingChunk, recoverRecordingEncoding } from './recording-enco
 import { countPcmSamples } from './pcm-capture';
 import {
   getNextRecordingChunkPosition,
+  readRecordingChunksFrom,
   getPendingRecordingChunks,
   markRecordingChunksAcked,
   putRecordingChunk,
@@ -121,6 +122,19 @@ export const acknowledgeRecordingChunks = (recordingSessionId: number, seq: numb
 };
 
 export const flushRecordingChunks = () => Promise.all([pendingCursor, pendingChunkWrite]);
+
+export const getLastAppendedChunkSeq = (recordingSessionId: number) =>
+  chunkCursor?.recordingSessionId === recordingSessionId ? chunkCursor.seq - 1 : null;
+
+export const readRecordingChunksForReplay = async (
+  recordingSessionId: number,
+  fromSeq: number,
+  count: number,
+) => {
+  if (!isIndexedDbSupported()) return [];
+  await pendingChunkWrite;
+  return readRecordingChunksFrom(recordingSessionId, fromSeq, Number.POSITIVE_INFINITY, count);
+};
 
 export const useRecordingChunkBuffer = () => {
   useEffect(() => {
