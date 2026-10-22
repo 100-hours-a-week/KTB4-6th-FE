@@ -2,7 +2,6 @@ import { CircleAlert, LoaderCircle } from 'lucide-react';
 import { cn } from '@/shared/lib';
 
 const CARD_CLASS_NAME = 'rounded-[20px] bg-white shadow-[0_2px_12px_rgba(31,53,85,0.07)]';
-const SUMMARY_ROW_COUNT = 3;
 const TOPIC_ROW_COUNT = 5;
 
 export const DashboardLoadingState = () => (
@@ -11,37 +10,40 @@ export const DashboardLoadingState = () => (
     aria-label="대시보드를 불러오는 중"
     className="flex flex-col gap-2.5 motion-safe:animate-pulse"
   >
-    <div aria-hidden="true" className={CARD_CLASS_NAME}>
-      <div className="flex flex-col gap-2.5 rounded-t-[20px] bg-brand-200 px-5 py-4">
+    <div aria-hidden="true" className={cn(CARD_CLASS_NAME, 'overflow-hidden')}>
+      <div className="flex flex-col gap-2.5 bg-brand-200 px-5 py-4">
         <div className="h-4 w-20 rounded-md bg-white/50" />
-        <div className="h-7 w-32 rounded-lg bg-white/70" />
+        <div className="h-8 w-32 rounded-lg bg-white/70" />
       </div>
-      <div className="px-[18px]">
-        {Array.from({ length: SUMMARY_ROW_COUNT }, (_, index) => (
-          <div
-            key={index}
-            className={cn(
-              'flex min-h-[50px] items-center justify-between',
-              index > 0 && 'border-t border-cool-100',
-            )}
-          >
-            <div className="h-4 w-24 rounded-md bg-cool-200" />
-            <div className="h-4 w-14 rounded-md bg-cool-200" />
-          </div>
-        ))}
+      <div className="flex flex-col gap-3.5 px-4 pt-4 pb-3.5">
+        <div className="h-5 w-36 rounded-md bg-cool-200" />
+        <div className="h-10 rounded-[11px] bg-cool-100" />
+        <div className="h-[260px] rounded-[10px] bg-cool-100" />
       </div>
     </div>
 
-    <div
-      aria-hidden="true"
-      className={cn(CARD_CLASS_NAME, 'mt-1.5 flex flex-col gap-3.5 px-4 pt-4 pb-3.5')}
-    >
-      <div className="h-5 w-36 rounded-md bg-cool-200" />
-      <div className="flex flex-col gap-2 px-0.5">
-        <div className="h-[18px] w-28 rounded-md bg-cool-200" />
-        <div className="h-4 w-44 rounded-md bg-cool-100" />
+    <div aria-hidden="true" className={cn(CARD_CLASS_NAME, 'grid grid-cols-2')}>
+      {Array.from({ length: 2 }, (_, index) => (
+        <div
+          key={index}
+          className={cn(
+            'flex flex-col gap-3 px-[18px] py-4',
+            index === 1 && 'border-l border-cool-100',
+          )}
+        >
+          <div className="h-4 w-24 rounded-md bg-cool-200" />
+          <div className="h-6 w-16 rounded-md bg-cool-200" />
+          {index === 1 && <div className="h-1.5 rounded-full bg-cool-100" />}
+        </div>
+      ))}
+      <div className="col-span-2 mx-[18px] flex items-center justify-between border-t border-cool-100 py-4">
+        <div className="flex flex-col gap-3">
+          <div className="h-4 w-32 rounded-md bg-cool-200" />
+          <div className="h-6 w-20 rounded-md bg-cool-200" />
+          <div className="h-3 w-36 rounded-md bg-cool-100" />
+        </div>
+        <div className="size-[58px] rounded-full border-[7px] border-cool-100" />
       </div>
-      <div className="h-[260px] rounded-[10px] bg-cool-100" />
     </div>
 
     <div aria-hidden="true" className={cn(CARD_CLASS_NAME, 'flex flex-col px-4 pt-4 pb-2')}>

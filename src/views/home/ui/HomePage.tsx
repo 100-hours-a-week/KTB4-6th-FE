@@ -47,7 +47,7 @@ export const HomePage = ({ teamId, notice }: HomePageProps) => {
   const { team, meetings } = toHomeViewModel(home);
 
   return (
-    <div className="flex min-h-[844px] flex-1 flex-col bg-cool-50">
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-cool-50">
       <HomeHeader
         teamId={teamId}
         hasUnreadNotification={hasUnreadNotification}

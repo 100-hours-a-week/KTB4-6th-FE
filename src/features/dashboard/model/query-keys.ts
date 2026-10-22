@@ -1,6 +1,6 @@
-import type { DashboardPeriodDays } from './dashboard-period';
+import type { DashboardDateRange } from './dashboard-period';
 
 export const dashboardKeys = {
-  detail: (teamId: number, days: DashboardPeriodDays) =>
-    ['teams', teamId, 'dashboard', days] as const,
+  detail: (teamId: number, range: DashboardDateRange) =>
+    ['teams', teamId, 'dashboard', range.from, range.to] as const,
 };

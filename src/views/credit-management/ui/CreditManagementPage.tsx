@@ -65,7 +65,7 @@ export const CreditManagementPage = ({ teamId }: CreditManagementPageProps) => {
   };
 
   return (
-    <div className="flex h-dvh min-h-[844px] flex-col bg-cool-50">
+    <div className="flex min-h-0 flex-1 flex-col bg-cool-50">
       <CreditManagementHeader isMenuDisabled={!team} onMenuClick={() => setIsSidebarOpen(true)} />
 
       <div ref={scrollRootRef} className="min-h-0 flex-1 overflow-y-auto">

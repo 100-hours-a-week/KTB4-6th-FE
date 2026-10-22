@@ -26,6 +26,7 @@ export const MeetingChat = () => {
     <div className="flex min-h-0 flex-1 flex-col bg-white">
       <ChatMessageList
         messages={chatMessages.messages}
+        ownQuestionMessageId={chatComposer.awaitingMessageId}
         isLoading={chatMessages.isLoading}
         isError={chatMessages.isError}
         isRetrying={chatMessages.isRetrying}

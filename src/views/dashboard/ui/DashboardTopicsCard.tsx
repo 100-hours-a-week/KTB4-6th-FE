@@ -17,7 +17,7 @@ export const DashboardTopicsCard = ({ topics }: DashboardTopicsCardProps) => {
   return (
     <section
       aria-labelledby="dashboard-topics-title"
-      className="flex flex-col gap-1.5 rounded-[20px] bg-white px-4 pt-4 pb-2 shadow-[0_2px_12px_rgba(31,53,85,0.07)]"
+      className="flex shrink-0 flex-col gap-1.5 rounded-[20px] bg-white px-4 pt-4 pb-2 shadow-[0_2px_12px_rgba(31,53,85,0.07)]"
     >
       <div className="flex items-center justify-between gap-2 pb-1.5">
         <h2

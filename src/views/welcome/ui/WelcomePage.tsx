@@ -10,7 +10,7 @@ interface WelcomePageProps {
   isAuthRequiredNotice?: boolean;
 }
 
-const FEATURES = ['실시간 녹취와 자동 요약', 'AI 회의 코칭과 리포트'];
+const FEATURES = ['실시간 받아쓰기', 'AI 회의 요약', '팀별 회의 기록 관리'];
 
 export const WelcomePage = ({
   authState = 'unauthenticated',
@@ -33,9 +33,9 @@ export const WelcomePage = ({
         <div className="flex flex-col items-center gap-2">
           <h1 className="font-display text-4xl font-bold tracking-tight text-brand-900">Meety</h1>
           <p className="text-base leading-relaxed text-cool-600">
-            회의가 끝나면 요약과 태스크는
+            회의에는 집중하고,
             <br />
-            이미 정리되어 있습니다
+            기록과 정리는 Meety에게 맡기세요
           </p>
         </div>
 

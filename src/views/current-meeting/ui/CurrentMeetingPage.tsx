@@ -17,6 +17,8 @@ import { useMeetingInfoEdit } from '../model/useMeetingInfoEdit';
 import { useRecordingObjectLostAutoEnd } from '../model/useRecordingObjectLostAutoEnd';
 import { useRecordingStartedNotice } from '../model/useRecordingStartedNotice';
 import { useRecordingStatusSync } from '../model/useRecordingStatusSync';
+import { useRecordingStorageNotice } from '../model/useRecordingStorageNotice';
+import { useTargetTimeReachedNotice } from '../model/useTargetTimeReachedNotice';
 import { CurrentMeetingDialogs } from './CurrentMeetingDialogs';
 import { CurrentMeetingHeader } from './CurrentMeetingHeader';
 import { CurrentMeetingLoadingState } from './CurrentMeetingLoadingState';
@@ -71,6 +73,15 @@ export const CurrentMeetingPage = ({
   });
   const redirectAfterMeetingDeleted = useMeetingDeletedRedirect(teamId);
   const recordingStartedNotice = useRecordingStartedNotice(meetingId);
+  useTargetTimeReachedNotice({
+    elapsedSeconds: recording.meeting?.elapsedSeconds ?? null,
+    targetMinutes: recording.meeting?.targetMinutes ?? null,
+    isRecording:
+      recording.meeting?.recordingStatus === 'recording' &&
+      !recording.isCompleted &&
+      !recording.isServerCompleted,
+  });
+  const recordingStorageNotice = useRecordingStorageNotice(meetingId);
   const meetingInfoEdit = useMeetingInfoEdit({ meetingId, meeting: recording.meeting });
   const { isOpen: isRecordingObjectLostNoticeOpen, isResuming: isResumingRecording } =
     useRecordingObjectLostAutoEnd({
@@ -120,13 +131,14 @@ export const CurrentMeetingPage = ({
     meetingEndedNotice,
     meetingInfoEdit,
     recordingStartedNotice,
+    recordingStorageNotice,
     navigateToTranscriptSegment,
     openSidebar: () => setIsSidebarOpen(true),
   };
 
   return (
     <CurrentMeetingProvider value={contextValue}>
-      <div className="relative flex h-dvh min-h-[844px] flex-col bg-cool-50">
+      <div className="relative flex min-h-0 flex-1 flex-col bg-cool-50">
         {!recording.isCompleted && (
           <MeetingSseConnection
             meetingId={String(meetingId)}

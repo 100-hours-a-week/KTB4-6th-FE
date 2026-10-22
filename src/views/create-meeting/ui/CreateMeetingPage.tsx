@@ -18,7 +18,7 @@ export const CreateMeetingPage = ({ teamId }: CreateMeetingPageProps) => {
   const selection = useAttendeeSelection(teamId);
 
   return (
-    <div className="relative flex h-dvh min-h-[844px] flex-1 flex-col overflow-hidden bg-cool-50">
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-cool-50">
       <header className="shrink-0 border-b border-cool-200 bg-white px-5 pt-5 pb-4">
         <div className="flex h-10 items-center gap-2">
           <span className="flex size-9 shrink-0 items-center justify-center text-cool-900">
