@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useMeetingTranscript } from '@/features/meeting';
+import { PREFETCHED_MEETING_STALE_TIME, useMeetingTranscript } from '@/features/meeting';
 import { mapTranscriptSegments } from './map-transcript-segments';
 import type { TranscriptEntry } from './preview-meeting-transcript';
 
@@ -18,6 +18,7 @@ export const useTranscriptViewState = ({
 }: UseTranscriptViewStateParams) => {
   const transcriptQuery = useMeetingTranscript(meetingId, {
     isEnabled: previewEntries === undefined,
+    staleTime: PREFETCHED_MEETING_STALE_TIME,
   });
   // 조회 결과가 바뀔 때만 다시 변환해서, 전사 항목이 같은 값이면 같은 객체로 유지한다.
   const fetchedEntries = useMemo(

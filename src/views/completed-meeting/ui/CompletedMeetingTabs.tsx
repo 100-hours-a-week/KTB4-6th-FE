@@ -1,4 +1,6 @@
-import Link from 'next/link';
+'use client';
+
+import type { MouseEvent } from 'react';
 import { cn } from '@/shared/lib';
 import { COMPLETED_MEETING_TABS, type CompletedMeetingTab } from '../model/completed-meeting-tab';
 
@@ -6,6 +8,9 @@ const TAB_LABELS: Record<CompletedMeetingTab, string> = {
   summary: '요약',
   transcript: '전사',
 };
+
+const isPlainLeftClick = (event: MouseEvent<HTMLAnchorElement>) =>
+  event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
 
 interface CompletedMeetingTabsProps {
   currentTab: CompletedMeetingTab;
@@ -16,13 +21,19 @@ export const CompletedMeetingTabs = ({ currentTab, getTabHref }: CompletedMeetin
   <nav aria-label="회의 상세 탭" className="flex border-b border-cool-200">
     {COMPLETED_MEETING_TABS.map((tab) => {
       const isCurrent = tab === currentTab;
+      const href = getTabHref(tab);
+
+      const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
+        if (!isPlainLeftClick(event)) return;
+        event.preventDefault();
+        window.history.replaceState(null, '', href);
+      };
 
       return (
-        <Link
+        <a
           key={tab}
-          href={getTabHref(tab)}
-          replace
-          scroll={false}
+          href={href}
+          onClick={handleClick}
           aria-current={isCurrent ? 'page' : undefined}
           className={cn(
             'flex-1 border-b-2 py-3.5 text-center text-base transition-colors',
@@ -32,7 +43,7 @@ export const CompletedMeetingTabs = ({ currentTab, getTabHref }: CompletedMeetin
           )}
         >
           {TAB_LABELS[tab]}
-        </Link>
+        </a>
       );
     })}
   </nav>

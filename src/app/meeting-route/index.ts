@@ -1,1 +1,1 @@
-export { MeetingRouteSwitch } from './ui/MeetingRouteSwitch';
+export { MeetingRouteScreen } from './ui/MeetingRouteScreen';
