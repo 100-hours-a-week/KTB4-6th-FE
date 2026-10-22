@@ -49,6 +49,7 @@ type RecordingSocketMessageListener = (
 
 interface RecordingWebSocketContextValue {
   statuses: Record<number, RecordingWebSocketStatus>;
+  aiRecoveringStatuses: Record<number, boolean>;
   connect: (recordingSessionId: number, audioFormat: AudioFormat) => void;
   sendAudioChunk: (recordingSessionId: number, chunk: ArrayBuffer, seq: number) => void;
   sendReplayedAudioChunk: (recordingSessionId: number, chunk: ArrayBuffer, seq: number) => void;
@@ -73,6 +74,24 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
   const recoveryInbox = useRef(createRecoveryMessageInbox());
   const sessionFlags = useRef(createRecordingSessionFlags());
   const [statuses, setStatuses] = useState<Record<number, RecordingWebSocketStatus>>({});
+  const [aiRecoveringStatuses, setAiRecoveringStatuses] = useState<Record<number, boolean>>({});
+
+  const syncAiRecovering = useCallback((recordingSessionId: number) => {
+    const isAiRecovering = sessionFlags.current.isAiRecovering(recordingSessionId);
+    setAiRecoveringStatuses((current) =>
+      current[recordingSessionId] === isAiRecovering
+        ? current
+        : { ...current, [recordingSessionId]: isAiRecovering },
+    );
+  }, []);
+
+  const resetAiRecovery = useCallback(
+    (recordingSessionId: number) => {
+      sessionFlags.current.resetAiRecovery(recordingSessionId);
+      syncAiRecovering(recordingSessionId);
+    },
+    [syncAiRecovering],
+  );
 
   const waitForRecoveryMessage = useCallback(
     (recordingSessionId: number, types: RecoveryMessageType[], timeoutMs: number) =>
@@ -82,14 +101,17 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
     [],
   );
 
-  const closeSocket = useCallback((recordingSessionId: number) => {
-    recoveryInbox.current.clear(recordingSessionId);
-    sessionFlags.current.resetAiRecovery(recordingSessionId);
-    const socket = sockets.current.get(recordingSessionId);
-    if (!socket) return;
-    sockets.current.delete(recordingSessionId);
-    closeSocketQuietly(socket);
-  }, []);
+  const closeSocket = useCallback(
+    (recordingSessionId: number) => {
+      recoveryInbox.current.clear(recordingSessionId);
+      resetAiRecovery(recordingSessionId);
+      const socket = sockets.current.get(recordingSessionId);
+      if (!socket) return;
+      sockets.current.delete(recordingSessionId);
+      closeSocketQuietly(socket);
+    },
+    [resetAiRecovery],
+  );
 
   const isEndedByServer = useCallback(
     (recordingSessionId: number) => sessionFlags.current.isEndedByServer(recordingSessionId),
@@ -110,7 +132,7 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
       if (sockets.current.has(recordingSessionId)) return;
       if (sessionFlags.current.isEndedByServer(recordingSessionId)) return;
       recoveryInbox.current.clear(recordingSessionId);
-      sessionFlags.current.resetAiRecovery(recordingSessionId);
+      resetAiRecovery(recordingSessionId);
 
       const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
       if (!baseUrl) {
@@ -145,6 +167,7 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
         const message = parseSocketMessage(event.data);
         if (!message) return;
         sessionFlags.current.applyMessage(recordingSessionId, message);
+        syncAiRecovering(recordingSessionId);
         if (message.type === 'recording.error') {
           closeSocket(recordingSessionId);
           setStatuses((current) => ({ ...current, [recordingSessionId]: 'failed' }));
@@ -157,7 +180,7 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
         if (sockets.current.get(recordingSessionId) !== socket) return;
         sockets.current.delete(recordingSessionId);
         recoveryInbox.current.clear(recordingSessionId);
-        sessionFlags.current.resetAiRecovery(recordingSessionId);
+        resetAiRecovery(recordingSessionId);
         socket.close();
         setStatuses((current) => ({ ...current, [recordingSessionId]: 'error' }));
         reportSocketFailure('녹음 WebSocket 오류', recordingSessionId, opened);
@@ -167,7 +190,7 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
         if (sockets.current.get(recordingSessionId) !== socket) return;
         sockets.current.delete(recordingSessionId);
         recoveryInbox.current.clear(recordingSessionId);
-        sessionFlags.current.resetAiRecovery(recordingSessionId);
+        resetAiRecovery(recordingSessionId);
 
         if (event.code === CLOSE_CODE_COMPLETED || event.code === CLOSE_CODE_SUPERSEDED) {
           const status = event.code === CLOSE_CODE_COMPLETED ? 'closed' : 'superseded';
@@ -179,7 +202,7 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
         reportSocketFailure('녹음 WebSocket 연결 종료', recordingSessionId, opened, event);
       };
     },
-    [closeSocket],
+    [closeSocket, resetAiRecovery, syncAiRecovering],
   );
 
   const sendAudioChunk = useCallback(
@@ -229,6 +252,7 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
   const value = useMemo(
     () => ({
       statuses,
+      aiRecoveringStatuses,
       connect,
       sendAudioChunk,
       sendReplayedAudioChunk,
@@ -242,6 +266,7 @@ export function RecordingWebSocketProvider({ children }: { children: ReactNode }
     }),
     [
       statuses,
+      aiRecoveringStatuses,
       connect,
       sendAudioChunk,
       sendReplayedAudioChunk,

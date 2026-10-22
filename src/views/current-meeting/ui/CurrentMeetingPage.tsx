@@ -28,6 +28,7 @@ import { MeetingControls } from './MeetingControls';
 import { MeetingEndingOverlay } from './MeetingEndingOverlay';
 import { MeetingTranscript } from './MeetingTranscript';
 import { RecordingObjectLostOverlay } from './RecordingObjectLostOverlay';
+import { TranscriptDelayedNotice } from './TranscriptDelayedNotice';
 import { WaitingForRecordingNotice } from './WaitingForRecordingNotice';
 
 interface CurrentMeetingPageProps {
@@ -159,6 +160,7 @@ export const CurrentMeetingPage = ({
           <MeetingTranscript />
         )}
 
+        {recording.isTranscriptDelayed && activeTab === 'transcript' && <TranscriptDelayedNotice />}
         {(recording.isWaiting || activeTab === 'transcript') && <MeetingControls />}
 
         <CurrentMeetingDialogs />
