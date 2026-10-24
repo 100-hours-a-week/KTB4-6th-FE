@@ -11,6 +11,7 @@ export interface CurrentMeetingViewModel {
   title: string;
   recorderName: string;
   attendees: MeetingAttendeeData[];
+  scheduledAt: string;
   targetMinutes: number;
   purpose: string;
   note: string;
