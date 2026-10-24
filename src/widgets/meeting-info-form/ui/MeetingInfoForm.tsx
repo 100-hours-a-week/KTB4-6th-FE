@@ -52,12 +52,15 @@ export const MeetingInfoForm = ({
   const durationError = touched.duration ? getCreateMeetingDurationError(values.duration) : '';
   const purposeError = touched.purpose ? getCreateMeetingPurposeError(values.purpose) : '';
 
-  const updateValue = (field: CreateMeetingFormField, value: string) => {
-    const nextValues = { ...values, [field]: value };
+  const updateValues = (changes: Partial<CreateMeetingFormValues>) => {
+    const nextValues = { ...values, ...changes };
 
     setValues(nextValues);
     onValidityChange(isCreateMeetingFormValid(nextValues, initialValues));
   };
+
+  const updateValue = (field: CreateMeetingFormField, value: string) =>
+    updateValues({ [field]: value });
 
   const markTouched = (field: CreateMeetingFormField) => {
     setTouched((current) => ({ ...current, [field]: true }));
@@ -84,9 +87,9 @@ export const MeetingInfoForm = ({
         scheduledDate={values.scheduledDate}
         scheduledTime={values.scheduledTime}
         error={scheduleError}
-        onChange={(field, value) => {
-          updateValue(field, value);
-          markTouched(field);
+        onChange={(changes) => {
+          updateValues(changes);
+          markTouched('scheduledDate');
         }}
       />
       <MeetingDurationField

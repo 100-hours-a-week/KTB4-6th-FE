@@ -19,7 +19,7 @@ export const CREATE_MEETING_NOTE_MAX_LENGTH = 200;
 export const CREATE_MEETING_DURATION_MIN_MINUTES = 5;
 export const CREATE_MEETING_DURATION_MAX_MINUTES = 60;
 export const CREATE_MEETING_DURATION_OPTIONS = [15, 30, 45, 60] as const;
-export const CREATE_MEETING_SCHEDULE_STEP_MINUTES = 10;
+export const CREATE_MEETING_SCHEDULE_STEP_MINUTES = 5;
 
 const kstDateTimeFormatter = new Intl.DateTimeFormat('en-CA', {
   timeZone: 'Asia/Seoul',
@@ -42,7 +42,13 @@ const toKstSchedule = (date: Date) => {
   };
 };
 
-export const getKstToday = () => toKstSchedule(new Date()).scheduledDate;
+export const getKstNowSchedule = () => toKstSchedule(new Date());
+
+export const getNextScheduleSlot = () => {
+  const stepMs = CREATE_MEETING_SCHEDULE_STEP_MINUTES * 60_000;
+
+  return toKstSchedule(new Date((Math.floor(Date.now() / stepMs) + 1) * stepMs));
+};
 
 export const toScheduleFormValues = (scheduledAt: string) => ({
   scheduledDate: scheduledAt.slice(0, 10),
@@ -60,18 +66,13 @@ const isScheduleUnchanged = (
   values.scheduledDate === savedValues.scheduledDate &&
   values.scheduledTime === savedValues.scheduledTime;
 
-export const createInitialMeetingFormValues = (): CreateMeetingFormValues => {
-  const stepMs = CREATE_MEETING_SCHEDULE_STEP_MINUTES * 60_000;
-  const nextSlot = new Date((Math.floor(Date.now() / stepMs) + 1) * stepMs);
-
-  return {
-    title: '',
-    ...toKstSchedule(nextSlot),
-    duration: '',
-    purpose: '',
-    note: '',
-  };
-};
+export const createInitialMeetingFormValues = (): CreateMeetingFormValues => ({
+  title: '',
+  ...getNextScheduleSlot(),
+  duration: '',
+  purpose: '',
+  note: '',
+});
 
 export const getCreateMeetingTitleError = (title: string) => {
   const length = title.trim().length;
