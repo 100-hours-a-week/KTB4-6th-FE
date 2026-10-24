@@ -30,8 +30,13 @@ export const useRecordingStreamStart = ({
   const recorderStatus = useMediaRecorder((state) => state.status);
   const startBrowserRecording = useMediaRecorder((state) => state.start);
   const releaseMicrophone = useMediaRecorder((state) => state.release);
-  const { sendAudioChunk, sendRecoveryFinished, disconnect, waitForRecoveryMessage } =
-    useRecordingWebSocket();
+  const {
+    sendAudioChunk,
+    sendRecoveryFinished,
+    disconnect,
+    isEndedByServer,
+    waitForRecoveryMessage,
+  } = useRecordingWebSocket();
   const setIsResumingStream = useRecordingSessionStore((state) => state.setIsResumingStream);
   const operation = useRecordingSessionStore((state) => state.operation);
   const { showToast } = useAppToast();
@@ -78,13 +83,16 @@ export const useRecordingStreamStart = ({
         });
         handleStarted();
       } catch (error) {
-        if (currentRunId === runId.current) handleFailed(recordingSessionId, error);
+        if (currentRunId === runId.current && !isEndedByServer(recordingSessionId)) {
+          handleFailed(recordingSessionId, error);
+        }
       } finally {
         setIsResumingStream(false);
         if (currentRunId === runId.current) isStarting.current = false;
       }
     })();
   }, [
+    isEndedByServer,
     operation,
     recorderStatus,
     recordingSessionId,

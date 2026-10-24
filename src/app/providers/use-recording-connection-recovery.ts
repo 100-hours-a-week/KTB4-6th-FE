@@ -77,6 +77,7 @@ export const useRecordingConnectionRecovery = ({
 
   useEffect(() => {
     if (recordingSessionId === undefined || meetingId === undefined) return;
+    if (socketStatus === 'failed') return;
     if (socketStatus === 'connected' && recorderStatus === 'ready') return;
 
     if (socketStatus === 'closed' || socketStatus === 'superseded') {
