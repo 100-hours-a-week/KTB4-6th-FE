@@ -4,7 +4,7 @@ export interface CurrentMeetingDetailData {
   title: string;
   purpose: string;
   note: string | null;
-  /** 예정 시작 시각. 시간대 표기 없이 오는 서버 시각이다. 수정 화면에는 아직 반영하지 않는다(V2) */
+  /** 예정 시작 시각. 시간대 표기 없이 오는 서버 시각이다 */
   scheduledAt: string;
   targetDurationMinutes: number;
   status: 'WAITING' | 'IN_PROGRESS' | 'COMPLETED';
@@ -26,6 +26,7 @@ export interface CurrentMeetingState {
   title: string;
   purpose: string;
   note: string;
+  scheduledAt: string;
   targetMinutes: number;
   attendees: MeetingAttendeeData[];
   meetingStatus: CurrentMeetingDetailData['status'];
@@ -46,6 +47,7 @@ export const toCurrentMeetingState = (
   title: meeting.title,
   purpose: meeting.purpose,
   note: meeting.note ?? '',
+  scheduledAt: meeting.scheduledAt,
   targetMinutes: meeting.targetDurationMinutes,
   attendees: meeting.attendees ?? [],
   meetingStatus: meeting.status,

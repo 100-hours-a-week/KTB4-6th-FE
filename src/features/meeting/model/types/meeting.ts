@@ -5,6 +5,7 @@ export interface MeetingInfoRequest {
   title: string;
   purpose: string;
   note: string;
+  scheduledAt: string;
   targetDurationMinutes: number;
 }
 

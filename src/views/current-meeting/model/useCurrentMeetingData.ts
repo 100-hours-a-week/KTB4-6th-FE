@@ -46,6 +46,7 @@ export const useCurrentMeetingData = (
         title: currentMeetingQuery.data.title,
         recorderName,
         attendees: currentMeetingQuery.data.attendees,
+        scheduledAt: currentMeetingQuery.data.scheduledAt,
         targetMinutes: currentMeetingQuery.data.targetMinutes,
         purpose: currentMeetingQuery.data.purpose,
         note: currentMeetingQuery.data.note,
