@@ -1,6 +1,7 @@
 'use client';
 
-import { lazy, Suspense, useState } from 'react';
+import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import {
   PREFETCHED_MEETING_STALE_TIME,
   useMeetingDetail,
@@ -8,13 +9,11 @@ import {
 } from '@/features/meeting';
 import { MeetingRouteLoadingState } from './MeetingRouteLoadingState';
 
-const CurrentMeetingPage = lazy(() =>
-  import('@/views/current-meeting').then((module) => ({ default: module.CurrentMeetingPage })),
+const CurrentMeetingPage = dynamic(() =>
+  import('@/views/current-meeting').then((module) => module.CurrentMeetingPage),
 );
-const CompletedMeetingPage = lazy(() =>
-  import('@/views/completed-meeting').then((module) => ({
-    default: module.CompletedMeetingPage,
-  })),
+const CompletedMeetingPage = dynamic(() =>
+  import('@/views/completed-meeting').then((module) => module.CompletedMeetingPage),
 );
 
 interface MeetingRouteSwitchProps {
@@ -30,23 +29,20 @@ export const MeetingRouteSwitch = ({ teamId, meetingId }: MeetingRouteSwitchProp
     setIsInitiallyCompleted(meetingQuery.data.status === 'COMPLETED');
   }
 
-  const loadingState = (
-    <MeetingRouteLoadingState
-      isPending={!meetingQuery.isError}
-      teamHomeHref={`/teams/${encodeURIComponent(teamId)}`}
-    />
-  );
-  if (isInitiallyCompleted === null) return loadingState;
+  if (isInitiallyCompleted === null) {
+    return (
+      <MeetingRouteLoadingState
+        isPending={!meetingQuery.isError}
+        teamHomeHref={`/teams/${encodeURIComponent(teamId)}`}
+      />
+    );
+  }
 
   const completedPage = <CompletedMeetingPage teamId={teamId} meetingId={meetingId} />;
 
-  return (
-    <Suspense fallback={loadingState}>
-      {isInitiallyCompleted ? (
-        completedPage
-      ) : (
-        <CurrentMeetingPage teamId={teamId} meetingId={meetingId} completedView={completedPage} />
-      )}
-    </Suspense>
+  return isInitiallyCompleted ? (
+    completedPage
+  ) : (
+    <CurrentMeetingPage teamId={teamId} meetingId={meetingId} completedView={completedPage} />
   );
 };
