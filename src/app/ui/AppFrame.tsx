@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { RecordingBanner } from '@/widgets/recording-banner';
+import { MaintenanceNotice } from './MaintenanceNotice';
 
 export function AppFrame({ children }: { children: ReactNode }) {
   return (
@@ -9,6 +10,7 @@ export function AppFrame({ children }: { children: ReactNode }) {
     >
       <RecordingBanner />
       {children}
+      <MaintenanceNotice />
     </div>
   );
 }
