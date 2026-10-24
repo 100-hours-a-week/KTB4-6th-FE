@@ -10,15 +10,17 @@ import {
   CREATE_MEETING_PURPOSE_MAX_LENGTH,
   CREATE_MEETING_TITLE_MAX_LENGTH,
   CREATE_MEETING_TITLE_MIN_LENGTH,
+  createInitialMeetingFormValues,
   getCreateMeetingDurationError,
   getCreateMeetingPurposeError,
+  getCreateMeetingScheduleError,
   getCreateMeetingTitleError,
-  INITIAL_CREATE_MEETING_FORM_VALUES,
   isCreateMeetingFormValid,
   type CreateMeetingFormField,
   type CreateMeetingFormValues,
 } from '@/features/meeting';
 import { cn } from '@/shared/lib';
+import { MeetingScheduleField } from './MeetingScheduleField';
 
 interface MeetingInfoFormProps {
   formId: string;
@@ -40,6 +42,8 @@ const getInitialDurationSelection = (duration: string): DurationSelection => {
 
 const initialTouched: CreateMeetingFormTouched = {
   title: false,
+  scheduledDate: false,
+  scheduledTime: false,
   duration: false,
   purpose: false,
   note: false,
@@ -47,18 +51,19 @@ const initialTouched: CreateMeetingFormTouched = {
 
 export const MeetingInfoForm = ({
   formId,
-  initialValues = INITIAL_CREATE_MEETING_FORM_VALUES,
+  initialValues,
   onSubmit,
   onValidityChange,
 }: MeetingInfoFormProps) => {
-  const [values, setValues] = useState(initialValues);
+  const [values, setValues] = useState(() => initialValues ?? createInitialMeetingFormValues());
   const [touched, setTouched] = useState(initialTouched);
   const [isDurationOpen, setIsDurationOpen] = useState(false);
   const [durationSelection, setDurationSelection] = useState<DurationSelection>(() =>
-    getInitialDurationSelection(initialValues.duration),
+    getInitialDurationSelection(values.duration),
   );
 
   const titleError = getCreateMeetingTitleError(values.title);
+  const scheduleError = getCreateMeetingScheduleError(values, initialValues);
   const durationError = getCreateMeetingDurationError(values.duration);
   const purposeError = getCreateMeetingPurposeError(values.purpose);
   const durationSelectionLabel =
@@ -72,7 +77,7 @@ export const MeetingInfoForm = ({
     const nextValues = { ...values, [field]: value };
 
     setValues(nextValues);
-    onValidityChange(isCreateMeetingFormValid(nextValues));
+    onValidityChange(isCreateMeetingFormValid(nextValues, initialValues));
   };
 
   const markTouched = (field: CreateMeetingFormField) => {
@@ -81,9 +86,16 @@ export const MeetingInfoForm = ({
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setTouched({ title: true, duration: true, purpose: true, note: true });
+    setTouched({
+      title: true,
+      scheduledDate: true,
+      scheduledTime: true,
+      duration: true,
+      purpose: true,
+      note: true,
+    });
 
-    if (!isCreateMeetingFormValid(values)) return;
+    if (!isCreateMeetingFormValid(values, initialValues)) return;
 
     onSubmit?.(values);
   };
@@ -120,6 +132,16 @@ export const MeetingInfoForm = ({
           ? titleError
           : `${CREATE_MEETING_TITLE_MIN_LENGTH}자 이상 ${CREATE_MEETING_TITLE_MAX_LENGTH}자 이하`}
       </p>
+
+      <MeetingScheduleField
+        scheduledDate={values.scheduledDate}
+        scheduledTime={values.scheduledTime}
+        error={touched.scheduledDate || touched.scheduledTime ? scheduleError : ''}
+        onChange={(field, value) => {
+          updateValue(field, value);
+          markTouched(field);
+        }}
+      />
 
       <label className="mt-5 block text-sm font-semibold text-cool-900" htmlFor="meeting-duration">
         목표 시간

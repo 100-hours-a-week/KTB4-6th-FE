@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import {
   MeetingApiError,
-  toMeetingInfoRequest,
+  toMeetingUpdateRequest,
+  toScheduleFormValues,
   useMeetingDetail,
   type CreateMeetingFormValues,
 } from '@/features/meeting';
@@ -37,6 +38,7 @@ export const MeetingInfoEditDialog = ({
 
   const initialValues: CreateMeetingFormValues = {
     title: meeting.title,
+    ...toScheduleFormValues(meeting.scheduledAt),
     duration: String(meeting.targetDurationMinutes),
     purpose: meeting.purpose,
     note: meeting.note,
@@ -45,7 +47,7 @@ export const MeetingInfoEditDialog = ({
   const handleSubmit = (values: CreateMeetingFormValues) => {
     setSubmitError(null);
     mutate(
-      { meetingId, ...toMeetingInfoRequest(values) },
+      { meetingId, ...toMeetingUpdateRequest(values, initialValues) },
       {
         onSuccess: () => {
           onClose();
