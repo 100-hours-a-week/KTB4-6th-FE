@@ -2,7 +2,7 @@ import type { MeetingAttendeeData } from '@/entities/meeting-attendee';
 
 export interface TranscriptSegment {
   id: string;
-  speakerNumber: number | null;
+  speakerName: string | null;
   startedAtSeconds: number;
   text: string;
 }
