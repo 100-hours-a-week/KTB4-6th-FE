@@ -30,8 +30,10 @@ export const SummaryTab = ({
         <SummarySectionCard key={index} section={section} />
       ))}
 
-      <p className="px-1 pt-1 pb-2 text-xs leading-5 text-cool-500">
-        AI가 요약한 결과라 정확하지 않을 수 있어요. 중요한 내용은 전사에서 확인해주세요.
+      <p className="px-1 pt-1 pb-2 text-xs leading-5 break-keep text-cool-500">
+        AI가 요약한 결과라 정확하지 않을 수 있어요.
+        <br />
+        중요한 내용은 전사에서 확인해주세요.
       </p>
     </div>
   );
