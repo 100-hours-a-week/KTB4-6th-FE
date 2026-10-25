@@ -9,3 +9,5 @@ export const meetingKeys = {
   speakerMapping: (meetingId: number, segmentId: number) =>
     ['meetings', meetingId, 'transcript', segmentId, 'speaker-mapping'] as const,
 };
+
+export const PREFETCHED_MEETING_STALE_TIME = 10_000;

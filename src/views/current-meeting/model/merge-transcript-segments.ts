@@ -6,7 +6,7 @@ const toTranscriptSegmentFromHistory = (
   segment: MeetingTranscriptSegmentData,
 ): TranscriptSegment => ({
   id: String(segment.segmentId),
-  speakerNumber: null,
+  speakerName: segment.speakerDisplayName,
   startedAtSeconds: Math.floor(segment.startedAtMs / 1000),
   text: segment.content,
 });
@@ -15,7 +15,7 @@ const toTranscriptSegmentFromLive = (
   transcript: TranscriptCreatedEventData,
 ): TranscriptSegment => ({
   id: String(transcript.transcriptSegmentId),
-  speakerNumber: null,
+  speakerName: transcript.speakerName,
   startedAtSeconds: Math.floor(transcript.startedAtMs / 1000),
   text: transcript.text,
 });

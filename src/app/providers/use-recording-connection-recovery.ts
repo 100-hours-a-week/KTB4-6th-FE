@@ -4,10 +4,11 @@ import { useCallback, useEffect, useEffectEvent, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { getCurrentMeetingQueryKey } from '@/features/meeting-sse';
 import {
+  enqueueRecordingUpload,
+  prepareRecordingFile,
   useCompleteRecording,
   useMediaRecorder,
   useRecordingSessionStore,
-  useUploadPendingRecordingParts,
 } from '@/features/recording';
 import {
   useRecordingWebSocket,
@@ -38,7 +39,6 @@ export const useRecordingConnectionRecovery = ({
   const recorderStatus = useMediaRecorder((state) => state.status);
   const prepareMicrophone = useMediaRecorder((state) => state.prepare);
   const releaseMicrophone = useMediaRecorder((state) => state.release);
-  const uploadPendingRecordingParts = useUploadPendingRecordingParts();
   const completeRecording = useCompleteRecording();
   const { connect, disconnect } = useRecordingWebSocket();
   const { showToast } = useAppToast();
@@ -52,8 +52,9 @@ export const useRecordingConnectionRecovery = ({
   const giveUp = useEffectEvent(async (id: number, targetMeetingId: number) => {
     setOperation('finishing');
     try {
-      await uploadPendingRecordingParts(id).catch(() => {});
+      const recordingFile = await prepareRecordingFile(id);
       await completeRecording.mutateAsync(id);
+      enqueueRecordingUpload(id, recordingFile);
       await queryClient.invalidateQueries({
         queryKey: getCurrentMeetingQueryKey(targetMeetingId),
       });

@@ -1,10 +1,11 @@
 'use client';
 
 import {
+  enqueueRecordingUpload,
+  prepareRecordingFile,
   useCompleteRecording,
   useMediaRecorder,
   useRecordingSessionStore,
-  useUploadPendingRecordingParts,
 } from '@/features/recording';
 import { useRecordingWebSocket } from '@/features/recording-websocket';
 import { useAppToast } from '@/shared/ui';
@@ -21,7 +22,6 @@ export const useCompleteRecordingFlow = ({
   onCompleted,
 }: UseCompleteRecordingFlowParams) => {
   const completeRecording = useCompleteRecording();
-  const uploadPendingRecordingParts = useUploadPendingRecordingParts();
   const resumeBrowserRecording = useMediaRecorder((state) => state.resume);
   const flushBrowserRecording = useMediaRecorder((state) => state.flush);
   const releaseMicrophone = useMediaRecorder((state) => state.release);
@@ -49,42 +49,29 @@ export const useCompleteRecordingFlow = ({
       disconnect(recordingSessionId);
     }
 
+    if (isRecorderAlive) await flushBrowserRecording().catch(() => {});
+    const recordingFile = await prepareRecordingFile(recordingSessionId);
+
     try {
-      const currentUpload = useRecordingSessionStore.getState().pendingUpload;
-      const reusableUpload =
-        currentUpload?.recordingSessionId === recordingSessionId ? currentUpload : null;
-
-      if (!reusableUpload?.isCompleted) {
-        if (isRecorderAlive) await flushBrowserRecording();
-        await uploadPendingRecordingParts(recordingSessionId);
-      }
-
       await completeRecording.mutateAsync(recordingSessionId);
     } catch {
       if (isEndedByServer(recordingSessionId)) {
         setOperation('idle');
         return;
       }
-      const currentUpload = useRecordingSessionStore.getState().pendingUpload;
-      const uploadCompleted =
-        currentUpload?.recordingSessionId === recordingSessionId && currentUpload.isCompleted;
-
-      if (!uploadCompleted && wasRecording && useMediaRecorder.getState().status === 'paused') {
+      if (wasRecording && useMediaRecorder.getState().status === 'paused') {
         try {
           resumeBrowserRecording();
         } catch {
           showToast('브라우저 녹음을 다시 시작하지 못했습니다.', 'danger');
         }
       }
-      showToast(
-        uploadCompleted
-          ? '회의를 종료하지 못했습니다. 다시 시도해주세요.'
-          : '녹음 파일을 업로드하지 못했습니다. 다시 시도해주세요.',
-        'danger',
-      );
+      showToast('회의를 종료하지 못했습니다. 다시 시도해주세요.', 'danger');
       setOperation('idle');
       return;
     }
+
+    enqueueRecordingUpload(recordingSessionId, recordingFile);
 
     try {
       releaseMicrophone();

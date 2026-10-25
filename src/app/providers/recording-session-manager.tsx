@@ -1,7 +1,8 @@
 'use client';
 
-import { useRecordingChunkBuffer, useRecordingSessionStore } from '@/features/recording';
+import { useRecordingSessionStore, useRecordingUploader } from '@/features/recording';
 import { useRecordingWebSocket } from '@/features/recording-websocket';
+import { useBeforeUnloadWarning } from '@/shared/lib';
 import { useRecordingAckSync } from './use-recording-ack-sync';
 import { useRecordingAiReplay } from './use-recording-ai-replay';
 import { useRecordingConnectionRecovery } from './use-recording-connection-recovery';
@@ -14,7 +15,8 @@ export function RecordingSessionManager() {
   const { statuses } = useRecordingWebSocket();
   const socketStatus = recordingSessionId === undefined ? undefined : statuses[recordingSessionId];
 
-  useRecordingChunkBuffer();
+  const isUploadingRecording = useRecordingUploader();
+  useBeforeUnloadWarning(isUploadingRecording);
   useRecordingAckSync();
   useRecordingAiReplay();
   useRecordingServerEnd();

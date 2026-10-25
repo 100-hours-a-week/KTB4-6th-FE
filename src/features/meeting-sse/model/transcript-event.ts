@@ -7,6 +7,7 @@ export interface TranscriptCreatedEventData {
   startedAtMs: number;
   endedAtMs?: number;
   recognizedAt: string;
+  speakerName: string | null;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -17,6 +18,12 @@ const isPositiveSafeInteger = (value: unknown): value is number =>
 
 const isNonNegativeSafeInteger = (value: unknown): value is number =>
   typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
+
+const toSpeakerName = (speaker: unknown) => {
+  if (typeof speaker === 'string' && speaker.trim() !== '') return speaker.trim();
+  if (typeof speaker === 'number' && Number.isFinite(speaker)) return `발화자 ${speaker}`;
+  return null;
+};
 
 export const parseTranscriptCreatedEvent = (data: string): TranscriptCreatedEventData | null => {
   let value: unknown;
@@ -57,5 +64,6 @@ export const parseTranscriptCreatedEvent = (data: string): TranscriptCreatedEven
       ? {}
       : { endedAtMs: segment.endedAtMs }),
     recognizedAt: segment.recognizedAt,
+    speakerName: toSpeakerName(segment.speaker),
   };
 };

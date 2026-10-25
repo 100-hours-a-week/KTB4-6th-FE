@@ -6,16 +6,18 @@ interface ApiErrorResponse {
   error?: { code?: string } | null;
 }
 
-/**
- * 5xx·네트워크 오류와 응답 형식 오류처럼 서비스 장애로 볼 수 있는 오류만 보고한다.
- * 401(재발급 인터셉터가 처리), 403·404, 업무 규칙 위반(409 등)처럼 서버가 의도해서 내려준
- * 4xx 응답과 요청 취소는 화면에서 처리하는 예상된 실패라 제외한다.
- */
+const getResponseStatus = (error: unknown) => {
+  if (axios.isAxiosError(error)) return error.response?.status;
+  if (error instanceof Error && 'status' in error && typeof error.status === 'number') {
+    return error.status;
+  }
+  return undefined;
+};
+
 const shouldReport = (error: unknown) => {
   if (axios.isCancel(error)) return false;
-  if (!axios.isAxiosError(error)) return true;
 
-  const status = error.response?.status;
+  const status = getResponseStatus(error);
   return status === undefined || status >= 500;
 };
 

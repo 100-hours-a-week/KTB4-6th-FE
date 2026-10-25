@@ -2,7 +2,7 @@ import type { MeetingAttendeeData } from '@/entities/meeting-attendee';
 
 export interface TranscriptSegment {
   id: string;
-  speakerNumber: number | null;
+  speakerName: string | null;
   startedAtSeconds: number;
   text: string;
 }
@@ -11,6 +11,7 @@ export interface CurrentMeetingViewModel {
   title: string;
   recorderName: string;
   attendees: MeetingAttendeeData[];
+  scheduledAt: string;
   targetMinutes: number;
   purpose: string;
   note: string;

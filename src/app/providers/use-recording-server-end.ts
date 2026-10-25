@@ -4,16 +4,12 @@ import { useEffect, useEffectEvent, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { getCurrentMeetingQueryKey } from '@/features/meeting-sse';
 import {
+  enqueueRecordingUpload,
+  prepareRecordingFile,
   useMediaRecorder,
   useRecordingSessionStore,
-  useUploadPendingRecordingParts,
 } from '@/features/recording';
 import { useRecordingWebSocket } from '@/features/recording-websocket';
-
-const UPLOAD_MAX_ATTEMPTS = 3;
-const UPLOAD_RETRY_DELAY_MS = 2000;
-
-const wait = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
 const waitForIdleOperation = () =>
   new Promise<void>((resolve) => {
@@ -35,29 +31,15 @@ export const useRecordingServerEnd = () => {
   const releaseMicrophone = useMediaRecorder((state) => state.release);
   const setOperation = useRecordingSessionStore((state) => state.setOperation);
   const clearActiveRecording = useRecordingSessionStore((state) => state.clearActiveRecording);
-  const uploadPendingRecordingParts = useUploadPendingRecordingParts();
   const handledSessionIds = useRef(new Set<number>());
-
-  const uploadWithRetry = async (recordingSessionId: number) => {
-    for (let attempt = 1; attempt <= UPLOAD_MAX_ATTEMPTS; attempt += 1) {
-      try {
-        await uploadPendingRecordingParts(recordingSessionId);
-        return;
-      } catch {
-        if (attempt < UPLOAD_MAX_ATTEMPTS) await wait(UPLOAD_RETRY_DELAY_MS * attempt);
-      }
-    }
-  };
 
   const handleServerEnd = useEffectEvent(async (recordingSessionId: number) => {
     if (handledSessionIds.current.has(recordingSessionId)) return;
     handledSessionIds.current.add(recordingSessionId);
 
     await waitForIdleOperation();
-    const { activeRecording, pendingUpload } = useRecordingSessionStore.getState();
+    const { activeRecording } = useRecordingSessionStore.getState();
     if (activeRecording?.recordingSessionId !== recordingSessionId) return;
-    const isUploadCompleted =
-      pendingUpload?.recordingSessionId === recordingSessionId && pendingUpload.isCompleted;
 
     setOperation('finishing');
     try {
@@ -66,7 +48,7 @@ export const useRecordingServerEnd = () => {
         await flushBrowserRecording().catch(() => {});
       }
       releaseMicrophone();
-      if (!isUploadCompleted) await uploadWithRetry(recordingSessionId);
+      enqueueRecordingUpload(recordingSessionId, await prepareRecordingFile(recordingSessionId));
     } finally {
       await queryClient
         .invalidateQueries({ queryKey: getCurrentMeetingQueryKey(activeRecording.meetingId) })

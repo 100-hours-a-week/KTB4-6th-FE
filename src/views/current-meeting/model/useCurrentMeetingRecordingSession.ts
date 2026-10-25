@@ -42,7 +42,6 @@ export const useCurrentMeetingRecordingSession = ({
   const activeRecording = useRecordingSessionStore((state) => state.activeRecording);
   const setActiveRecording = useRecordingSessionStore((state) => state.setActiveRecording);
   const setIsPausedByUser = useRecordingSessionStore((state) => state.setIsPausedByUser);
-  const pendingUpload = useRecordingSessionStore((state) => state.pendingUpload);
   const operation = useRecordingSessionStore((state) => state.operation);
   const isPausedByUser = useRecordingSessionStore((state) => state.isPausedByUser);
   const { aiRecoveringStatuses } = useRecordingWebSocket();
@@ -91,13 +90,10 @@ export const useCurrentMeetingRecordingSession = ({
   });
   const isWaiting = isMeetingWaiting && recordingSessionId === null && !isCompleted;
   const isStartingRecording = operation === 'starting';
-  const isUploadCompleted =
-    pendingUpload?.recordingSessionId === recordingSessionId && pendingUpload.isCompleted;
   const availability = getRecordingAvailability({
     isWaiting,
     isCompleted,
     isStartingRecording,
-    isUploadCompleted,
     isOperationIdle: operation === 'idle',
     isBrowserRecorderActive: recorderStatus === 'recording' || isPausedByUser,
     hasActiveRecording: activeRecording !== null,

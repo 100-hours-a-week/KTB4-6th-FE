@@ -4,11 +4,7 @@ import { useState } from 'react';
 import { Dialog } from '@base-ui/react/dialog';
 import { X } from 'lucide-react';
 import { useAppFrameElement } from '@/shared/lib';
-import {
-  INITIAL_CREATE_MEETING_FORM_VALUES,
-  isCreateMeetingFormValid,
-  type CreateMeetingFormValues,
-} from '@/features/meeting';
+import { isCreateMeetingFormValid, type CreateMeetingFormValues } from '@/features/meeting';
 import { MeetingInfoForm } from './MeetingInfoForm';
 
 interface MeetingInfoDialogProps {
@@ -24,7 +20,7 @@ interface MeetingInfoDialogProps {
 const MEETING_INFO_FORM_ID = 'meeting-info-form';
 
 export const MeetingInfoDialog = ({
-  initialValues = INITIAL_CREATE_MEETING_FORM_VALUES,
+  initialValues,
   isSubmitting,
   submitError,
   closeLabel = '닫기',
@@ -33,7 +29,9 @@ export const MeetingInfoDialog = ({
   onBack,
 }: MeetingInfoDialogProps) => {
   const frame = useAppFrameElement();
-  const [isFormValid, setIsFormValid] = useState(() => isCreateMeetingFormValid(initialValues));
+  const [isFormValid, setIsFormValid] = useState(
+    () => initialValues !== undefined && isCreateMeetingFormValid(initialValues, initialValues),
+  );
 
   return (
     <Dialog.Root open onOpenChange={(open) => !open && !isSubmitting && onClose()}>
