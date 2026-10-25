@@ -12,7 +12,6 @@ interface TranscriptTabProps {
   meetingId: number;
   entries: TranscriptEntry[];
   isPreview: boolean;
-  /** 현재 재생 위치에 해당해 강조할 발화의 ID */
   activeEntryId: string | null;
   highlightedEntryId: string | null;
 }
@@ -39,7 +38,7 @@ export const TranscriptTab = ({
 
   return (
     <div className="flex flex-1 flex-col px-5 py-5">
-      <div className="sticky top-0 z-10 flex flex-col gap-3 pb-3">
+      <div className="sticky top-0 z-10 -mt-5 flex flex-col gap-3 bg-cool-50 pt-5 pb-3">
         <form
           onSubmit={(event) => {
             event.preventDefault();
