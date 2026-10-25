@@ -18,6 +18,7 @@ export interface ChatMessageViewModel {
   askerTeamMemberId: number | null;
   askerDisplayName: string;
   createdAtLabel: string;
+  answeredAtLabel: string;
   question: string;
   answerState: MeetingChatAnswerState;
   answer: string | null;
@@ -36,6 +37,7 @@ const toChatMessageViewModel = (
   askerTeamMemberId: message.askerTeamMemberId,
   askerDisplayName: message.askerDisplayName,
   createdAtLabel: formatChatMessageTime(message.createdAt),
+  answeredAtLabel: formatChatMessageTime(message.answeredAt ?? message.createdAt),
   question: message.question,
   answerState: getMeetingChatAnswerState(message, now),
   answer: message.answer,

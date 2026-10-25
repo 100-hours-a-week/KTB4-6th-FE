@@ -140,7 +140,7 @@ export const CurrentMeetingHeader = () => {
               )}
             </button>
           </div>
-          {!isWaiting && (
+          {!isWaiting && !isCompleted && (
             <span
               className={cn(
                 'flex items-center gap-1 font-mono text-xs font-semibold whitespace-nowrap tabular-nums',
