@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
 import { captureException } from '@/shared/lib';
 import { encodeRecordingChunk, recoverRecordingEncoding } from './recording-encoder';
 import { countPcmSamples } from './pcm-capture';
@@ -10,7 +9,7 @@ import {
   markRecordingChunksAcked,
   putRecordingChunk,
 } from './recording-chunk-store';
-import { deleteStaleRecordingChunks, isIndexedDbSupported } from './recording-db';
+import { isIndexedDbSupported } from './recording-db';
 import { markRecordingStorageFailure } from './recording-storage';
 
 interface ChunkCursor {
@@ -23,8 +22,6 @@ let chunkCursor: ChunkCursor | null = null;
 let pendingCursor: Promise<void> = Promise.resolve();
 let pendingChunkWrite: Promise<void> = Promise.resolve();
 let reportedFailureSessionId: number | null = null;
-
-const STALE_CHUNK_AGE_MS = 3 * 60 * 60 * 1000;
 
 const reportChunkSaveFailure = (recordingSessionId: number, error: unknown) => {
   if (reportedFailureSessionId === recordingSessionId) return;
@@ -121,10 +118,3 @@ export const acknowledgeRecordingChunks = (recordingSessionId: number, seq: numb
 };
 
 export const flushRecordingChunks = () => Promise.all([pendingCursor, pendingChunkWrite]);
-
-export const useRecordingChunkBuffer = () => {
-  useEffect(() => {
-    if (!isIndexedDbSupported()) return;
-    void deleteStaleRecordingChunks(STALE_CHUNK_AGE_MS).catch(() => {});
-  }, []);
-};
