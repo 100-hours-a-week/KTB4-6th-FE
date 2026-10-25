@@ -8,13 +8,22 @@ export const useMeetingSearchResults = (
   teamId: number,
   keyword: string,
 ): MeetingSearchResultsData => {
-  const { status, data, hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage } =
-    useMeetingSearch(teamId, keyword);
+  const {
+    status,
+    data,
+    refetch,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetchNextPageError,
+    fetchNextPage,
+  } = useMeetingSearch(teamId, keyword);
 
   const loadMore = () => {
     if (!hasNextPage || isFetchingNextPage) return;
     void fetchNextPage();
   };
+
+  const retry = () => void refetch();
 
   if (!data) {
     return {
@@ -24,6 +33,7 @@ export const useMeetingSearchResults = (
       hasMore: false,
       loadMoreStatus: 'idle',
       loadMore,
+      retry,
     };
   }
 
@@ -34,5 +44,6 @@ export const useMeetingSearchResults = (
     hasMore: hasNextPage,
     loadMoreStatus: isFetchingNextPage ? 'loading' : isFetchNextPageError ? 'error' : 'idle',
     loadMore,
+    retry,
   };
 };

@@ -19,7 +19,7 @@ export const MeetingSearchResults = ({
   getMenuActions,
   scrollRootRef,
 }: MeetingSearchResultsProps) => {
-  const { keyword, status, meetings, hasMore, loadMoreStatus, loadMore } = results;
+  const { keyword, status, meetings, hasMore, loadMoreStatus, loadMore, retry } = results;
 
   if (status === 'loading') {
     return (
@@ -44,6 +44,13 @@ export const MeetingSearchResults = ({
       >
         <h2 className="text-base font-bold text-cool-900">검색 결과를 불러오지 못했어요</h2>
         <p className="mt-2 text-sm leading-6 text-cool-600">잠시 후 다시 시도해주세요.</p>
+        <button
+          type="button"
+          onClick={retry}
+          className="mt-4 inline-flex min-w-24 items-center justify-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-700"
+        >
+          다시 시도
+        </button>
       </section>
     );
   }

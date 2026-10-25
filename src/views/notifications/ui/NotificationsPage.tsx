@@ -28,6 +28,7 @@ export const NotificationsPage = ({ teamId }: NotificationsPageProps) => {
     data,
     isPending,
     isError,
+    refetch,
     hasNextPage,
     isFetchingNextPage,
     isFetchNextPageError,
@@ -76,7 +77,7 @@ export const NotificationsPage = ({ teamId }: NotificationsPageProps) => {
         {isPending ? (
           <NotificationsSkeleton />
         ) : isError && !data ? (
-          <NotificationsErrorState />
+          <NotificationsErrorState onRetry={() => void refetch()} />
         ) : notifications.length === 0 ? (
           <NotificationsEmptyState />
         ) : (
