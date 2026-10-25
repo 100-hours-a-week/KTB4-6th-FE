@@ -5,6 +5,7 @@ import {
   Mp4OutputFormat,
   Output,
 } from 'mediabunny';
+import { toAudioSpecificConfig } from './aac-description';
 import { toAacSample } from './aac-encoder';
 import { getEncodingMeta, readEncodedFramesFrom } from './encoded-recording-store';
 import type { EncodedFrame } from './recording-db';
@@ -29,7 +30,7 @@ export const buildRecordingMp4 = async (
     codec: meta.codec,
     sampleRate: meta.sampleRate,
     numberOfChannels: meta.numberOfChannels,
-    description: meta.description,
+    description: toAudioSpecificConfig(meta.description),
   };
   let frameCount = 0;
   let storedEndSample = 0;
