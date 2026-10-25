@@ -1,4 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
+import type { AudioFileUploadTarget } from '../api/create-audio-file-upload-url';
 
 export type RecordingChunkStatus = 'pending' | 'acked';
 
@@ -26,6 +27,16 @@ export interface EncodingMeta {
   description: ArrayBuffer;
 }
 
+export interface PendingRecordingUpload {
+  recordingSessionId: number;
+  createdAt: number;
+  uploadTarget?: AudioFileUploadTarget;
+  storedFile?: {
+    fileSizeBytes: number;
+    durationMs: number;
+  };
+}
+
 interface RecordingDB extends DBSchema {
   chunks: {
     key: [number, number];
@@ -40,13 +51,18 @@ interface RecordingDB extends DBSchema {
     key: number;
     value: EncodingMeta;
   };
+  pendingUploads: {
+    key: number;
+    value: PendingRecordingUpload;
+  };
 }
 
 const DB_NAME = 'meety-recording';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 export const CHUNK_STORE_NAME = 'chunks';
 export const ENCODED_FRAME_STORE_NAME = 'encodedFrames';
 export const ENCODING_META_STORE_NAME = 'encodingMeta';
+export const PENDING_UPLOAD_STORE_NAME = 'pendingUploads';
 
 let dbPromise: Promise<IDBPDatabase<RecordingDB>> | null = null;
 
@@ -65,6 +81,9 @@ export const getRecordingDb = () => {
             keyPath: ['recordingSessionId', 'timestampUs'],
           });
           db.createObjectStore(ENCODING_META_STORE_NAME, { keyPath: 'recordingSessionId' });
+        }
+        if (oldVersion < 3) {
+          db.createObjectStore(PENDING_UPLOAD_STORE_NAME, { keyPath: 'recordingSessionId' });
         }
       },
       blocking() {
@@ -92,10 +111,16 @@ export const isIndexedDbSupported = () => typeof indexedDB !== 'undefined';
 export const deleteStaleRecordingChunks = async (maxAgeMs: number, now = Date.now()) => {
   const db = await getRecordingDb();
   const tx = db.transaction(
-    [CHUNK_STORE_NAME, ENCODED_FRAME_STORE_NAME, ENCODING_META_STORE_NAME],
+    [
+      CHUNK_STORE_NAME,
+      ENCODED_FRAME_STORE_NAME,
+      ENCODING_META_STORE_NAME,
+      PENDING_UPLOAD_STORE_NAME,
+    ],
     'readwrite',
   );
   const chunkStore = tx.objectStore(CHUNK_STORE_NAME);
+  const pendingUploadStore = tx.objectStore(PENDING_UPLOAD_STORE_NAME);
 
   let sessionCursor = await chunkStore.openKeyCursor();
   while (sessionCursor) {
@@ -105,10 +130,17 @@ export const deleteStaleRecordingChunks = async (maxAgeMs: number, now = Date.no
       await chunkStore.delete(sessionRange(recordingSessionId));
       await tx.objectStore(ENCODED_FRAME_STORE_NAME).delete(sessionRange(recordingSessionId));
       await tx.objectStore(ENCODING_META_STORE_NAME).delete(recordingSessionId);
+      await pendingUploadStore.delete(recordingSessionId);
     }
     sessionCursor = await chunkStore.openKeyCursor(
       IDBKeyRange.lowerBound([recordingSessionId, Infinity], true),
     );
+  }
+
+  let uploadCursor = await pendingUploadStore.openCursor();
+  while (uploadCursor) {
+    if (now - uploadCursor.value.createdAt > maxAgeMs) await uploadCursor.delete();
+    uploadCursor = await uploadCursor.continue();
   }
 
   await tx.done;
