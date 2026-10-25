@@ -5,8 +5,10 @@ export {
   acknowledgeRecordingChunks,
   appendRecordingChunk,
   flushRecordingChunks,
+  getLastAppendedChunkSeq,
   getRecordingChunksToResend,
   prepareChunkCursor,
+  readRecordingChunksForReplay,
 } from './model/useRecordingChunkBuffer';
 export { hasEnoughRecordingStorage, useRecordingStorageFailure } from './model/recording-storage';
 export { useRecordingSessionStore } from './model/useRecordingSessionStore';

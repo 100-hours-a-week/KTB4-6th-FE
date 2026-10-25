@@ -27,7 +27,7 @@ export const useCompleteRecordingFlow = ({
   const releaseMicrophone = useMediaRecorder((state) => state.release);
   const clearActiveRecording = useRecordingSessionStore((state) => state.clearActiveRecording);
   const setOperation = useRecordingSessionStore((state) => state.setOperation);
-  const { disconnect } = useRecordingWebSocket();
+  const { disconnect, isEndedByServer } = useRecordingWebSocket();
   const { showToast } = useAppToast();
 
   const handleCompleteRecording = async () => {
@@ -55,6 +55,10 @@ export const useCompleteRecordingFlow = ({
     try {
       await completeRecording.mutateAsync(recordingSessionId);
     } catch {
+      if (isEndedByServer(recordingSessionId)) {
+        setOperation('idle');
+        return;
+      }
       if (wasRecording && useMediaRecorder.getState().status === 'paused') {
         try {
           resumeBrowserRecording();

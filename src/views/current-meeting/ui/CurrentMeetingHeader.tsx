@@ -15,8 +15,16 @@ const formatElapsed = (seconds: number) =>
 
 export const CurrentMeetingHeader = () => {
   const { team, teamMembers, recording, openSidebar } = useCurrentMeetingContext();
-  const { meeting, isWaiting, isPaused, isEnding, connectionStatus, isRecording, isCompleted } =
-    recording;
+  const {
+    meeting,
+    isWaiting,
+    isPaused,
+    isEnding,
+    connectionStatus,
+    isRecording,
+    isCompleted,
+    isTranscriptDelayed,
+  } = recording;
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [isAttendeesOpen, setIsAttendeesOpen] = useState(false);
   const isDisconnected = connectionStatus === 'error';
@@ -54,23 +62,30 @@ export const CurrentMeetingHeader = () => {
           <Menu className="size-5" strokeWidth={2} />
         </button>
         <h1 className="text-lg font-bold text-cool-900">현재 회의</h1>
-        <span
-          className={cn(
-            'ml-auto flex items-center gap-1.5 whitespace-nowrap text-xs',
-            connectionStatus === 'error' ? 'text-danger' : 'text-cool-600',
-          )}
-        >
+        {isTranscriptDelayed ? (
+          <span className="ml-auto flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold whitespace-nowrap text-amber-800">
+            <span aria-hidden="true" className="size-2 rounded-full bg-amber-600" />
+            기록 지연
+          </span>
+        ) : (
           <span
-            aria-hidden="true"
             className={cn(
-              'size-2 rounded-full',
-              connectionStatus === 'connecting' && 'bg-brand-600 motion-safe:animate-pulse',
-              connectionStatus === 'connected' && 'bg-success',
-              connectionStatus === 'error' && 'bg-danger',
+              'ml-auto flex items-center gap-1.5 whitespace-nowrap text-xs',
+              connectionStatus === 'error' ? 'text-danger' : 'text-cool-600',
             )}
-          />
-          {connectionLabel}
-        </span>
+          >
+            <span
+              aria-hidden="true"
+              className={cn(
+                'size-2 rounded-full',
+                connectionStatus === 'connecting' && 'bg-brand-600 motion-safe:animate-pulse',
+                connectionStatus === 'connected' && 'bg-success',
+                connectionStatus === 'error' && 'bg-danger',
+              )}
+            />
+            {connectionLabel}
+          </span>
+        )}
       </div>
 
       <div className="mt-4 flex items-start justify-between gap-3">

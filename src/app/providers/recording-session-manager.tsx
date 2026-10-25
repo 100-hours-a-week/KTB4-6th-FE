@@ -4,7 +4,9 @@ import { useRecordingSessionStore, useRecordingUploader } from '@/features/recor
 import { useRecordingWebSocket } from '@/features/recording-websocket';
 import { useBeforeUnloadWarning } from '@/shared/lib';
 import { useRecordingAckSync } from './use-recording-ack-sync';
+import { useRecordingAiReplay } from './use-recording-ai-replay';
 import { useRecordingConnectionRecovery } from './use-recording-connection-recovery';
+import { useRecordingServerEnd } from './use-recording-server-end';
 import { useRecordingStreamStart } from './use-recording-stream-start';
 
 export function RecordingSessionManager() {
@@ -16,6 +18,8 @@ export function RecordingSessionManager() {
   const isUploadingRecording = useRecordingUploader();
   useBeforeUnloadWarning(isUploadingRecording);
   useRecordingAckSync();
+  useRecordingAiReplay();
+  useRecordingServerEnd();
   const { resetAttempts } = useRecordingConnectionRecovery({
     meetingId: activeRecording?.meetingId,
     recordingSessionId,

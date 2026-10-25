@@ -40,6 +40,7 @@ export const CurrentMeetingDialogs = () => {
       />
       <MeetingEndedDialog
         isOpen={meetingEndedNotice.isMeetingEndedNoticeOpen}
+        serverEnd={meetingEndedNotice.serverEnd}
         onConfirm={meetingEndedNotice.goToResult}
         onGoHome={meetingEndedNotice.goHome}
       />

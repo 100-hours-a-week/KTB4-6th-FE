@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useActiveMeeting } from '@/features/home';
 import { useMediaRecorder, useRecordingSessionStore } from '@/features/recording';
+import { useRecordingWebSocket } from '@/features/recording-websocket';
 import { getRecordingAvailability } from './recording-availability';
 import { useCompleteRecordingFlow } from './useCompleteRecordingFlow';
 import { useCurrentMeetingConnection } from './useCurrentMeetingConnection';
@@ -43,6 +44,7 @@ export const useCurrentMeetingRecordingSession = ({
   const setIsPausedByUser = useRecordingSessionStore((state) => state.setIsPausedByUser);
   const operation = useRecordingSessionStore((state) => state.operation);
   const isPausedByUser = useRecordingSessionStore((state) => state.isPausedByUser);
+  const { aiRecoveringStatuses } = useRecordingWebSocket();
   const { activeMeeting: teamActiveMeeting } = useActiveMeeting(Number(teamId));
   const hasTeamActiveMeetingElsewhere =
     teamActiveMeeting !== null && teamActiveMeeting.meetingId !== meetingId;
@@ -119,9 +121,13 @@ export const useCurrentMeetingRecordingSession = ({
     canPauseResumeRecording: availability.canPauseResumeRecording,
   });
 
+  const isTranscriptDelayed =
+    recordingSessionId !== null && aiRecoveringStatuses[recordingSessionId] === true;
+
   return {
     recordingSessionId,
     recorderStatus,
+    isTranscriptDelayed,
     isPausedByUser,
     operation,
     connectionStatus,
