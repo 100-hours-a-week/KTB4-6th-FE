@@ -1,3 +1,4 @@
+import { toAiSpeakerName } from '@/entities/transcript-speaker';
 import type { MeetingTranscriptSegmentData } from '@/features/meeting';
 import type { TranscriptCreatedEventData } from '@/features/meeting-sse';
 import type { TranscriptSegment } from './current-meeting';
@@ -6,7 +7,7 @@ const toTranscriptSegmentFromHistory = (
   segment: MeetingTranscriptSegmentData,
 ): TranscriptSegment => ({
   id: String(segment.segmentId),
-  speakerName: segment.speakerDisplayName,
+  speakerName: segment.speakerDisplayName?.trim() || toAiSpeakerName(segment.speakerId),
   startedAtSeconds: Math.floor(segment.startedAtMs / 1000),
   text: segment.content,
 });

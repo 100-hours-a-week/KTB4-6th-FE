@@ -1,3 +1,5 @@
+import { toAiSpeakerName } from '@/entities/transcript-speaker';
+
 export interface TranscriptCreatedEventData {
   type: 'TRANSCRIPT_CREATED';
   meetingId: number;
@@ -21,8 +23,7 @@ const isNonNegativeSafeInteger = (value: unknown): value is number =>
 
 const toSpeakerName = (speaker: unknown, speakerId: unknown) => {
   if (typeof speaker === 'string' && speaker.trim() !== '') return speaker.trim();
-  if (isNonNegativeSafeInteger(speakerId)) return `화자 ${speakerId + 1}`;
-  return null;
+  return toAiSpeakerName(speakerId);
 };
 
 export const parseTranscriptCreatedEvent = (data: string): TranscriptCreatedEventData | null => {

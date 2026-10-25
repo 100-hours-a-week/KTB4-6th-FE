@@ -8,6 +8,7 @@ export interface MeetingTranscriptSegmentData {
   startedAtMs: number;
   endedAtMs: number;
   recognizedAt: string;
+  speakerId: number | null;
 }
 
 export type MeetingTranscriptResponse = ApiResponse<{ segments: MeetingTranscriptSegmentData[] }>;
