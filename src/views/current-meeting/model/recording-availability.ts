@@ -5,7 +5,6 @@ interface RecordingAvailabilityInput {
   isWaiting: boolean;
   isCompleted: boolean;
   isStartingRecording: boolean;
-  isUploadCompleted: boolean;
   isOperationIdle: boolean;
   isBrowserRecorderActive: boolean;
   hasActiveRecording: boolean;
@@ -25,7 +24,6 @@ export const getRecordingAvailability = ({
   isWaiting,
   isCompleted,
   isStartingRecording,
-  isUploadCompleted,
   isOperationIdle,
   isBrowserRecorderActive,
   hasActiveRecording,
@@ -52,7 +50,7 @@ export const getRecordingAvailability = ({
   // 일시정지 중엔 오디오 소켓을 일부러 끊어둬서 connectionStatus가 'connected'가 아니다 —
   // 재개 버튼을 누르는 게 곧 재연결을 시작하는 행위라, 연결 여부로 막으면 안 된다.
   const pauseResumeBlockedReason: RecordingBlockedReason | null =
-    hasRecordingSession && !isCompleted && !isUploadCompleted && isOperationIdle && !isPausedByUser
+    hasRecordingSession && !isCompleted && isOperationIdle && !isPausedByUser
       ? connectionBlockedReason
       : null;
 
@@ -64,7 +62,6 @@ export const getRecordingAvailability = ({
       (isPausedByUser || connectionStatus === 'connected') &&
       isBrowserRecorderActive &&
       !isCompleted &&
-      !isUploadCompleted &&
       isOperationIdle,
     pauseResumeBlockedReason,
     canCompleteRecording: hasRecordingSession && !isCompleted && isOperationIdle,

@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   MeetingApiError,
-  toMeetingInfoRequest,
+  toMeetingUpdateRequest,
+  toScheduleFormValues,
   useUpdateMeeting,
   type CreateMeetingFormValues,
 } from '@/features/meeting';
@@ -31,6 +32,7 @@ export const useMeetingInfoEdit = ({ meetingId, meeting }: UseMeetingInfoEditPar
 
   const editFormInitialValues: CreateMeetingFormValues | null = meeting && {
     title: meeting.title,
+    ...toScheduleFormValues(meeting.scheduledAt),
     duration: String(meeting.targetMinutes),
     purpose: meeting.purpose,
     note: meeting.note,
@@ -45,9 +47,11 @@ export const useMeetingInfoEdit = ({ meetingId, meeting }: UseMeetingInfoEditPar
   };
 
   const handleSubmitEditForm = (values: CreateMeetingFormValues) => {
+    if (!editFormInitialValues) return;
+
     setSubmitError(null);
     mutate(
-      { meetingId, ...toMeetingInfoRequest(values) },
+      { meetingId, ...toMeetingUpdateRequest(values, editFormInitialValues) },
       {
         onSuccess: () => {
           // 목표 시간·목적·비고가 바뀌었을 수 있어 조회 결과를 다시 받아온다.

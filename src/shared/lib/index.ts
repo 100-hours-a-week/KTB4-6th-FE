@@ -9,7 +9,6 @@ export { formatRelativeTime } from './format-relative-time';
 export { formatDurationSeconds } from './format-duration-seconds';
 export { breakSentences } from './break-sentences';
 export { downloadFile, downloadTextFile } from './download-file';
-export { isOpfsSupported, listOpfsFileNames, readOpfsFile, removeOpfsFile } from './opfs';
 export { useBeforeUnloadWarning } from './use-before-unload-warning';
 export { useWakeLock } from './use-wake-lock';
 export {

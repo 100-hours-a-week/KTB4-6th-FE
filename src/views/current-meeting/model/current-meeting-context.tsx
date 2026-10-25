@@ -7,6 +7,7 @@ import type { useCurrentMeetingRecording } from './useCurrentMeetingRecording';
 import type { useMeetingEndedNotice } from './useMeetingEndedNotice';
 import type { useMeetingInfoEdit } from './useMeetingInfoEdit';
 import type { useRecordingStartedNotice } from './useRecordingStartedNotice';
+import type { useRecordingStorageNotice } from './useRecordingStorageNotice';
 
 type LoadedRecordingState = Omit<ReturnType<typeof useCurrentMeetingRecording>, 'meeting'> & {
   meeting: CurrentMeetingViewModel;
@@ -22,6 +23,7 @@ export interface CurrentMeetingContextValue {
   meetingEndedNotice: ReturnType<typeof useMeetingEndedNotice>;
   meetingInfoEdit: ReturnType<typeof useMeetingInfoEdit>;
   recordingStartedNotice: ReturnType<typeof useRecordingStartedNotice>;
+  recordingStorageNotice: ReturnType<typeof useRecordingStorageNotice>;
   navigateToTranscriptSegment: (segmentId: number) => void;
   openSidebar: () => void;
 }

@@ -2,12 +2,23 @@
 
 import {
   isInsufficientCreditError,
+  isUnsupportedRecordingBrowserError,
   useMediaRecorder,
   useRecordingSessionStore,
   useStartRecording,
 } from '@/features/recording';
 import { useRecordingWebSocket } from '@/features/recording-websocket';
 import { useAppToast } from '@/shared/ui';
+
+const getMicrophoneErrorMessage = (error: unknown) => {
+  if (isUnsupportedRecordingBrowserError(error)) {
+    return '이 브라우저에서는 녹음할 수 없습니다. 최신 버전의 Chrome 또는 Safari에서 다시 시도해주세요.';
+  }
+  if (error instanceof DOMException && error.name === 'NotAllowedError') {
+    return '마이크 권한이 없어 녹음을 진행할 수 없습니다. 마이크 권한을 다시 설정해주세요.';
+  }
+  return '마이크를 사용할 수 없습니다. 장치와 브라우저 권한을 확인해주세요.';
+};
 
 interface UseStartRecordingFlowParams {
   teamId: string;
@@ -18,10 +29,6 @@ interface UseStartRecordingFlowParams {
   onInsufficientCredit: () => void;
 }
 
-/**
- * 마이크 준비 → 녹음 시작 요청 → 녹음 세션 저장 → 오디오 소켓 연결 순서로 녹음을 시작한다.
- * 크레딧 부족으로 실패하면 토스트 대신 onInsufficientCredit으로 알린다.
- */
 export const useStartRecordingFlow = ({
   teamId,
   meetingId,
@@ -71,11 +78,7 @@ export const useStartRecordingFlow = ({
         }
       }
     } catch (error) {
-      const message =
-        error instanceof DOMException && error.name === 'NotAllowedError'
-          ? '마이크 권한이 없어 녹음을 진행할 수 없습니다. 마이크 권한을 다시 설정해주세요.'
-          : '마이크를 사용할 수 없습니다. 장치와 브라우저 권한을 확인해주세요.';
-      showToast(message, 'danger');
+      showToast(getMicrophoneErrorMessage(error), 'danger');
     } finally {
       setOperation('idle');
     }

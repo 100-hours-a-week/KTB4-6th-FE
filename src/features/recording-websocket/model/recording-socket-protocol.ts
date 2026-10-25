@@ -1,16 +1,18 @@
 export type RecordingSocketMessage =
   | { type: 'ack'; seq: number }
   | { type: 'recovery.start'; lastProcessedSequence: number }
-  | { type: 'stream.ready' };
+  | { type: 'stream.ready' }
+  | { type: 'recording.error'; code: string; message: string | null }
+  | { type: 'recording.recovering'; code: string | null }
+  | { type: 'recording.replay.request'; fromSequence: number }
+  | { type: 'recording.recovery.completed' };
 
 export type RecoveryMessageType = 'recovery.start' | 'stream.ready';
 export type RecoveryMessage = Extract<RecordingSocketMessage, { type: RecoveryMessageType }>;
 
 const SEQ_HEADER_BYTES = 8;
 
-/** 녹음이 종료(COMPLETED)돼 BE가 닫음 */
 export const CLOSE_CODE_COMPLETED = 1000;
-/** 같은 녹음으로 새 연결이 들어와 BE가 이전 연결을 닫음 */
 export const CLOSE_CODE_SUPERSEDED = 4001;
 
 export const isRecoveryMessage = (message: RecordingSocketMessage): message is RecoveryMessage =>
@@ -40,16 +42,35 @@ export const parseSocketMessage = (data: unknown): RecordingSocketMessage | null
         : null;
     case 'stream.ready':
       return { type: 'stream.ready' };
+    case 'recording.error':
+      return typeof message.code === 'string'
+        ? {
+            type: 'recording.error',
+            code: message.code,
+            message: typeof message.message === 'string' ? message.message : null,
+          }
+        : null;
+    case 'recording.recovering':
+      return {
+        type: 'recording.recovering',
+        code: typeof message.code === 'string' ? message.code : null,
+      };
+    case 'recording.replay.request':
+      return Number.isSafeInteger(message.fromSequence) && (message.fromSequence as number) >= 0
+        ? { type: 'recording.replay.request', fromSequence: message.fromSequence as number }
+        : null;
+    case 'recording.recovery.completed':
+      return { type: 'recording.recovery.completed' };
     default:
       return null;
   }
 };
 
-/** [순번 8바이트, big-endian unsigned][오디오 바이트] */
-export const createAudioFrame = (chunk: Blob, seq: number) => {
-  const header = new ArrayBuffer(SEQ_HEADER_BYTES);
-  new DataView(header).setBigUint64(0, BigInt(seq), false);
-  return new Blob([header, chunk]);
+export const createAudioFrame = (chunk: ArrayBuffer, seq: number) => {
+  const frame = new Uint8Array(SEQ_HEADER_BYTES + chunk.byteLength);
+  new DataView(frame.buffer).setBigUint64(0, BigInt(seq), false);
+  frame.set(new Uint8Array(chunk), SEQ_HEADER_BYTES);
+  return frame.buffer;
 };
 
 export const createRecoveryFinishedMessage = (lastSequence: number) =>

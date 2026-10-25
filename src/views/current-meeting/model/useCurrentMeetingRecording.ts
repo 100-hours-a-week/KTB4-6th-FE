@@ -42,6 +42,7 @@ export const useCurrentMeetingRecording = ({
   const {
     recordingSessionId,
     recorderStatus,
+    isTranscriptDelayed,
     isPausedByUser,
     operation,
     connectionStatus,
@@ -105,6 +106,7 @@ export const useCurrentMeetingRecording = ({
     isRecorder,
     isCompleted: hasCompleted,
     isServerCompleted,
+    isTranscriptDelayed: isTranscriptDelayed && !hasCompleted,
     isStartDialogOpen,
     isRecordingAcknowledged,
     isInsufficientCreditDialogOpen,

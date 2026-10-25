@@ -99,7 +99,10 @@ export const MeetingTranscript = () => {
               )}
             >
               <div className="min-w-0">
-                <time className="block font-mono text-xs text-cool-500">
+                <p className="text-xs font-semibold break-keep text-brand-600">
+                  {segment.speakerName ?? '발화자 확인 중'}
+                </p>
+                <time className="mt-1 block font-mono text-xs text-cool-500">
                   {formatTimestamp(segment.startedAtSeconds)}
                 </time>
               </div>

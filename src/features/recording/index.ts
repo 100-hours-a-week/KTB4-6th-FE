@@ -1,17 +1,19 @@
 export { useCompleteRecording } from './model/useCompleteRecording';
-export { isInsufficientCreditError } from './model/errors';
+export { isInsufficientCreditError, isUnsupportedRecordingBrowserError } from './model/errors';
 export { useMediaRecorder } from './model/useMediaRecorder';
 export {
   acknowledgeRecordingChunks,
   appendRecordingChunk,
   flushRecordingChunks,
+  getLastAppendedChunkSeq,
   getRecordingChunksToResend,
   prepareChunkCursor,
-  useRecordingChunkBuffer,
+  readRecordingChunksForReplay,
 } from './model/useRecordingChunkBuffer';
-export { readOpfsPartFilesInOrder, removeOpfsPartFiles } from './model/opfs-recording-parts';
+export { hasEnoughRecordingStorage, useRecordingStorageFailure } from './model/recording-storage';
 export { useRecordingSessionStore } from './model/useRecordingSessionStore';
 export { useStartRecording } from './model/useStartRecording';
 export { useUpdateRecordingStatus } from './model/useUpdateRecordingStatus';
-export { useUploadPendingRecordingParts } from './model/useUploadPendingRecordingParts';
-export { useUploadRecordingFile } from './model/useUploadRecordingFile';
+export { prepareRecordingFile } from './model/recording-file';
+export { enqueueRecordingUpload } from './model/recording-uploader';
+export { useRecordingUploader } from './model/useRecordingUploader';

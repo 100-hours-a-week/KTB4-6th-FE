@@ -152,7 +152,9 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
 
               recordingListeners.emit(meetingId, type);
 
-              if (type === 'RECORDING_COMPLETED') disconnect(meetingId);
+              if (type === 'RECORDING_COMPLETED' || type === 'RECORDING_FAILED') {
+                disconnect(meetingId);
+              }
             });
           });
 

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { useMeetingDetail } from '@/features/meeting';
+import { PREFETCHED_MEETING_STALE_TIME, useMeetingDetail } from '@/features/meeting';
 import { getTeamDetail } from '@/features/team-management';
 import { NavigationSidebar } from '@/widgets/navigation-sidebar';
 import { parseCompletedMeetingSegmentId } from '../model/completed-meeting-segment-id';
@@ -31,9 +31,14 @@ export const CompletedMeetingPage = ({ teamId, meetingId }: CompletedMeetingPage
     queryFn: () => getTeamDetail(numericTeamId),
     enabled: Number.isSafeInteger(numericTeamId) && numericTeamId > 0,
   });
-  const meetingDetailQuery = useMeetingDetail(meetingId);
+  const meetingDetailQuery = useMeetingDetail(meetingId, {
+    staleTime: PREFETCHED_MEETING_STALE_TIME,
+  });
   const viewerRole = team?.role === 'LEADER' ? 'leader' : 'member';
-  const { state: audio, retry: retryAudioFile } = useAudioViewState({ meetingId });
+  const { state: audio, retry: retryAudioFile } = useAudioViewState({
+    meetingId,
+    endedAt: meetingDetailQuery.data?.endedAt ?? null,
+  });
 
   const getTabHref = (nextTab: CompletedMeetingTab) =>
     `/teams/${encodeURIComponent(teamId)}/meetings/${meetingId}?tab=${nextTab}`;

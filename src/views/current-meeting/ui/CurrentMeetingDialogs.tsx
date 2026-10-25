@@ -5,10 +5,16 @@ import { MeetingEditNoticeDialog } from './MeetingEditNoticeDialog';
 import { MeetingEndedDialog } from './MeetingEndedDialog';
 import { RecordingStartDialog } from './RecordingStartDialog';
 import { RecordingStartedDialog } from './RecordingStartedDialog';
+import { RecordingStorageNoticeDialog } from './RecordingStorageNoticeDialog';
 
 export const CurrentMeetingDialogs = () => {
-  const { recording, meetingEndedNotice, meetingInfoEdit, recordingStartedNotice } =
-    useCurrentMeetingContext();
+  const {
+    recording,
+    meetingEndedNotice,
+    meetingInfoEdit,
+    recordingStartedNotice,
+    recordingStorageNotice,
+  } = useCurrentMeetingContext();
 
   return (
     <>
@@ -28,8 +34,13 @@ export const CurrentMeetingDialogs = () => {
         isOpen={recordingStartedNotice.isRecordingStartedNoticeOpen}
         onOpenChange={recordingStartedNotice.setIsRecordingStartedNoticeOpen}
       />
+      <RecordingStorageNoticeDialog
+        notice={recordingStorageNotice.notice}
+        onClose={recordingStorageNotice.closeNotice}
+      />
       <MeetingEndedDialog
         isOpen={meetingEndedNotice.isMeetingEndedNoticeOpen}
+        serverEnd={meetingEndedNotice.serverEnd}
         onConfirm={meetingEndedNotice.goToResult}
         onGoHome={meetingEndedNotice.goHome}
       />

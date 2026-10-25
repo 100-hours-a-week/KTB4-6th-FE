@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { startKakaoLogin } from '@/features/auth';
 import { useHome } from '@/features/home';
 import { useStartTeamSpace } from '@/features/team-space';
+import { breakSentences } from '@/shared/lib';
 import { useAppToast } from '@/shared/ui';
 import { TeamSpaceStartSheet } from './TeamSpaceStartSheet';
 
@@ -116,9 +117,9 @@ export const LoginButton = ({
       {loginError ? (
         <p
           role="alert"
-          className="w-full max-w-[300px] rounded-xl bg-danger-bg px-4 py-3 text-center text-sm text-danger"
+          className="w-full max-w-[300px] rounded-xl bg-danger-bg px-4 py-3 text-center text-sm break-keep whitespace-pre-line text-danger"
         >
-          {loginError}
+          {breakSentences(loginError)}
         </p>
       ) : null}
     </div>
