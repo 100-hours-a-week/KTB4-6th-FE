@@ -19,9 +19,9 @@ const isPositiveSafeInteger = (value: unknown): value is number =>
 const isNonNegativeSafeInteger = (value: unknown): value is number =>
   typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
 
-const toSpeakerName = (speaker: unknown) => {
+const toSpeakerName = (speaker: unknown, speakerId: unknown) => {
   if (typeof speaker === 'string' && speaker.trim() !== '') return speaker.trim();
-  if (typeof speaker === 'number' && Number.isFinite(speaker)) return `발화자 ${speaker}`;
+  if (isNonNegativeSafeInteger(speakerId)) return `화자 ${speakerId + 1}`;
   return null;
 };
 
@@ -64,6 +64,6 @@ export const parseTranscriptCreatedEvent = (data: string): TranscriptCreatedEven
       ? {}
       : { endedAtMs: segment.endedAtMs }),
     recognizedAt: segment.recognizedAt,
-    speakerName: toSpeakerName(segment.speaker),
+    speakerName: toSpeakerName(segment.speaker, segment.speakerId),
   };
 };
