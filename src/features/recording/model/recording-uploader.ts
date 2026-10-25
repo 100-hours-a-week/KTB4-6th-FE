@@ -1,5 +1,6 @@
 'use client';
 
+import axios from 'axios';
 import { create } from 'zustand';
 import { captureException, parseServerDate } from '@/shared/lib';
 import { completeAudioFileUpload } from '../api/complete-audio-file-upload';
@@ -23,6 +24,8 @@ import { buildRecordingFile, type RecordingFile } from './recording-file';
 const RETRY_DELAYS_MS = [0, 5_000, 15_000, 60_000];
 const UPLOAD_URL_EXPIRY_MARGIN_MS = 30_000;
 const STALE_RECORDING_AGE_MS = 3 * 60 * 60 * 1000;
+
+type UploadStage = 'url' | 'put' | 'complete';
 
 class UploadUrlExpiredError extends Error {
   constructor() {
@@ -81,8 +84,12 @@ const runUpload = async (
     await putPendingUpload(next).catch(() => {});
   };
 
+  let stage: UploadStage = 'url';
+  let attempts = 0;
+
   const uploadOnce = async () => {
     let { uploadTarget, storedFile } = upload;
+    stage = 'url';
 
     if (!uploadTarget || !storedFile) {
       if (!recordingFile) throw new Error('저장된 녹음 파일이 없습니다.');
@@ -95,11 +102,13 @@ const runUpload = async (
         throw new UploadUrlExpiredError();
       }
 
+      stage = 'put';
       await uploadAudioFile(uploadTarget.uploadUrl, file);
       storedFile = { fileSizeBytes: file.size, durationMs };
       await saveUpload({ ...upload, storedFile });
     }
 
+    stage = 'complete';
     try {
       await completeAudioFileUpload({ audioFileId: uploadTarget.audioFileId, ...storedFile });
     } catch (error) {
@@ -110,6 +119,7 @@ const runUpload = async (
   let lastError: unknown;
   for (const delayMs of RETRY_DELAYS_MS) {
     await wait(delayMs);
+    attempts += 1;
     try {
       await uploadOnce();
       await clearUploadedRecording(recordingSessionId);
@@ -124,7 +134,11 @@ const runUpload = async (
     tags: {
       feature: 'recording-upload',
       'recording.session_id': recordingSessionId,
-      'recording.upload_stage': 'upload',
+      'recording.upload_stage': stage,
+      'recording.upload_attempts': attempts,
+      ...(axios.isAxiosError(lastError) && {
+        'api.status': lastError.response?.status ?? 'network',
+      }),
     },
   });
 };

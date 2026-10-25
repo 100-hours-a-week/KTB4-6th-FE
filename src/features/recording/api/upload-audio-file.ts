@@ -6,6 +6,6 @@ export const uploadAudioFile = async (uploadUrl: string, file: File): Promise<vo
   });
 
   if (!response.ok) {
-    throw new Error('녹음 파일을 스토리지에 업로드하지 못했습니다.');
+    throw new Error(`녹음 파일을 스토리지에 업로드하지 못했습니다. (HTTP ${response.status})`);
   }
 };
