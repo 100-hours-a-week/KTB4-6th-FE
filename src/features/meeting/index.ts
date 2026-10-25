@@ -25,7 +25,11 @@ export {
   isInvalidMeetingAttendeeError,
   MEETING_ATTENDEE_MAX_COUNT,
 } from './model/meeting-attendee';
-export { isAudioFileExpiredError, isAudioFileNotAvailableError } from './model/audio-file-errors';
+export {
+  isAudioFileExpiredError,
+  isAudioFileNotAvailableError,
+  isAudioFileNotFoundError,
+} from './model/audio-file-errors';
 export { MeetingApiError } from './model/errors';
 export { getMeetingSummaryPhase } from './model/meeting-summary-phase';
 export { meetingKeys, PREFETCHED_MEETING_STALE_TIME } from './model/query-keys';

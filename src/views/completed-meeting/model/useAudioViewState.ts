@@ -1,14 +1,24 @@
 'use client';
 
 import { useState } from 'react';
-import { useAudioFile } from '@/features/meeting';
+import {
+  isAudioFileNotAvailableError,
+  isAudioFileNotFoundError,
+  useAudioFile,
+} from '@/features/meeting';
 import { getAudioRemainingDays } from './get-audio-remaining-days';
+
+const UPLOADING_REFETCH_INTERVAL_MS = 10_000;
+
+const isAudioUploadingError = (error: unknown) =>
+  isAudioFileNotAvailableError(error) || isAudioFileNotFoundError(error);
 
 export type AudioViewState =
   /** 처음 불러오는 중 */
   | { kind: 'loading' }
   /** 음성 파일 조회에 실패 */
   | { kind: 'error' }
+  | { kind: 'uploading' }
   /** 저장 기한이 지났거나 삭제되어 재생할 수 없음 */
   | { kind: 'expired' }
   | {
@@ -36,7 +46,11 @@ interface UseAudioViewStateParams {
  * 음성 파일 조회에 실패했을 때 retry로 다시 조회한다.
  */
 export const useAudioViewState = ({ meetingId, previewAudio }: UseAudioViewStateParams) => {
-  const audioFileQuery = useAudioFile(meetingId, { isEnabled: previewAudio === undefined });
+  const audioFileQuery = useAudioFile(meetingId, {
+    isEnabled: previewAudio === undefined,
+    getRefetchInterval: (error) =>
+      isAudioUploadingError(error) ? UPLOADING_REFETCH_INTERVAL_MS : false,
+  });
   // 남은 일수의 기준 시각은 화면을 연 시점으로 고정한다.
   const [now] = useState(() => Date.now());
 
@@ -52,6 +66,7 @@ export const useAudioViewState = ({ meetingId, previewAudio }: UseAudioViewState
           };
     }
     if (audioFileQuery.isPending) return { kind: 'loading' };
+    if (isAudioUploadingError(audioFileQuery.error)) return { kind: 'uploading' };
     if (audioFileQuery.data === undefined) return { kind: 'error' };
 
     const { audioFileId, status, expiresAt, durationMs } = audioFileQuery.data;

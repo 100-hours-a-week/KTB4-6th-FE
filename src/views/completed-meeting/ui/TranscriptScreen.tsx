@@ -12,6 +12,7 @@ import { useTranscriptViewState } from '../model/useTranscriptViewState';
 import { AudioErrorNotice } from './AudioErrorNotice';
 import { AudioExpiredNotice } from './AudioExpiredNotice';
 import { AudioPlayer } from './AudioPlayer';
+import { AudioUploadingNotice } from './AudioUploadingNotice';
 import { TranscriptLoadErrorState } from './TranscriptLoadErrorState';
 import { TranscriptLoadingState } from './TranscriptLoadingState';
 import { TranscriptTab } from './TranscriptTab';
@@ -111,6 +112,7 @@ export const TranscriptScreen = ({
         )}
       </div>
 
+      {audio.kind === 'uploading' && <AudioUploadingNotice />}
       {isAudioExpired && <AudioExpiredNotice />}
       {!isAudioExpired && isAudioError && (
         <AudioErrorNotice onRetry={audio.kind === 'error' ? onAudioFileRetry : retryAudioSource} />
