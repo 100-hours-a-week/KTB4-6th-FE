@@ -5,8 +5,10 @@ import {
   type MeetingChatListData,
   type MeetingChatMessageData,
 } from '@/features/meeting-chat';
+import { parseServerDate } from '@/shared/lib';
 
 const chatTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
+  timeZone: 'Asia/Seoul',
   hour: '2-digit',
   minute: '2-digit',
   hour12: false,
@@ -25,8 +27,8 @@ export interface ChatMessageViewModel {
   citations: MeetingChatCitation[] | null;
 }
 
-export const formatChatMessageTime = (createdAt: string | Date) =>
-  chatTimeFormatter.format(new Date(createdAt));
+export const formatChatMessageTime = (value: string | Date) =>
+  chatTimeFormatter.format(typeof value === 'string' ? parseServerDate(value) : value);
 
 const toChatMessageViewModel = (
   message: MeetingChatMessageData,
