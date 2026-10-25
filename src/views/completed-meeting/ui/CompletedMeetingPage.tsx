@@ -35,7 +35,10 @@ export const CompletedMeetingPage = ({ teamId, meetingId }: CompletedMeetingPage
     staleTime: PREFETCHED_MEETING_STALE_TIME,
   });
   const viewerRole = team?.role === 'LEADER' ? 'leader' : 'member';
-  const { state: audio, retry: retryAudioFile } = useAudioViewState({ meetingId });
+  const { state: audio, retry: retryAudioFile } = useAudioViewState({
+    meetingId,
+    endedAt: meetingDetailQuery.data?.endedAt ?? null,
+  });
 
   const getTabHref = (nextTab: CompletedMeetingTab) =>
     `/teams/${encodeURIComponent(teamId)}/meetings/${meetingId}?tab=${nextTab}`;
