@@ -170,13 +170,19 @@ export const CurrentMeetingHeader = () => {
           </div>
           <div>
             <dt className="font-semibold text-cool-900">회의 목적</dt>
-            <dd data-clarity-mask="true" className="mt-1 leading-6 break-words text-cool-700">
+            <dd
+              data-clarity-mask="true"
+              className="mt-1 leading-6 break-words whitespace-pre-wrap text-cool-700"
+            >
               {meeting.purpose}
             </dd>
           </div>
           <div>
             <dt className="font-semibold text-cool-900">비고</dt>
-            <dd data-clarity-mask="true" className="mt-1 leading-6 break-words text-cool-700">
+            <dd
+              data-clarity-mask="true"
+              className="mt-1 leading-6 break-words whitespace-pre-wrap text-cool-700"
+            >
               {meeting.note || <span className="text-cool-400">없음</span>}
             </dd>
           </div>
