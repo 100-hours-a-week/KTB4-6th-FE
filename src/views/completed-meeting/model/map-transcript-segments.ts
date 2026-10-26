@@ -1,6 +1,6 @@
 import { toAiSpeakerName } from '@/entities/transcript-speaker';
 import type { MeetingTranscriptSegmentData } from '@/features/meeting';
-import type { TranscriptEntry } from './preview-meeting-transcript';
+import type { TranscriptEntry } from './types';
 
 /** 서버가 발화자 이름을 주지 않았을 때 대신 보여줄 이름. 이 이름도 눌러서 발화자를 연결할 수 있다. */
 export const UNKNOWN_SPEAKER_NAME = '발화자 없음';

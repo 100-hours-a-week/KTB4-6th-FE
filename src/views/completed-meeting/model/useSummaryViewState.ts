@@ -1,8 +1,6 @@
 'use client';
 
 import { getMeetingSummaryPhase, useMeetingSummary } from '@/features/meeting';
-import type { MeetingSummaryStatus } from './preview-completed-meeting';
-import { mockMeetingSummaryMarkdown } from './preview-meeting-summary';
 
 export type SummaryViewState =
   | { kind: 'loading' }
@@ -13,20 +11,12 @@ export type SummaryViewState =
 
 interface UseSummaryViewStateParams {
   meetingId: number;
-  previewStatus?: MeetingSummaryStatus;
 }
 
-export const useSummaryViewState = ({ meetingId, previewStatus }: UseSummaryViewStateParams) => {
-  const summaryQuery = useMeetingSummary(meetingId, { isEnabled: previewStatus === undefined });
+export const useSummaryViewState = ({ meetingId }: UseSummaryViewStateParams) => {
+  const summaryQuery = useMeetingSummary(meetingId);
 
   const getState = (): SummaryViewState => {
-    if (previewStatus) {
-      return previewStatus === 'completed'
-        ? { kind: 'completed', content: mockMeetingSummaryMarkdown }
-        : previewStatus === 'failed'
-          ? { kind: 'failed', isTranscriptEmpty: false }
-          : { kind: previewStatus };
-    }
     if (summaryQuery.isPending) return { kind: 'loading' };
     if (summaryQuery.data === undefined) return { kind: 'error' };
 

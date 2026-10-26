@@ -12,16 +12,10 @@ import { useAppToast } from '@/shared/ui';
 interface UseSummaryRegenerationParams {
   meetingId: number;
   teamId: number;
-  /** 개발 환경 전용 미리보기이면 요청하지 않고 성공한 것처럼 안내만 한다. */
-  isPreview: boolean;
 }
 
 /** 요약 재생성 요청과 그 결과 안내(토스트), 팀 크레딧 잔액 갱신을 맡는다. */
-export const useSummaryRegeneration = ({
-  meetingId,
-  teamId,
-  isPreview,
-}: UseSummaryRegenerationParams) => {
+export const useSummaryRegeneration = ({ meetingId, teamId }: UseSummaryRegenerationParams) => {
   const { showToast } = useAppToast();
   const queryClient = useQueryClient();
   const request = useRequestMeetingSummary(meetingId);
@@ -31,10 +25,6 @@ export const useSummaryRegeneration = ({
    * 요청이 실패해서 같은 모달에서 다시 시도할 수 있어야 할 때만 false다.
    */
   const regenerate = async (reason: string) => {
-    if (isPreview) {
-      showToast('요약 재생성을 시작했습니다', 'success');
-      return true;
-    }
     if (request.isPending) return false;
 
     try {

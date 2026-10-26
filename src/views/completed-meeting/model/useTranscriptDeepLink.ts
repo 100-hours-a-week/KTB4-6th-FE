@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
-import type { TranscriptEntry } from './preview-meeting-transcript';
+import type { TranscriptEntry } from './types';
 
 interface UseTranscriptDeepLinkOptions {
   containerRef: RefObject<HTMLElement | null>;

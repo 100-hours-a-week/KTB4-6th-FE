@@ -5,7 +5,7 @@ import { Dialog } from '@base-ui/react/dialog';
 import { Plus, X } from 'lucide-react';
 import { CUSTOM_NAME_MAX_LENGTH } from '@/features/meeting';
 import { cn, useAppFrameElement, withWaGwa } from '@/shared/lib';
-import type { TeamMember } from '../model/preview-team-members';
+import type { TeamMember } from '../model/types';
 
 /** 연결하려는 대상. 팀 멤버면 memberId가 있고, 직접 입력한 이름·별칭이면 null이다. */
 export interface SpeakerLinkSelection {

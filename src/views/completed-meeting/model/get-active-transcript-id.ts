@@ -1,4 +1,4 @@
-import type { TranscriptEntry } from './preview-meeting-transcript';
+import type { TranscriptEntry } from './types';
 
 /**
  * 재생 위치(ms)에 해당하는 전사 항목의 ID를 돌려준다.

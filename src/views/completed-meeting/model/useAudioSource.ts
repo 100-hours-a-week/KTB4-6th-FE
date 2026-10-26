@@ -11,7 +11,7 @@ const REFRESH_BEFORE_EXPIRY_MS = 60_000;
 const MIN_REFRESH_INTERVAL_MS = 5_000;
 
 export type AudioSourceStatus =
-  /** 재생 주소를 받는 중이거나, 받을 필요가 없음(개발용 미리보기 포함) */
+  /** 재생 주소를 받는 중이거나, 받을 필요가 없음 */
   | 'loading'
   | 'ready'
   /** 보관 기간이 지나 재생 주소를 받을 수 없음 */
@@ -25,7 +25,6 @@ export type AudioSourceStatus =
  *
  * 재생 주소는 만료 시각이 지나면 재생·탐색이 실패하므로, 만료 직전에 새 주소를 받고
  * refreshAudioSource로 실패했을 때도 다시 받을 수 있다.
- * 개발용 미리보기는 음성 파일이 없어 주소를 발급받지 않고 재생할 수 없다.
  */
 export const useAudioSource = (audio: AudioViewState, isEnabled: boolean) => {
   const audioFileId = audio.kind === 'available' ? audio.audioFileId : null;

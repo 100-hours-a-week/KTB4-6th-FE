@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useMeetingTranscriptSearch } from '@/features/meeting';
-import type { TranscriptEntry } from './preview-meeting-transcript';
+import type { TranscriptEntry } from './types';
 
 interface UseTranscriptSearchParams {
   meetingId: number;

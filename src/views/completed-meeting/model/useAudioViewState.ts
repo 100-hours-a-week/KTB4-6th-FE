@@ -25,39 +25,26 @@ export type AudioViewState =
   | { kind: 'expired' }
   | {
       kind: 'available';
-      /** 재생 주소를 발급받을 음성 파일. 개발용 미리보기에서는 null */
-      audioFileId: number | null;
+      /** 재생 주소를 발급받을 음성 파일 */
+      audioFileId: number;
       remainingDays: number;
       durationSeconds: number;
     };
 
-interface PreviewAudio {
-  /** 만료됐으면 null */
-  remainingDays: number | null;
-  durationSeconds: number;
-}
-
 interface UseAudioViewStateParams {
   meetingId: number;
   endedAt: string | null;
-  /** 개발 환경 전용 미리보기 음성 정보. 있으면 조회하지 않고 이 값을 쓴다. */
-  previewAudio?: PreviewAudio;
 }
 
 /**
- * 헤더·더보기 메뉴·전사 화면이 함께 쓰는 음성 파일 상태를 음성 파일 조회 결과(또는 개발용 미리보기)로 정한다.
+ * 헤더·더보기 메뉴·전사 화면이 함께 쓰는 음성 파일 상태를 음성 파일 조회 결과로 정한다.
  * 음성 파일 조회에 실패했을 때 retry로 다시 조회한다.
  */
-export const useAudioViewState = ({
-  meetingId,
-  endedAt,
-  previewAudio,
-}: UseAudioViewStateParams) => {
+export const useAudioViewState = ({ meetingId, endedAt }: UseAudioViewStateParams) => {
   const uploadDeadline = endedAt ? parseServerDate(endedAt).getTime() + UPLOAD_WAIT_LIMIT_MS : null;
   const [uploadCheckedAt, setUploadCheckedAt] = useState(() => Date.now());
   const isWaitingForUpload = uploadDeadline !== null && uploadCheckedAt < uploadDeadline;
   const audioFileQuery = useAudioFile(meetingId, {
-    isEnabled: previewAudio === undefined,
     getRefetchInterval: (error) =>
       isAudioUploadingError(error) && uploadDeadline !== null && Date.now() < uploadDeadline
         ? UPLOADING_REFETCH_INTERVAL_MS
@@ -76,16 +63,6 @@ export const useAudioViewState = ({
   const [now] = useState(() => Date.now());
 
   const getState = (): AudioViewState => {
-    if (previewAudio) {
-      return previewAudio.remainingDays === null
-        ? { kind: 'expired' }
-        : {
-            kind: 'available',
-            audioFileId: null,
-            remainingDays: previewAudio.remainingDays,
-            durationSeconds: previewAudio.durationSeconds,
-          };
-    }
     if (audioFileQuery.isPending) return { kind: 'loading' };
     if (isWaitingForUpload && isAudioUploadingError(audioFileQuery.error)) {
       return { kind: 'uploading' };

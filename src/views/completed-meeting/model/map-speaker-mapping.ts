@@ -1,5 +1,5 @@
 import type { SpeakerMappingData } from '@/features/meeting';
-import type { TeamMember } from './preview-team-members';
+import type { TeamMember } from './types';
 
 /** 발화자 연결 모달이 그릴 데이터 */
 export interface SpeakerLinkDialogData {

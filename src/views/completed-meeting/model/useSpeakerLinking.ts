@@ -6,8 +6,6 @@ import { useAppToast } from '@/shared/ui';
 
 interface UseSpeakerLinkingParams {
   meetingId: number;
-  /** 개발 환경 전용 미리보기이면 저장하지 않고 성공한 것처럼 안내만 한다. */
-  isPreview: boolean;
 }
 
 interface LinkTarget {
@@ -18,7 +16,7 @@ interface LinkTarget {
 }
 
 /** 발화자 연결·해제 저장과 그 결과 안내(토스트)를 맡는다. */
-export const useSpeakerLinking = ({ meetingId, isPreview }: UseSpeakerLinkingParams) => {
+export const useSpeakerLinking = ({ meetingId }: UseSpeakerLinkingParams) => {
   const { showToast } = useAppToast();
   const update = useUpdateSpeakerMapping(meetingId);
 
@@ -28,10 +26,6 @@ export const useSpeakerLinking = ({ meetingId, isPreview }: UseSpeakerLinkingPar
     request: { teamMemberId: number | null; customAlias: string | null },
     successMessage: string,
   ) => {
-    if (isPreview) {
-      showToast(successMessage, 'success');
-      return true;
-    }
     if (update.isPending) return false;
 
     try {
