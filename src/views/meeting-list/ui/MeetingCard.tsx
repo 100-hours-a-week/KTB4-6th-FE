@@ -33,6 +33,7 @@ export const MeetingCard = ({
         <span className="flex min-w-0 items-center gap-1.5">
           <Link
             href={`/teams/${teamId}/meetings/${meeting.id}`}
+            prefetch={false}
             className="truncate text-base font-semibold text-cool-900 outline-none after:absolute after:inset-0 after:rounded-xl focus-visible:after:ring-2 focus-visible:after:ring-brand-600"
           >
             {meeting.title}
