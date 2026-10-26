@@ -47,11 +47,13 @@ export const VoiceEnrollScriptStep = ({
 
   return (
     <>
-      <div className={cn('flex items-start gap-3', hasCloseButton && 'pr-[38px]')}>
+      <div className={cn('flex items-start gap-3', hasCloseButton && 'pr-8')}>
         <div className="flex min-w-0 flex-1 flex-col gap-2">
-          <span className="text-xs leading-none font-semibold text-brand-600">
-            {mode === 'first' ? '처음 한 번만 필요해요' : '음성 정보 수정'}
-          </span>
+          {mode === 'first' && (
+            <span className="text-xs leading-none font-semibold text-brand-600">
+              처음 한 번만 필요해요
+            </span>
+          )}
           <Drawer.Title className="text-[21px] leading-[1.35] font-bold tracking-[-0.035em] text-cool-900">
             {mode === 'first' ? '내 목소리를 등록해 주세요' : '목소리를 다시 등록해요'}
           </Drawer.Title>
@@ -70,13 +72,15 @@ export const VoiceEnrollScriptStep = ({
             )}
           </Drawer.Description>
         </div>
-        <Image
-          src="/brand/mascot/meety-09-microphone.png"
-          alt=""
-          width={64}
-          height={64}
-          className="-mt-1 size-16 shrink-0"
-        />
+        {mode === 'first' && (
+          <Image
+            src="/brand/mascot/meety-09-microphone-transparent.png"
+            alt=""
+            width={80}
+            height={80}
+            className="-mt-2 size-20 shrink-0"
+          />
+        )}
       </div>
 
       <div className="flex items-center gap-2.5 rounded-[10px] bg-brand-50 px-[13px] py-[11px]">

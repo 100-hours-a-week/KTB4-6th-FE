@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import { VoiceEnrollResult } from './VoiceEnrollResult';
 
 interface VoiceEnrollDeniedStepProps {
@@ -7,15 +6,6 @@ interface VoiceEnrollDeniedStepProps {
 
 export const VoiceEnrollDeniedStep = ({ onRetry }: VoiceEnrollDeniedStepProps) => (
   <VoiceEnrollResult
-    image={
-      <Image
-        src="/brand/mascot/meety-10-mic-denied.png"
-        alt=""
-        width={160}
-        height={160}
-        className="size-40 object-contain"
-      />
-    }
     title="마이크 권한이 필요해요"
     description={
       <>
