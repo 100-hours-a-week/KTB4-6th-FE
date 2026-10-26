@@ -9,10 +9,6 @@ interface UseTranscriptSearchParams {
   entries: TranscriptEntry[];
 }
 
-/**
- * 전사 검색 입력과 결과 순회를 관리한다.
- * 검색 결과는 서버가 알려준 발화 중, 화면에 보이는 전사 순서(entries) 그대로 넘어가게 정렬한다.
- */
 export const useTranscriptSearch = ({ meetingId, entries }: UseTranscriptSearchParams) => {
   const [searchInput, setSearchInput] = useState('');
   const [submittedInput, setSubmittedInput] = useState('');
@@ -21,7 +17,6 @@ export const useTranscriptSearch = ({ meetingId, entries }: UseTranscriptSearchP
 
   const { keyword, matches } = useMeetingTranscriptSearch(meetingId, submittedInput);
 
-  /** 입력을 마치고 제출했을 때(Enter, 검색 버튼) 그 시점의 입력값으로 검색한다. */
   const submitSearch = () => setSubmittedInput(searchInput);
 
   const clearSearch = () => {
@@ -36,7 +31,6 @@ export const useTranscriptSearch = ({ meetingId, entries }: UseTranscriptSearchP
     return entries.filter((entry) => matchedSegmentIds.has(entry.id)).map((entry) => entry.id);
   }, [keyword, entries, matches]);
 
-  // 검색어가 바뀌면 결과를 처음부터 다시 본다.
   if (keyword !== previousKeyword) {
     setPreviousKeyword(keyword);
     setMatchIndex(0);

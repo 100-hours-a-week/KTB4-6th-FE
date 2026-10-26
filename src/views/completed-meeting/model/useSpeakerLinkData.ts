@@ -10,7 +10,6 @@ interface UseSpeakerLinkDataParams {
   entry: TranscriptEntry;
 }
 
-/** 발화자 연결 모달이 그릴 데이터를 발화자 매핑 조회 결과로 정한다. */
 export const useSpeakerLinkData = ({ meetingId, entry }: UseSpeakerLinkDataParams) => {
   const mappingQuery = useSpeakerMapping(meetingId, Number(entry.id));
   const fetchedData = useMemo(

@@ -25,7 +25,6 @@ export const CompletedMeetingHeader = ({
   onMenuClick,
 }: CompletedMeetingHeaderProps) => {
   const isAudioExpired = audio.kind === 'expired';
-  // 불러오는 중이거나 조회에 실패하면 저장 기한을 알 수 없어 표시하지 않는다.
   const isAudioDeadlineKnown = audio.kind === 'available' || audio.kind === 'expired';
 
   return (

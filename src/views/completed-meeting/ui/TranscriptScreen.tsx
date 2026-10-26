@@ -66,7 +66,6 @@ export const TranscriptScreen = ({
     isEnabled: status === 'ready',
   });
 
-  // 재생 위치를 직접 옮기는 것은 그 위치를 보겠다는 뜻이라, 스크롤이 멈춰 있었어도 다시 따라간다.
   const handleSeek = (ms: number) => {
     resumeFollowing();
     seek(ms);

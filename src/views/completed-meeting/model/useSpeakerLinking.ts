@@ -9,18 +9,14 @@ interface UseSpeakerLinkingParams {
 }
 
 interface LinkTarget {
-  /** 팀 멤버로 연결하면 멤버 ID */
   memberId: string | null;
-  /** 안내 문구에 쓸 이름 (멤버 이름 또는 직접 입력한 별칭) */
   name: string;
 }
 
-/** 발화자 연결·해제 저장과 그 결과 안내(토스트)를 맡는다. */
 export const useSpeakerLinking = ({ meetingId }: UseSpeakerLinkingParams) => {
   const { showToast } = useAppToast();
   const update = useUpdateSpeakerMapping(meetingId);
 
-  /** 저장했으면 true. 실패하면 false여서 모달을 열어 둔 채 다시 시도할 수 있다. */
   const save = async (
     transcriptSpeakerId: number,
     request: { teamMemberId: number | null; customAlias: string | null },

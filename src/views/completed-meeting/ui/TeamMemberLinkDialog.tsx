@@ -7,7 +7,6 @@ import { CUSTOM_NAME_MAX_LENGTH } from '@/features/meeting';
 import { cn, useAppFrameElement, withWaGwa } from '@/shared/lib';
 import type { TeamMember } from '../model/types';
 
-/** 연결하려는 대상. 팀 멤버면 memberId가 있고, 직접 입력한 이름·별칭이면 null이다. */
 export interface SpeakerLinkSelection {
   memberId: string | null;
   name: string;
@@ -17,17 +16,13 @@ type LinkSelection = { type: 'member'; memberId: string } | { type: 'custom' } |
 
 interface CurrentLink {
   name: string;
-  /** 팀 멤버와 연결된 경우의 멤버 ID. 직접 입력한 별칭이면 없음 */
   memberId?: string;
 }
 
 interface TeamMemberLinkDialogProps {
-  /** 연결되지 않은 발화자의 이름(`발화자 N`) */
   speakerLabel: string;
   members: TeamMember[];
-  /** 이미 연결된 발화자라면 현재 연결 정보 */
   currentLink: CurrentLink | null;
-  /** 저장 요청 중이면 버튼과 닫기를 막는다. */
   isSubmitting: boolean;
   onConnect: (selection: SpeakerLinkSelection) => void;
   onUnlink: () => void;
@@ -91,10 +86,6 @@ const MemberOption = ({
   </label>
 );
 
-/**
- * 전사의 발화자를 팀 멤버 또는 직접 입력한 이름·별칭과 연결하는 모달.
- * 이미 연결된 발화자는 현재 연결을 선택한 상태로 열리고, 연결을 해제할 수 있다.
- */
 export const TeamMemberLinkDialog = ({
   speakerLabel,
   members,
