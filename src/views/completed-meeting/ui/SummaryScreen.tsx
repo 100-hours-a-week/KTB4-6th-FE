@@ -52,6 +52,7 @@ export const SummaryScreen = ({
       {state.kind === 'generating' && <SummaryGeneratingState />}
       {state.kind === 'failed' && (
         <SummaryFailedState
+          isTranscriptEmpty={state.isTranscriptEmpty}
           transcriptHref={transcriptHref}
           isRetrying={isRegenerating}
           onRetry={regenerate}
