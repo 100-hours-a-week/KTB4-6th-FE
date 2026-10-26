@@ -122,7 +122,7 @@ export const VoiceEnrollScriptStep = ({
             <div className="flex items-center gap-2.5">
               <span aria-hidden="true" className="size-2 rounded-full bg-danger" />
               <VoiceEnrollWave levels={waveLevels} />
-              <span className="font-mono text-[13px] leading-none font-medium text-danger tabular-nums">
+              <span className="text-sm leading-none font-semibold text-danger tabular-nums">
                 {formatElapsed(elapsedSeconds)}
               </span>
             </div>

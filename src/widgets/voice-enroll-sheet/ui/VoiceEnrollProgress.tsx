@@ -18,8 +18,10 @@ export const VoiceEnrollProgress = ({ ratios, currentStep }: VoiceEnrollProgress
         </span>
       ))}
     </div>
-    <span className="shrink-0 font-mono text-xs font-medium text-brand-600 tabular-nums">
-      {currentStep} / {ratios.length}
+    <span className="shrink-0 text-[13px] font-semibold text-brand-600 tabular-nums">
+      {currentStep}
+      <span className="mx-0.5">/</span>
+      {ratios.length}
     </span>
   </div>
 );
