@@ -1,17 +1,19 @@
 import { cn } from '@/shared/lib';
 
-type VoiceEnrollSentenceStatus = 'waiting' | 'reading' | 'ready';
+type VoiceEnrollSentenceStatus = 'waiting' | 'reading' | 'ready' | 'recorded';
 
 const SENTENCE_HINTS: Record<VoiceEnrollSentenceStatus, string> = {
   waiting: '녹음을 시작하면 이 문장부터 읽어 주세요',
   reading: '소리 내어 읽어 주세요',
   ready: '다 읽었다면 다음으로 넘어가 주세요',
+  recorded: '이미 녹음한 문장이에요',
 };
 
 const SENTENCE_BORDERS: Record<VoiceEnrollSentenceStatus, string> = {
   waiting: 'border-cool-200',
   reading: 'border-brand-200',
   ready: 'border-brand-600',
+  recorded: 'border-brand-600',
 };
 
 interface VoiceEnrollSentenceCardProps {

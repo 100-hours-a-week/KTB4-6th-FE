@@ -16,11 +16,13 @@ interface VoiceEnrollScriptStepProps {
   phase: VoiceEnrollScriptPhase;
   hasCloseButton: boolean;
   sentenceIndex: number;
+  recordedSentences: readonly boolean[];
   sentenceProgress: number;
   elapsedSeconds: number;
   waveLevels: readonly number[];
   onStart: () => void;
   onNext: () => void;
+  onPrevious: () => void;
 }
 
 export const VoiceEnrollScriptStep = ({
@@ -28,22 +30,33 @@ export const VoiceEnrollScriptStep = ({
   phase,
   hasCloseButton,
   sentenceIndex,
+  recordedSentences,
   sentenceProgress,
   elapsedSeconds,
   waveLevels,
   onStart,
   onNext,
+  onPrevious,
 }: VoiceEnrollScriptStepProps) => {
   const isRecording = phase === 'recording';
   const isProcessing = phase === 'processing';
-  const isReady = isProcessing || (isRecording && sentenceProgress >= 1);
+  const isRecorded = isRecording && recordedSentences[sentenceIndex];
+  const isReady = isProcessing || isRecorded || (isRecording && sentenceProgress >= 1);
   const isLastSentence = sentenceIndex === VOICE_ENROLL_SCRIPT.length - 1;
+  const recordingIndex = recordedSentences.indexOf(false);
   const progressRatios = VOICE_ENROLL_SCRIPT.map((_, index) => {
-    if (isProcessing || index < sentenceIndex) return 1;
-    if (index === sentenceIndex && isRecording) return sentenceProgress;
+    if (isProcessing || recordedSentences[index]) return 1;
+    if (index === recordingIndex && isRecording) return sentenceProgress;
     return 0;
   });
   const nextLabel = !isReady ? '천천히 읽어 주세요' : isLastSentence ? '녹음 완료' : '다음 문장';
+  const sentenceStatus = isRecorded
+    ? 'recorded'
+    : !isRecording && !isProcessing
+      ? 'waiting'
+      : isReady
+        ? 'ready'
+        : 'reading';
 
   return (
     <>
@@ -96,7 +109,7 @@ export const VoiceEnrollScriptStep = ({
         <VoiceEnrollProgress ratios={progressRatios} currentStep={sentenceIndex + 1} />
         <VoiceEnrollSentenceCard
           sentence={VOICE_ENROLL_SCRIPT[sentenceIndex]}
-          status={!isRecording && !isProcessing ? 'waiting' : isReady ? 'ready' : 'reading'}
+          status={sentenceStatus}
         />
       </div>
 
@@ -126,14 +139,25 @@ export const VoiceEnrollScriptStep = ({
                 {formatElapsed(elapsedSeconds)}
               </span>
             </div>
-            <button
-              type="button"
-              disabled={!isReady}
-              onClick={onNext}
-              className="min-h-[54px] w-full rounded-xl bg-brand-600 text-[15px] font-semibold text-white transition-colors duration-200 disabled:bg-cool-100 disabled:text-cool-400"
-            >
-              {nextLabel}
-            </button>
+            <div className="flex w-full gap-2">
+              {sentenceIndex > 0 && (
+                <button
+                  type="button"
+                  onClick={onPrevious}
+                  className="min-h-[54px] shrink-0 rounded-xl border border-cool-300 bg-white px-5 text-[15px] font-semibold text-cool-600 transition-colors hover:bg-cool-50"
+                >
+                  이전 문장
+                </button>
+              )}
+              <button
+                type="button"
+                disabled={!isReady}
+                onClick={onNext}
+                className="min-h-[54px] flex-1 rounded-xl bg-brand-600 text-[15px] font-semibold text-white transition-colors duration-200 disabled:bg-cool-100 disabled:text-cool-400"
+              >
+                {nextLabel}
+              </button>
+            </div>
           </>
         )}
 
