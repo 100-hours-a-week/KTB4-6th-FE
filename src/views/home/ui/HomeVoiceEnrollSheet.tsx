@@ -6,10 +6,16 @@ import { useAppToast } from '@/shared/ui';
 import { VoiceEnrollSheet } from '@/widgets/voice-enroll-sheet';
 
 interface HomeVoiceEnrollSheetProps {
+  teamId: number;
   hasVoiceProfile: boolean;
+  hasVoiceConsent: boolean;
 }
 
-export const HomeVoiceEnrollSheet = ({ hasVoiceProfile }: HomeVoiceEnrollSheetProps) => {
+export const HomeVoiceEnrollSheet = ({
+  teamId,
+  hasVoiceProfile,
+  hasVoiceConsent,
+}: HomeVoiceEnrollSheetProps) => {
   const [isDismissed, setIsDismissed] = useState(false);
   const { showToast } = useAppToast();
   const markVoiceProfileRegistered = useMarkHomeVoiceProfileRegistered();
@@ -22,8 +28,9 @@ export const HomeVoiceEnrollSheet = ({ hasVoiceProfile }: HomeVoiceEnrollSheetPr
 
   return (
     <VoiceEnrollSheet
-      isOpen={!hasVoiceProfile && !isDismissed}
+      isOpen={hasVoiceConsent && !hasVoiceProfile && !isDismissed}
       mode="first"
+      consentHref={`/teams/${teamId}/voice-consent`}
       onDone={handleDone}
       onClose={() => setIsDismissed(true)}
     />

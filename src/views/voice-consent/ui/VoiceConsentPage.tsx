@@ -5,7 +5,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 import { homeKeys, useHome, type HomeData } from '@/features/home';
-import { useAgreeVoiceConsent } from '@/features/voice-profile';
+import {
+  clearDismissedVoiceConsentPrompt,
+  dismissVoiceConsentPrompt,
+  useAgreeVoiceConsent,
+} from '@/features/voice-profile';
 
 interface VoiceConsentPageProps {
   teamId: number;
@@ -39,11 +43,17 @@ export const VoiceConsentPage = ({ teamId, isFullView }: VoiceConsentPageProps) 
   const returnPath = hasVoiceConsent ? `/teams/${teamId}/manage` : consentPath;
   const showFullView = isFullView || hasVoiceConsent;
 
+  const handleDecline = () => {
+    dismissVoiceConsentPrompt(teamId);
+    router.replace(homePath);
+  };
+
   const handleAgree = async () => {
     if (consent.isPending) return;
 
     try {
       await consent.mutateAsync();
+      clearDismissedVoiceConsentPrompt(teamId);
       queryClient.setQueryData<HomeData>(homeKeys.all, (currentHome) =>
         currentHome ? { ...currentHome, hasVoiceConsent: true } : currentHome,
       );
@@ -80,13 +90,24 @@ export const VoiceConsentPage = ({ teamId, isFullView }: VoiceConsentPageProps) 
   return (
     <main className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-white px-6 pt-6 pb-8">
       <header className="flex items-center gap-2">
-        <Link
-          href={showFullView ? returnPath : homePath}
-          aria-label="이전 화면으로 이동"
-          className="-ml-2 flex size-10 items-center justify-center rounded-full text-cool-900 hover:bg-cool-50"
-        >
-          <ChevronLeft className="size-6" />
-        </Link>
+        {showFullView ? (
+          <Link
+            href={returnPath}
+            aria-label="이전 화면으로 이동"
+            className="-ml-2 flex size-10 items-center justify-center rounded-full text-cool-900 hover:bg-cool-50"
+          >
+            <ChevronLeft className="size-6" />
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={handleDecline}
+            aria-label="이전 화면으로 이동"
+            className="-ml-2 flex size-10 items-center justify-center rounded-full text-cool-900 hover:bg-cool-50"
+          >
+            <ChevronLeft className="size-6" />
+          </button>
+        )}
         <span className="text-base font-semibold text-cool-900">
           {showFullView ? '동의 내용 전문' : '음성 정보 수집 동의'}
         </span>
@@ -157,7 +178,7 @@ export const VoiceConsentPage = ({ teamId, isFullView }: VoiceConsentPageProps) 
           <button
             type="button"
             disabled={consent.isPending}
-            onClick={() => router.replace(homePath)}
+            onClick={handleDecline}
             className="min-h-12 rounded-xl font-semibold text-cool-600 disabled:opacity-60"
           >
             동의하지 않음

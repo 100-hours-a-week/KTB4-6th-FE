@@ -134,7 +134,7 @@ export const NicknameScreen = ({ flow }: NicknameScreenProps) => {
 
     if (teamId !== null) {
       setHasJoined(true);
-      router.push(`/teams/${teamId}`);
+      router.push(`/teams/${teamId}/voice-consent`);
     }
   };
 
