@@ -5,7 +5,7 @@ interface VoiceEnrollResultProps {
   image?: ReactNode;
   title: string;
   description: ReactNode;
-  children: ReactNode;
+  children?: ReactNode;
 }
 
 export const VoiceEnrollResult = ({
@@ -24,6 +24,6 @@ export const VoiceEnrollResult = ({
         {description}
       </Drawer.Description>
     </div>
-    <div className="flex flex-col gap-1.5">{children}</div>
+    {children && <div className="flex flex-col gap-1.5">{children}</div>}
   </>
 );

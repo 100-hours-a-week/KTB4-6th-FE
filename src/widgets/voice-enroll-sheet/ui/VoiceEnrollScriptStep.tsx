@@ -1,10 +1,12 @@
 import { Drawer } from '@base-ui/react/drawer';
 import { Mic } from 'lucide-react';
 import Image from 'next/image';
+import { VOICE_PROFILE_SCRIPT, type VoiceQualityWarning } from '@/features/voice-profile';
 import { cn } from '@/shared/lib';
 import type { VoiceEnrollMode, VoiceEnrollScriptPhase } from '../model/types';
-import { VOICE_PROFILE_SCRIPT } from '@/features/voice-profile';
+import { VOICE_QUALITY_MESSAGES } from '../model/voice-quality-message';
 import { VoiceEnrollProgress } from './VoiceEnrollProgress';
+import { VoiceEnrollQualityBanner } from './VoiceEnrollQualityBanner';
 import { VoiceEnrollSentenceCard } from './VoiceEnrollSentenceCard';
 import { VoiceEnrollWave } from './VoiceEnrollWave';
 
@@ -14,12 +16,14 @@ const formatElapsed = (seconds: number) =>
 interface VoiceEnrollScriptStepProps {
   mode: VoiceEnrollMode;
   phase: VoiceEnrollScriptPhase;
+  isStarting: boolean;
   hasCloseButton: boolean;
   sentenceIndex: number;
   recordedSentences: readonly boolean[];
   sentenceProgress: number;
   elapsedSeconds: number;
   waveLevels: readonly number[];
+  qualityWarning: VoiceQualityWarning | null;
   onStart: () => void;
   onNext: () => void;
   onPrevious: () => void;
@@ -28,12 +32,14 @@ interface VoiceEnrollScriptStepProps {
 export const VoiceEnrollScriptStep = ({
   mode,
   phase,
+  isStarting,
   hasCloseButton,
   sentenceIndex,
   recordedSentences,
   sentenceProgress,
   elapsedSeconds,
   waveLevels,
+  qualityWarning,
   onStart,
   onNext,
   onPrevious,
@@ -58,42 +64,54 @@ export const VoiceEnrollScriptStep = ({
         ? 'ready'
         : 'reading';
 
+  const qualityMessage =
+    isRecording && qualityWarning ? VOICE_QUALITY_MESSAGES[qualityWarning] : null;
+
   return (
     <>
-      <div className={cn('flex items-start gap-3', hasCloseButton && 'pr-8')}>
-        <div className="flex min-w-0 flex-1 flex-col gap-2">
-          {mode === 'first' && (
-            <span className="text-xs leading-none font-semibold text-brand-600">
-              처음 한 번만 필요해요
-            </span>
+      <div className="relative">
+        <VoiceEnrollQualityBanner message={qualityMessage} hasCloseButton={hasCloseButton} />
+        <div
+          className={cn(
+            'flex items-start gap-3 transition-opacity duration-300',
+            hasCloseButton && 'pr-8',
+            qualityMessage && 'opacity-0',
           )}
-          <Drawer.Title className="text-[21px] leading-[1.35] font-bold tracking-[-0.035em] text-cool-900">
-            {mode === 'first' ? '내 목소리를 등록해 주세요' : '목소리를 다시 등록해요'}
-          </Drawer.Title>
-          <Drawer.Description className="text-[13.5px] leading-[1.6] text-cool-600">
-            {mode === 'first' ? (
-              <>
-                등록한 목소리는 회의록에서
-                <br />내 발언을 구분하는 데 써요.
-              </>
-            ) : (
-              <>
-                3문장을 처음부터 다시 녹음해요.
-                <br />
-                새로 등록하면 이전 음성 정보는 바뀌어요.
-              </>
+        >
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            {mode === 'first' && (
+              <span className="text-xs leading-none font-semibold text-brand-600">
+                처음 한 번만 필요해요
+              </span>
             )}
-          </Drawer.Description>
+            <Drawer.Title className="text-[21px] leading-[1.35] font-bold tracking-[-0.035em] text-cool-900">
+              {mode === 'first' ? '내 목소리를 등록해 주세요' : '목소리를 다시 등록해요'}
+            </Drawer.Title>
+            <Drawer.Description className="text-[13.5px] leading-[1.6] text-cool-600">
+              {mode === 'first' ? (
+                <>
+                  등록한 목소리는 회의록에서
+                  <br />내 발언을 구분하는 데 써요.
+                </>
+              ) : (
+                <>
+                  3문장을 처음부터 다시 녹음해요.
+                  <br />
+                  새로 등록하면 이전 음성 정보는 바뀌어요.
+                </>
+              )}
+            </Drawer.Description>
+          </div>
+          {mode === 'first' && (
+            <Image
+              src="/brand/mascot/meety-09-microphone-transparent.png"
+              alt=""
+              width={80}
+              height={80}
+              className="-mt-2 size-20 shrink-0"
+            />
+          )}
         </div>
-        {mode === 'first' && (
-          <Image
-            src="/brand/mascot/meety-09-microphone-transparent.png"
-            alt=""
-            width={80}
-            height={80}
-            className="-mt-2 size-20 shrink-0"
-          />
-        )}
       </div>
 
       <div className="flex items-center gap-2.5 rounded-[10px] bg-brand-50 px-[13px] py-[11px]">
@@ -119,8 +137,9 @@ export const VoiceEnrollScriptStep = ({
             <button
               type="button"
               aria-label="녹음 시작"
+              disabled={isStarting}
               onClick={onStart}
-              className="flex size-[72px] items-center justify-center rounded-full bg-brand-600 text-white shadow-[0_0_0_8px_var(--color-brand-100)] transition-transform active:scale-95"
+              className="flex size-[72px] items-center justify-center rounded-full bg-brand-600 text-white shadow-[0_0_0_8px_var(--color-brand-100)] transition-transform active:scale-95 disabled:opacity-60"
             >
               <Mic aria-hidden="true" className="size-7" strokeWidth={1.8} />
             </button>
