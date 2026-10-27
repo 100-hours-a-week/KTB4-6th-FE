@@ -8,6 +8,7 @@ import { CreateMeetingButton } from './CreateMeetingButton';
 import { HomeErrorState } from './HomeErrorState';
 import { HomeHeader } from './HomeHeader';
 import { HomePageSkeleton } from './HomePageSkeleton';
+import { HomeVoiceEnrollSheet } from './HomeVoiceEnrollSheet';
 import { MeetingListSection } from './MeetingListSection';
 import { TeamSummaryCard } from './TeamSummaryCard';
 import { toHomeViewModel } from '../model/home-view-model';
@@ -67,6 +68,8 @@ export const HomePage = ({ teamId, notice }: HomePageProps) => {
         teamId={teamId}
         teamName={team.name}
       />
+
+      <HomeVoiceEnrollSheet hasVoiceProfile={home.hasVoiceProfile} />
     </div>
   );
 };
