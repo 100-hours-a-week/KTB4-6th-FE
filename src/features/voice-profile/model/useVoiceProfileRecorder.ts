@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import {
+  captureException,
   countPcmSamples,
   createPcmCapture,
   ensureAacEncodingSupported,
@@ -22,6 +23,7 @@ import {
   type VoiceQualityWarning,
 } from './voice-quality';
 import { EMPTY_WAVE_LEVELS, pushWaveLevel } from './voice-wave';
+import { buildVoiceProfileFile } from './voice-profile-file';
 
 export type VoiceProfileRecorderStatus =
   | 'idle'
@@ -31,7 +33,8 @@ export type VoiceProfileRecorderStatus =
   | 'completed'
   | 'denied'
   | 'unsupported'
-  | 'unavailable';
+  | 'unavailable'
+  | 'fileFailed';
 
 interface RecorderState {
   status: VoiceProfileRecorderStatus;
@@ -41,6 +44,7 @@ interface RecorderState {
   totalSamples: number;
   qualityWarning: VoiceQualityWarning | null;
   waveLevels: number[];
+  file: File | null;
 }
 
 const INITIAL_STATE: RecorderState = {
@@ -51,6 +55,7 @@ const INITIAL_STATE: RecorderState = {
   totalSamples: 0,
   qualityWarning: null,
   waveLevels: EMPTY_WAVE_LEVELS,
+  file: null,
 };
 
 const LAST_SENTENCE_INDEX = VOICE_PROFILE_SCRIPT.length - 1;
@@ -149,12 +154,22 @@ export const useVoiceProfileRecorder = () => {
     if (session !== sessionRef.current) return;
 
     releaseCapture();
-    setState((current) => ({
-      ...current,
-      status: 'completed',
-      recordedCount: VOICE_PROFILE_SCRIPT.length,
-      qualityWarning: null,
-    }));
+    try {
+      const file = await buildVoiceProfileFile(sentenceChunksRef.current);
+      if (session !== sessionRef.current) return;
+      sentenceChunksRef.current = [];
+      setState((current) => ({
+        ...current,
+        status: 'completed',
+        recordedCount: VOICE_PROFILE_SCRIPT.length,
+        qualityWarning: null,
+        file,
+      }));
+    } catch (error) {
+      if (session !== sessionRef.current) return;
+      captureException(error, { tags: { feature: 'voice-profile-file' } });
+      setState((current) => ({ ...current, status: 'fileFailed', qualityWarning: null }));
+    }
   };
 
   const next = () => {
@@ -206,6 +221,7 @@ export const useVoiceProfileRecorder = () => {
     elapsedSeconds: Math.floor(state.totalSamples / PCM_SAMPLE_RATE),
     qualityWarning: state.qualityWarning,
     waveLevels: state.waveLevels,
+    file: state.file,
     start,
     next,
     previous,
