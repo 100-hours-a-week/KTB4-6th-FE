@@ -13,6 +13,14 @@ import {
   type PcmCapture,
 } from '@/shared/lib';
 import { getMinSentenceSamples, VOICE_PROFILE_SCRIPT } from './voice-profile-script';
+import {
+  analyzePcmChunk,
+  EMPTY_VOICE_QUALITY_TRACKER,
+  evaluateVoiceQuality,
+  startNextSentence,
+  trackPcmChunk,
+  type VoiceQualityWarning,
+} from './voice-quality';
 
 export type VoiceProfileRecorderStatus =
   | 'idle'
@@ -30,6 +38,7 @@ interface RecorderState {
   recordedCount: number;
   sentenceSamples: number;
   totalSamples: number;
+  qualityWarning: VoiceQualityWarning | null;
 }
 
 const INITIAL_STATE: RecorderState = {
@@ -38,6 +47,7 @@ const INITIAL_STATE: RecorderState = {
   recordedCount: 0,
   sentenceSamples: 0,
   totalSamples: 0,
+  qualityWarning: null,
 };
 
 const LAST_SENTENCE_INDEX = VOICE_PROFILE_SCRIPT.length - 1;
@@ -59,6 +69,7 @@ export const useVoiceProfileRecorder = () => {
   const captureRef = useRef<PcmCapture | null>(null);
   const recordingIndexRef = useRef(0);
   const sentenceChunksRef = useRef<Int16Array[][]>([]);
+  const qualityTrackerRef = useRef(EMPTY_VOICE_QUALITY_TRACKER);
 
   const releaseCapture = () => {
     if (captureRef.current) releasePcmCapture(captureRef.current);
@@ -76,11 +87,15 @@ export const useVoiceProfileRecorder = () => {
   const handleChunk = (session: number) => (chunk: ArrayBuffer) => {
     if (session !== sessionRef.current) return;
     const samples = countPcmSamples(chunk);
-    sentenceChunksRef.current[recordingIndexRef.current].push(new Int16Array(chunk));
+    const pcm = new Int16Array(chunk);
+    sentenceChunksRef.current[recordingIndexRef.current].push(pcm);
+    qualityTrackerRef.current = trackPcmChunk(qualityTrackerRef.current, analyzePcmChunk(pcm));
+    const qualityWarning = evaluateVoiceQuality(qualityTrackerRef.current);
     setState((current) => ({
       ...current,
       sentenceSamples: current.sentenceSamples + samples,
       totalSamples: current.totalSamples + samples,
+      qualityWarning,
     }));
   };
 
@@ -113,6 +128,7 @@ export const useVoiceProfileRecorder = () => {
       captureRef.current = capture;
       recordingIndexRef.current = 0;
       sentenceChunksRef.current = VOICE_PROFILE_SCRIPT.map(() => []);
+      qualityTrackerRef.current = EMPTY_VOICE_QUALITY_TRACKER;
       startPcmCapture(capture, handleChunk(session));
       setState((current) => ({ ...current, status: 'recording' }));
     } catch (error) {
@@ -132,6 +148,7 @@ export const useVoiceProfileRecorder = () => {
       ...current,
       status: 'completed',
       recordedCount: VOICE_PROFILE_SCRIPT.length,
+      qualityWarning: null,
     }));
   };
 
@@ -150,6 +167,7 @@ export const useVoiceProfileRecorder = () => {
     }
 
     recordingIndexRef.current = sentenceIndex + 1;
+    qualityTrackerRef.current = startNextSentence(qualityTrackerRef.current);
     setState((current) => ({
       ...current,
       sentenceIndex: current.sentenceIndex + 1,
@@ -168,6 +186,7 @@ export const useVoiceProfileRecorder = () => {
     releaseCapture();
     recordingIndexRef.current = 0;
     sentenceChunksRef.current = [];
+    qualityTrackerRef.current = EMPTY_VOICE_QUALITY_TRACKER;
     setState(INITIAL_STATE);
   };
 
@@ -180,6 +199,7 @@ export const useVoiceProfileRecorder = () => {
         ? state.sentenceSamples / getMinSentenceSamples(state.recordedCount)
         : 1,
     elapsedSeconds: Math.floor(state.totalSamples / PCM_SAMPLE_RATE),
+    qualityWarning: state.qualityWarning,
     start,
     next,
     previous,
