@@ -32,6 +32,7 @@ export interface HomeData {
   meetingMetrics: HomeMeetingMetricsData;
   todayMeetingCount: number;
   todayMeetings: HomeTodayMeetingData[];
+  hasVoiceProfile: boolean;
 }
 
 export interface HomeResponse {

@@ -1,5 +1,4 @@
-import { captureException } from '@/shared/lib';
-import { PCM_SAMPLE_RATE } from './pcm-capture';
+import { captureException, PCM_SAMPLE_RATE } from '@/shared/lib';
 import { getNextRecordingChunkPosition } from './recording-chunk-store';
 import { isIndexedDbSupported } from './recording-db';
 import { finishRecordingEncoding } from './recording-encoder';

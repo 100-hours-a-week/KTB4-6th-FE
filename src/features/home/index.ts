@@ -5,6 +5,7 @@ export { getTeamHomePath, HOME_NOTICE_MEETING_DELETED } from './model/home-notic
 export { useMeetingDeletedRedirect } from './model/useMeetingDeletedRedirect';
 export { homeKeys } from './model/query-keys';
 export { useHome } from './model/useHome';
+export { useMarkHomeVoiceProfileRegistered } from './model/useMarkHomeVoiceProfileRegistered';
 export type {
   HomeData,
   HomeMeetingMetricsData,

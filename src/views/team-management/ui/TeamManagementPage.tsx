@@ -11,6 +11,7 @@ import { TeamLeaveAction } from './TeamLeaveAction';
 import { TeamManagementContentSkeleton } from './TeamManagementContentSkeleton';
 import { TeamManagementErrorState } from './TeamManagementErrorState';
 import { TeamManagementHeader } from './TeamManagementHeader';
+import { VoiceProfileSection } from './VoiceProfileSection';
 
 interface TeamManagementPageProps {
   teamId: number;
@@ -33,6 +34,7 @@ export const TeamManagementPage = ({ teamId }: TeamManagementPageProps) => {
         ) : (
           <>
             <TeamInfoSection role={role} team={team} teamId={teamId} />
+            <VoiceProfileSection />
             <ParticipantListSection role={role} participants={participants} teamId={teamId} />
             {isLeader && <BlockedListSection teamId={teamId} />}
           </>

@@ -1,8 +1,7 @@
 'use client';
 
-import { captureException } from '@/shared/lib';
+import { captureException, countPcmSamples } from '@/shared/lib';
 import { encodeRecordingChunk, recoverRecordingEncoding } from './recording-encoder';
-import { countPcmSamples } from './pcm-capture';
 import {
   getNextRecordingChunkPosition,
   readRecordingChunksFrom,
