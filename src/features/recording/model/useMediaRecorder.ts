@@ -2,17 +2,18 @@
 
 import { create } from 'zustand';
 import type { AudioFormat } from '@/entities/recording';
-import { ensureAacEncodingSupported } from './aac-encoder';
-import { UnsupportedRecordingBrowserError } from './errors';
 import {
   createPcmCapture,
+  ensureAacEncodingSupported,
   flushPcmCapture,
   releasePcmCapture,
   resumePcmCapture,
   startPcmCapture,
-  PCM_AUDIO_FORMAT,
+  UnsupportedRecordingBrowserError,
   type PcmCapture,
-} from './pcm-capture';
+} from '@/shared/lib';
+
+const PCM_AUDIO_FORMAT: AudioFormat = 'pcm_s16le';
 
 type MediaRecorderStatus = 'idle' | 'requesting' | 'ready' | 'recording' | 'paused';
 

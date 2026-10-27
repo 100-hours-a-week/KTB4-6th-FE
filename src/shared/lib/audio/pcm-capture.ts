@@ -1,7 +1,4 @@
-import type { AudioFormat } from '@/entities/recording';
-import { UnsupportedRecordingBrowserError } from './errors';
-
-export const PCM_AUDIO_FORMAT: AudioFormat = 'pcm_s16le';
+import { UnsupportedRecordingBrowserError } from './unsupported-recording-browser-error';
 
 export const PCM_SAMPLE_RATE = 16_000;
 const PCM_BYTES_PER_SAMPLE = 2;

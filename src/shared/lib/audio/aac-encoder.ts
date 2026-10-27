@@ -1,4 +1,4 @@
-import { UnsupportedRecordingBrowserError } from './errors';
+import { UnsupportedRecordingBrowserError } from './unsupported-recording-browser-error';
 import { PCM_SAMPLE_RATE } from './pcm-capture';
 
 const AAC_SAMPLE_RATE = 48_000;
