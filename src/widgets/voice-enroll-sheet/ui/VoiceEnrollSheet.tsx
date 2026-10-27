@@ -2,13 +2,15 @@
 
 import { Drawer } from '@base-ui/react/drawer';
 import { X } from 'lucide-react';
+import { useRegisterVoiceProfile, useVoiceProfileRecorder } from '@/features/voice-profile';
 import { cn, useAppFrameElement } from '@/shared/lib';
 import type { VoiceEnrollMode } from '../model/types';
-import { useVoiceEnrollTempFlow } from '../model/useVoiceEnrollTempFlow';
+import { toVoiceEnrollPhase } from '../model/voice-enroll-phase';
 import { VoiceEnrollDeniedStep } from './VoiceEnrollDeniedStep';
 import { VoiceEnrollDoneStep } from './VoiceEnrollDoneStep';
 import { VoiceEnrollFailedStep } from './VoiceEnrollFailedStep';
 import { VoiceEnrollScriptStep } from './VoiceEnrollScriptStep';
+import { VoiceEnrollUnavailableStep } from './VoiceEnrollUnavailableStep';
 
 interface VoiceEnrollSheetProps {
   isOpen: boolean;
@@ -19,9 +21,20 @@ interface VoiceEnrollSheetProps {
 
 export const VoiceEnrollSheet = ({ isOpen, mode, onDone, onClose }: VoiceEnrollSheetProps) => {
   const frame = useAppFrameElement();
-  const flow = useVoiceEnrollTempFlow();
-  const { phase } = flow;
-  const canClose = mode === 'edit' && phase !== 'processing' && phase !== 'done';
+  const registration = useRegisterVoiceProfile();
+  const recorder = useVoiceProfileRecorder({ onComplete: (file) => registration.mutate(file) });
+  const phase = toVoiceEnrollPhase(recorder.status, registration);
+  const canRecord = phase !== 'unsupported' && phase !== 'unavailable';
+  const canClose = !canRecord || (mode === 'edit' && phase !== 'processing' && phase !== 'done');
+
+  const restart = () => {
+    registration.reset();
+    recorder.reset();
+  };
+
+  const retryRegistration = () => {
+    if (recorder.file) registration.mutate(recorder.file);
+  };
 
   const handleOpenChange = (open: boolean) => {
     if (!open && canClose) {
@@ -31,7 +44,7 @@ export const VoiceEnrollSheet = ({ isOpen, mode, onDone, onClose }: VoiceEnrollS
 
   const handleOpenChangeComplete = (open: boolean) => {
     if (!open) {
-      flow.reset();
+      restart();
     }
   };
 
@@ -56,7 +69,7 @@ export const VoiceEnrollSheet = ({ isOpen, mode, onDone, onClose }: VoiceEnrollS
             {canClose && (
               <Drawer.Close
                 aria-label="음성 등록 닫기"
-                className="absolute top-3.5 right-2.5 flex size-11 items-center justify-center rounded-lg text-cool-600 transition-colors hover:bg-cool-50"
+                className="absolute top-3.5 right-2.5 z-10 flex size-11 items-center justify-center rounded-lg text-cool-600 transition-colors hover:bg-cool-50"
               >
                 <X className="size-4" strokeWidth={2} />
               </Drawer.Close>
@@ -66,21 +79,29 @@ export const VoiceEnrollSheet = ({ isOpen, mode, onDone, onClose }: VoiceEnrollS
               <VoiceEnrollScriptStep
                 mode={mode}
                 phase={phase}
+                isStarting={recorder.status === 'requesting'}
                 hasCloseButton={canClose}
-                sentenceIndex={flow.sentenceIndex}
-                recordedSentences={flow.recordedSentences}
-                sentenceProgress={flow.sentenceProgress}
-                elapsedSeconds={flow.elapsedSeconds}
-                waveLevels={flow.waveLevels}
-                onStart={flow.start}
-                onNext={flow.next}
-                onPrevious={flow.previous}
+                sentenceIndex={recorder.sentenceIndex}
+                recordedSentences={recorder.recordedSentences}
+                sentenceProgress={recorder.sentenceProgress}
+                elapsedSeconds={recorder.elapsedSeconds}
+                waveLevels={recorder.waveLevels}
+                qualityWarning={recorder.qualityWarning}
+                onStart={recorder.start}
+                onNext={recorder.next}
+                onPrevious={recorder.previous}
               />
             )}
             {phase === 'done' && <VoiceEnrollDoneStep mode={mode} onDone={onDone} />}
-            {phase === 'denied' && <VoiceEnrollDeniedStep onRetry={flow.start} />}
+            {phase === 'denied' && <VoiceEnrollDeniedStep onRetry={recorder.start} />}
+            {(phase === 'unsupported' || phase === 'unavailable') && (
+              <VoiceEnrollUnavailableStep reason={phase} onRetry={recorder.start} />
+            )}
             {phase === 'failed' && (
-              <VoiceEnrollFailedStep onRetry={flow.retry} onRestart={flow.reset} />
+              <VoiceEnrollFailedStep
+                onRetry={recorder.file ? retryRegistration : undefined}
+                onRestart={restart}
+              />
             )}
           </Drawer.Popup>
         </Drawer.Viewport>
