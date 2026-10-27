@@ -64,7 +64,11 @@ const INITIAL_STATE: RecorderState = {
   file: null,
 };
 
-export const useVoiceProfileRecorder = () => {
+interface UseVoiceProfileRecorderOptions {
+  onComplete?: (file: File) => void;
+}
+
+export const useVoiceProfileRecorder = ({ onComplete }: UseVoiceProfileRecorderOptions = {}) => {
   const [state, setState] = useState(INITIAL_STATE);
   const sessionRef = useRef(0);
   const captureRef = useRef<PcmCapture | null>(null);
@@ -143,6 +147,7 @@ export const useVoiceProfileRecorder = () => {
         qualityWarning: null,
         file,
       }));
+      onComplete?.(file);
     } catch (error) {
       if (session !== sessionRef.current) return;
       captureException(error, { tags: { feature: 'voice-profile-file' } });
