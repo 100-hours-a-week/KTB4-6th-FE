@@ -1,14 +1,17 @@
-import type { VoiceProfileRecorderStatus } from '@/features/voice-profile';
+import type {
+  VoiceProfileRecorderStatus,
+  VoiceProfileRegisterFailure,
+} from '@/features/voice-profile';
 import type { VoiceEnrollPhase } from './types';
 
 interface RegistrationState {
   isSuccess: boolean;
-  isError: boolean;
+  failure: VoiceProfileRegisterFailure | null;
 }
 
 export const toVoiceEnrollPhase = (
   recorderStatus: VoiceProfileRecorderStatus,
-  registration: RegistrationState,
+  { isSuccess, failure }: RegistrationState,
 ): VoiceEnrollPhase => {
   switch (recorderStatus) {
     case 'denied':
@@ -22,8 +25,9 @@ export const toVoiceEnrollPhase = (
     case 'finishing':
       return 'processing';
     case 'completed':
-      if (registration.isSuccess) return 'done';
-      return registration.isError ? 'failed' : 'processing';
+      if (isSuccess) return 'done';
+      if (failure === 'consent') return 'consent';
+      return failure ? 'failed' : 'processing';
     default:
       return 'idle';
   }

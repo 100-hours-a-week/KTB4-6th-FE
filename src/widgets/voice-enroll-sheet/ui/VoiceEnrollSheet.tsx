@@ -2,10 +2,15 @@
 
 import { Drawer } from '@base-ui/react/drawer';
 import { X } from 'lucide-react';
-import { useRegisterVoiceProfile, useVoiceProfileRecorder } from '@/features/voice-profile';
+import {
+  toVoiceProfileRegisterFailure,
+  useRegisterVoiceProfile,
+  useVoiceProfileRecorder,
+} from '@/features/voice-profile';
 import { cn, useAppFrameElement } from '@/shared/lib';
 import type { VoiceEnrollMode } from '../model/types';
 import { toVoiceEnrollPhase } from '../model/voice-enroll-phase';
+import { VoiceEnrollConsentStep } from './VoiceEnrollConsentStep';
 import { VoiceEnrollDeniedStep } from './VoiceEnrollDeniedStep';
 import { VoiceEnrollDoneStep } from './VoiceEnrollDoneStep';
 import { VoiceEnrollFailedStep } from './VoiceEnrollFailedStep';
@@ -23,9 +28,15 @@ export const VoiceEnrollSheet = ({ isOpen, mode, onDone, onClose }: VoiceEnrollS
   const frame = useAppFrameElement();
   const registration = useRegisterVoiceProfile();
   const recorder = useVoiceProfileRecorder({ onComplete: (file) => registration.mutate(file) });
-  const phase = toVoiceEnrollPhase(recorder.status, registration);
-  const canRecord = phase !== 'unsupported' && phase !== 'unavailable';
-  const canClose = !canRecord || (mode === 'edit' && phase !== 'processing' && phase !== 'done');
+  const registrationFailure = registration.isError
+    ? toVoiceProfileRegisterFailure(registration.error)
+    : null;
+  const phase = toVoiceEnrollPhase(recorder.status, {
+    isSuccess: registration.isSuccess,
+    failure: registrationFailure,
+  });
+  const isBlocked = phase === 'unsupported' || phase === 'unavailable' || phase === 'consent';
+  const canClose = isBlocked || (mode === 'edit' && phase !== 'processing' && phase !== 'done');
 
   const restart = () => {
     registration.reset();
@@ -97,9 +108,15 @@ export const VoiceEnrollSheet = ({ isOpen, mode, onDone, onClose }: VoiceEnrollS
             {(phase === 'unsupported' || phase === 'unavailable') && (
               <VoiceEnrollUnavailableStep reason={phase} onRetry={recorder.start} />
             )}
+            {phase === 'consent' && <VoiceEnrollConsentStep />}
             {phase === 'failed' && (
               <VoiceEnrollFailedStep
-                onRetry={recorder.file ? retryRegistration : undefined}
+                reason={
+                  registrationFailure === 'retry' || registrationFailure === 'rerecord'
+                    ? registrationFailure
+                    : 'file'
+                }
+                onRetry={retryRegistration}
                 onRestart={restart}
               />
             )}
