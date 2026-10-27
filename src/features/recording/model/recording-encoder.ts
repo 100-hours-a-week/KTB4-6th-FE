@@ -1,14 +1,14 @@
-import { captureException } from '@/shared/lib';
 import {
   AAC_ENCODER_CONFIG,
   AAC_FRAME_SAMPLES,
+  captureException,
   closeAacEncoder,
   encodeAacSamples,
   isSameAacEncoding,
   toAacSample,
   UPSAMPLE_FACTOR,
   upsamplePcmChunk,
-} from './aac-encoder';
+} from '@/shared/lib';
 import {
   flushEncodedFrames,
   saveEncodedFrame,

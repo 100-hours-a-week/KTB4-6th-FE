@@ -5,8 +5,7 @@ import {
   Mp4OutputFormat,
   Output,
 } from 'mediabunny';
-import { toAudioSpecificConfig } from './aac-description';
-import { toAacSample } from './aac-encoder';
+import { toAacSample, toAudioSpecificConfig } from '@/shared/lib';
 import { getEncodingMeta, readEncodedFramesFrom } from './encoded-recording-store';
 import type { EncodedFrame } from './recording-db';
 
