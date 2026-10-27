@@ -21,6 +21,7 @@ import {
   trackPcmChunk,
   type VoiceQualityWarning,
 } from './voice-quality';
+import { EMPTY_WAVE_LEVELS, pushWaveLevel } from './voice-wave';
 
 export type VoiceProfileRecorderStatus =
   | 'idle'
@@ -39,6 +40,7 @@ interface RecorderState {
   sentenceSamples: number;
   totalSamples: number;
   qualityWarning: VoiceQualityWarning | null;
+  waveLevels: number[];
 }
 
 const INITIAL_STATE: RecorderState = {
@@ -48,6 +50,7 @@ const INITIAL_STATE: RecorderState = {
   sentenceSamples: 0,
   totalSamples: 0,
   qualityWarning: null,
+  waveLevels: EMPTY_WAVE_LEVELS,
 };
 
 const LAST_SENTENCE_INDEX = VOICE_PROFILE_SCRIPT.length - 1;
@@ -89,13 +92,15 @@ export const useVoiceProfileRecorder = () => {
     const samples = countPcmSamples(chunk);
     const pcm = new Int16Array(chunk);
     sentenceChunksRef.current[recordingIndexRef.current].push(pcm);
-    qualityTrackerRef.current = trackPcmChunk(qualityTrackerRef.current, analyzePcmChunk(pcm));
+    const stats = analyzePcmChunk(pcm);
+    qualityTrackerRef.current = trackPcmChunk(qualityTrackerRef.current, stats);
     const qualityWarning = evaluateVoiceQuality(qualityTrackerRef.current);
     setState((current) => ({
       ...current,
       sentenceSamples: current.sentenceSamples + samples,
       totalSamples: current.totalSamples + samples,
       qualityWarning,
+      waveLevels: pushWaveLevel(current.waveLevels, stats.levelDb),
     }));
   };
 
@@ -200,6 +205,7 @@ export const useVoiceProfileRecorder = () => {
         : 1,
     elapsedSeconds: Math.floor(state.totalSamples / PCM_SAMPLE_RATE),
     qualityWarning: state.qualityWarning,
+    waveLevels: state.waveLevels,
     start,
     next,
     previous,
