@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { VoiceEnrollPhase } from './types';
-import { VOICE_ENROLL_SCRIPT } from './voice-enroll-script';
+import { VOICE_PROFILE_SCRIPT } from '@/features/voice-profile';
 
 const WAVE_BAR_COUNT = 18;
 const TICK_MS = 100;
@@ -11,7 +11,7 @@ const PROCESSING_MS = 1600;
 
 const createWaveLevels = () => Array.from({ length: WAVE_BAR_COUNT }, () => Math.random());
 const IDLE_WAVE_LEVELS: number[] = Array(WAVE_BAR_COUNT).fill(0);
-const NO_RECORDED_SENTENCES: boolean[] = VOICE_ENROLL_SCRIPT.map(() => false);
+const NO_RECORDED_SENTENCES: boolean[] = VOICE_PROFILE_SCRIPT.map(() => false);
 
 const markRecorded = (recorded: boolean[], index: number) =>
   recorded.map((item, itemIndex) => itemIndex === index || item);
@@ -65,7 +65,7 @@ export const useVoiceEnrollTempFlow = () => {
   const next = () => {
     const isNewlyRecorded = !recordedSentences[sentenceIndex];
     setRecordedSentences(markRecorded(recordedSentences, sentenceIndex));
-    if (sentenceIndex === VOICE_ENROLL_SCRIPT.length - 1) {
+    if (sentenceIndex === VOICE_PROFILE_SCRIPT.length - 1) {
       process();
       return;
     }
@@ -88,7 +88,7 @@ export const useVoiceEnrollTempFlow = () => {
   };
 
   const recordingIndex = Math.max(0, recordedSentences.indexOf(false));
-  const sentenceDuration = VOICE_ENROLL_SCRIPT[recordingIndex].length * MS_PER_CHARACTER;
+  const sentenceDuration = VOICE_PROFILE_SCRIPT[recordingIndex].length * MS_PER_CHARACTER;
 
   return {
     phase,

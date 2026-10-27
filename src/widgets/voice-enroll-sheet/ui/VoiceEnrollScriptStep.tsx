@@ -3,7 +3,7 @@ import { Mic } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/shared/lib';
 import type { VoiceEnrollMode, VoiceEnrollScriptPhase } from '../model/types';
-import { VOICE_ENROLL_SCRIPT } from '../model/voice-enroll-script';
+import { VOICE_PROFILE_SCRIPT } from '@/features/voice-profile';
 import { VoiceEnrollProgress } from './VoiceEnrollProgress';
 import { VoiceEnrollSentenceCard } from './VoiceEnrollSentenceCard';
 import { VoiceEnrollWave } from './VoiceEnrollWave';
@@ -42,9 +42,9 @@ export const VoiceEnrollScriptStep = ({
   const isProcessing = phase === 'processing';
   const isRecorded = isRecording && recordedSentences[sentenceIndex];
   const isReady = isProcessing || isRecorded || (isRecording && sentenceProgress >= 1);
-  const isLastSentence = sentenceIndex === VOICE_ENROLL_SCRIPT.length - 1;
+  const isLastSentence = sentenceIndex === VOICE_PROFILE_SCRIPT.length - 1;
   const recordingIndex = recordedSentences.indexOf(false);
-  const progressRatios = VOICE_ENROLL_SCRIPT.map((_, index) => {
+  const progressRatios = VOICE_PROFILE_SCRIPT.map((_, index) => {
     if (isProcessing || recordedSentences[index]) return 1;
     if (index === recordingIndex && isRecording) return sentenceProgress;
     return 0;
@@ -108,7 +108,7 @@ export const VoiceEnrollScriptStep = ({
       <div className="flex flex-col gap-3">
         <VoiceEnrollProgress ratios={progressRatios} currentStep={sentenceIndex + 1} />
         <VoiceEnrollSentenceCard
-          sentence={VOICE_ENROLL_SCRIPT[sentenceIndex]}
+          sentence={VOICE_PROFILE_SCRIPT[sentenceIndex]}
           status={sentenceStatus}
         />
       </div>
