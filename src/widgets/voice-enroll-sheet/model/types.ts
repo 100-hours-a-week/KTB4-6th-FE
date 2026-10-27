@@ -6,6 +6,7 @@ export type VoiceEnrollPhase =
   | 'denied'
   | 'unsupported'
   | 'unavailable'
+  | 'consent'
   | 'failed';
 
 export type VoiceEnrollScriptPhase = Extract<VoiceEnrollPhase, 'idle' | 'recording' | 'processing'>;
