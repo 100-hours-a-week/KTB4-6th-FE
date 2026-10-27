@@ -20,11 +20,18 @@ import { VoiceEnrollUnavailableStep } from './VoiceEnrollUnavailableStep';
 interface VoiceEnrollSheetProps {
   isOpen: boolean;
   mode: VoiceEnrollMode;
+  consentHref?: string;
   onDone: () => void;
   onClose?: () => void;
 }
 
-export const VoiceEnrollSheet = ({ isOpen, mode, onDone, onClose }: VoiceEnrollSheetProps) => {
+export const VoiceEnrollSheet = ({
+  isOpen,
+  mode,
+  consentHref,
+  onDone,
+  onClose,
+}: VoiceEnrollSheetProps) => {
   const frame = useAppFrameElement();
   const registration = useRegisterVoiceProfile();
   const recorder = useVoiceProfileRecorder({ onComplete: (file) => registration.mutate(file) });
@@ -108,7 +115,7 @@ export const VoiceEnrollSheet = ({ isOpen, mode, onDone, onClose }: VoiceEnrollS
             {(phase === 'unsupported' || phase === 'unavailable') && (
               <VoiceEnrollUnavailableStep reason={phase} onRetry={recorder.start} />
             )}
-            {phase === 'consent' && <VoiceEnrollConsentStep />}
+            {phase === 'consent' && <VoiceEnrollConsentStep consentHref={consentHref} />}
             {phase === 'failed' && (
               <VoiceEnrollFailedStep
                 reason={

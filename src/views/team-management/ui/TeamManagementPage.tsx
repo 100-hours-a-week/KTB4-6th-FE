@@ -34,7 +34,7 @@ export const TeamManagementPage = ({ teamId }: TeamManagementPageProps) => {
         ) : (
           <>
             <TeamInfoSection role={role} team={team} teamId={teamId} />
-            <VoiceProfileSection />
+            <VoiceProfileSection teamId={teamId} />
             <ParticipantListSection role={role} participants={participants} teamId={teamId} />
             {isLeader && <BlockedListSection teamId={teamId} />}
           </>
