@@ -33,6 +33,7 @@ export interface HomeData {
   todayMeetingCount: number;
   todayMeetings: HomeTodayMeetingData[];
   hasVoiceProfile: boolean;
+  hasVoiceConsent: boolean;
 }
 
 export interface HomeResponse {
