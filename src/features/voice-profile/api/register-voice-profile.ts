@@ -1,6 +1,20 @@
-const FAKE_REGISTER_DELAY_MS = 1_600;
+import { apiClient } from '@/shared/api';
 
-export const registerVoiceProfile = async (file: File): Promise<void> => {
-  if (file.size === 0) throw new Error('등록할 음성 파일이 비어 있습니다.');
-  await new Promise((resolve) => window.setTimeout(resolve, FAKE_REGISTER_DELAY_MS));
+interface RegisterVoiceProfileResponse {
+  success: boolean;
+  data: {
+    hasVoiceProfile: boolean;
+  } | null;
+  error: unknown | null;
+}
+
+export const registerVoiceProfile = async (): Promise<void> => {
+  const response = await apiClient.post<RegisterVoiceProfileResponse>(
+    '/api/v1/users/me/voice-profile',
+  );
+  const { success, data } = response.data;
+
+  if (!success || data?.hasVoiceProfile !== true) {
+    throw new Error('음성 등록 응답이 올바르지 않습니다.');
+  }
 };
