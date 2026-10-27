@@ -27,13 +27,6 @@ const STALE_RECORDING_AGE_MS = 3 * 60 * 60 * 1000;
 
 type UploadStage = 'url' | 'put' | 'complete';
 
-class UploadUrlExpiredError extends Error {
-  constructor() {
-    super('녹음 파일 업로드 URL이 만료되었습니다.');
-    this.name = 'UploadUrlExpiredError';
-  }
-}
-
 interface RecordingUploadState {
   uploadingSessionIds: number[];
 }
@@ -95,11 +88,9 @@ const runUpload = async (
       if (!recordingFile) throw new Error('저장된 녹음 파일이 없습니다.');
       const { file, durationMs } = recordingFile;
 
-      if (!uploadTarget) {
+      if (!uploadTarget || !isUploadUrlUsable(uploadTarget)) {
         uploadTarget = await createAudioFileUploadUrl(recordingSessionId, file.type);
         await saveUpload({ ...upload, uploadTarget });
-      } else if (!isUploadUrlUsable(uploadTarget)) {
-        throw new UploadUrlExpiredError();
       }
 
       stage = 'put';
@@ -126,7 +117,6 @@ const runUpload = async (
       return;
     } catch (error) {
       lastError = error;
-      if (error instanceof UploadUrlExpiredError) break;
     }
   }
 
