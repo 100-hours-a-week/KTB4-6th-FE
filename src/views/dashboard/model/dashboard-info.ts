@@ -11,7 +11,7 @@ export const DASHBOARD_INFO = {
     label: '맥락에서 벗어난 시간',
     descriptionLines: [
       'AI가 회의 목적과 관련 없다고 판단한 발언 시간을 더한 값이에요.',
-      '전체 회의 시간에서 차지하는 비율도 함께 보여줘요.',
+      'AI 분석이 끝난 회의 시간에서 차지하는 비율도 함께 보여줘요.',
     ],
   },
   targetComparison: {
