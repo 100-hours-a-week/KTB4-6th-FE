@@ -2,12 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createListenerRegistry } from './listener-registry';
-import { parseTranscriptCreatedEvent, type TranscriptCreatedEventData } from './transcript-event';
+import {
+  parseSpeakerMappingUpdatedEvent,
+  parseTranscriptCreatedEvent,
+  type TranscriptCreatedEventData,
+} from './transcript-event';
 
-/**
- * 실시간 전사 이벤트를 회의별 목록으로 쌓는다.
- * 순번이 같은 전사는 한 번만 넣고, 순번 순서로 정렬하며, 새 전사는 구독자에게도 알린다.
- */
+export type SpeakerNames = Record<number, string | null>;
+
 export const useMeetingTranscripts = () => {
   const [transcriptListeners] = useState(() =>
     createListenerRegistry<[TranscriptCreatedEventData]>(),
@@ -16,6 +18,16 @@ export const useMeetingTranscripts = () => {
   const [transcriptsByMeetingId, setTranscriptsByMeetingId] = useState<
     Record<string, TranscriptCreatedEventData[]>
   >({});
+  const [speakerNamesByMeetingId, setSpeakerNamesByMeetingId] = useState<
+    Record<string, SpeakerNames>
+  >({});
+
+  const updateSpeakerNames = useCallback((meetingId: string, speakerNames: SpeakerNames) => {
+    setSpeakerNamesByMeetingId((current) => ({
+      ...current,
+      [meetingId]: { ...current[meetingId], ...speakerNames },
+    }));
+  }, []);
 
   const receiveTranscript = useCallback(
     (meetingId: string, data: string) => {
@@ -33,9 +45,27 @@ export const useMeetingTranscripts = () => {
           (left, right) => left.sequenceNumber - right.sequenceNumber,
         ),
       }));
+      if (transcript.speakerId !== null) {
+        updateSpeakerNames(meetingId, { [transcript.speakerId]: transcript.speakerName });
+      }
       transcriptListeners.emit(meetingId, transcript);
     },
-    [transcriptListeners],
+    [transcriptListeners, updateSpeakerNames],
+  );
+
+  const receiveSpeakerMapping = useCallback(
+    (meetingId: string, data: string) => {
+      const event = parseSpeakerMappingUpdatedEvent(data);
+      if (!event || String(event.meetingId) !== meetingId) return;
+
+      updateSpeakerNames(
+        meetingId,
+        Object.fromEntries(
+          event.mappings.map(({ speakerId, speakerName }) => [speakerId, speakerName]),
+        ),
+      );
+    },
+    [updateSpeakerNames],
   );
 
   useEffect(() => {
@@ -48,7 +78,9 @@ export const useMeetingTranscripts = () => {
 
   return {
     transcriptsByMeetingId,
+    speakerNamesByMeetingId,
     subscribeTranscriptCreated: transcriptListeners.subscribe,
     receiveTranscript,
+    receiveSpeakerMapping,
   };
 };
