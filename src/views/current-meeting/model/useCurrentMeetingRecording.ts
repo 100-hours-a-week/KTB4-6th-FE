@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRecordingSessionStore } from '@/features/recording';
 import type { TeamMemberData } from '@/features/team-management';
 import { getMeetingPhase, isRecordingStartedByMe } from './meeting-phase';
 import { useCurrentMeetingData } from './useCurrentMeetingData';
@@ -34,10 +35,18 @@ export const useCurrentMeetingRecording = ({
     handleStartDialogOpenChange,
   } = useRecordingStartDialog();
   const [isInsufficientCreditDialogOpen, setIsInsufficientCreditDialogOpen] = useState(false);
-  const isRecorderByServer = isRecordingStartedByMe({
-    recordingStartedByTeamMemberId: meeting?.recordingStartedByTeamMemberId,
-    myTeamMemberId,
-  });
+  const recordingElsewhereSessionId = useRecordingSessionStore(
+    (state) => state.recordingElsewhereSessionId,
+  );
+  const isRecordingElsewhere =
+    recordingElsewhereSessionId !== null &&
+    recordingElsewhereSessionId === meeting?.recordingSessionId;
+  const isRecorderByServer =
+    !isRecordingElsewhere &&
+    isRecordingStartedByMe({
+      recordingStartedByTeamMemberId: meeting?.recordingStartedByTeamMemberId,
+      myTeamMemberId,
+    });
 
   const {
     recordingSessionId,
