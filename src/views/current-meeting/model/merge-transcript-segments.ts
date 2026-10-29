@@ -1,22 +1,34 @@
 import { toAiSpeakerName } from '@/entities/transcript-speaker';
 import type { MeetingTranscriptSegmentData } from '@/features/meeting';
-import type { TranscriptCreatedEventData } from '@/features/meeting-sse';
+import type { SpeakerNames, TranscriptCreatedEventData } from '@/features/meeting-sse';
 import type { TranscriptSegment } from './current-meeting';
+
+const toLatestSpeakerName = (
+  speakerNames: SpeakerNames,
+  speakerId: number | null,
+  speakerName: string | null,
+) => (speakerId !== null && speakerId in speakerNames ? speakerNames[speakerId] : speakerName);
 
 const toTranscriptSegmentFromHistory = (
   segment: MeetingTranscriptSegmentData,
+  speakerNames: SpeakerNames,
 ): TranscriptSegment => ({
   id: String(segment.segmentId),
-  speakerName: segment.speakerDisplayName?.trim() || toAiSpeakerName(segment.speakerId),
+  speakerName: toLatestSpeakerName(
+    speakerNames,
+    segment.speakerId,
+    segment.speakerDisplayName?.trim() || toAiSpeakerName(segment.speakerId),
+  ),
   startedAtSeconds: Math.floor(segment.startedAtMs / 1000),
   text: segment.content,
 });
 
 const toTranscriptSegmentFromLive = (
   transcript: TranscriptCreatedEventData,
+  speakerNames: SpeakerNames,
 ): TranscriptSegment => ({
   id: String(transcript.transcriptSegmentId),
-  speakerName: transcript.speakerName,
+  speakerName: toLatestSpeakerName(speakerNames, transcript.speakerId, transcript.speakerName),
   startedAtSeconds: Math.floor(transcript.startedAtMs / 1000),
   text: transcript.text,
 });
@@ -29,14 +41,18 @@ const toTranscriptSegmentFromLive = (
 export const mergeTranscriptSegments = (
   historySegments: MeetingTranscriptSegmentData[],
   liveTranscripts: TranscriptCreatedEventData[],
+  speakerNames: SpeakerNames,
 ): TranscriptSegment[] => {
   const bySequence = new Map<number, TranscriptSegment>();
 
   for (const segment of historySegments) {
-    bySequence.set(segment.sequenceNumber, toTranscriptSegmentFromHistory(segment));
+    bySequence.set(segment.sequenceNumber, toTranscriptSegmentFromHistory(segment, speakerNames));
   }
   for (const transcript of liveTranscripts) {
-    bySequence.set(transcript.sequenceNumber, toTranscriptSegmentFromLive(transcript));
+    bySequence.set(
+      transcript.sequenceNumber,
+      toTranscriptSegmentFromLive(transcript, speakerNames),
+    );
   }
 
   return [...bySequence.entries()]

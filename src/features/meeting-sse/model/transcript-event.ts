@@ -9,7 +9,14 @@ export interface TranscriptCreatedEventData {
   startedAtMs: number;
   endedAtMs?: number;
   recognizedAt: string;
+  speakerId: number | null;
   speakerName: string | null;
+}
+
+export interface SpeakerMappingUpdatedEventData {
+  type: 'SPEAKER_MAPPING_UPDATED';
+  meetingId: number;
+  mappings: { speakerId: number; speakerName: string | null }[];
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -66,6 +73,39 @@ export const parseTranscriptCreatedEvent = (data: string): TranscriptCreatedEven
       ? {}
       : { endedAtMs: segment.endedAtMs }),
     recognizedAt: segment.recognizedAt,
+    speakerId: isNonNegativeSafeInteger(segment.speakerId) ? segment.speakerId : null,
     speakerName: toSpeakerName(segment.speaker, segment.speakerId),
   };
+};
+
+export const parseSpeakerMappingUpdatedEvent = (
+  data: string,
+): SpeakerMappingUpdatedEventData | null => {
+  let value: unknown;
+
+  try {
+    value = JSON.parse(data);
+  } catch {
+    return null;
+  }
+
+  if (
+    !isRecord(value) ||
+    value.type !== 'SPEAKER_MAPPING_UPDATED' ||
+    !isPositiveSafeInteger(value.meetingId) ||
+    !Array.isArray(value.mappings)
+  ) {
+    return null;
+  }
+
+  const mappings: SpeakerMappingUpdatedEventData['mappings'] = [];
+  for (const mapping of value.mappings) {
+    if (!isRecord(mapping) || !isNonNegativeSafeInteger(mapping.speakerId)) return null;
+    mappings.push({
+      speakerId: mapping.speakerId,
+      speakerName: toSpeakerName(mapping.speaker, mapping.speakerId),
+    });
+  }
+
+  return { type: value.type, meetingId: value.meetingId, mappings };
 };
