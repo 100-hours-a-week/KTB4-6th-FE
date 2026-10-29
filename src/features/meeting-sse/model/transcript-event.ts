@@ -22,7 +22,8 @@ const isNonNegativeSafeInteger = (value: unknown): value is number =>
   typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
 
 const toSpeakerName = (speaker: unknown, speakerId: unknown) => {
-  if (typeof speaker === 'string' && speaker.trim() !== '') return speaker.trim();
+  const displayName = isRecord(speaker) ? speaker.displayName : null;
+  if (typeof displayName === 'string' && displayName.trim() !== '') return displayName.trim();
   return toAiSpeakerName(speakerId);
 };
 
