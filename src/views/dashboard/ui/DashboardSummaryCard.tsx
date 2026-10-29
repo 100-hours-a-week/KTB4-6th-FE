@@ -9,7 +9,6 @@ interface DashboardSummaryCardProps {
   overtimeMeetings: number;
   contextOutSeconds: number;
   contextOutRate: number;
-  totalDurationSeconds: number;
 }
 
 interface SummaryMetricProps {
@@ -76,7 +75,6 @@ export const DashboardSummaryCard = ({
   overtimeMeetings,
   contextOutSeconds,
   contextOutRate,
-  totalDurationSeconds,
 }: DashboardSummaryCardProps) => {
   const hasMeetings = totalMeetings > 0;
   const achievedMeetings = Math.max(0, totalMeetings - overtimeMeetings);
@@ -114,11 +112,6 @@ export const DashboardSummaryCard = ({
           <span className="text-[21px] leading-none font-semibold tracking-[-0.025em] whitespace-nowrap text-cool-900 tabular-nums">
             {hasMeetings ? formatDurationSeconds(contextOutSeconds) : EMPTY_VALUE}
           </span>
-          {hasMeetings && (
-            <span className="text-[12.5px] leading-none text-cool-600">
-              총 회의 시간 {formatDurationSeconds(totalDurationSeconds)} 중
-            </span>
-          )}
         </div>
 
         {hasMeetings && (
