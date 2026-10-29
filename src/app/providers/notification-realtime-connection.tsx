@@ -4,6 +4,7 @@ import { useEffect, useEffectEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useParams, usePathname } from 'next/navigation';
 import {
+  getNotificationHref,
   NOTIFICATION_SSE_EVENTS,
   notificationKeys,
   parseNotificationCreatedEvent,
@@ -47,7 +48,11 @@ export const NotificationRealtimeConnection = () => {
       }
     }
 
-    if (!NOTIFICATIONS_PAGE_PATTERN.test(pathname)) {
+    const targetPath = teamId
+      ? getNotificationHref(Number(teamId), notification)?.split('?')[0]
+      : undefined;
+
+    if (!NOTIFICATIONS_PAGE_PATTERN.test(pathname) && targetPath !== pathname) {
       showNotificationBanner(notification);
     }
   });
