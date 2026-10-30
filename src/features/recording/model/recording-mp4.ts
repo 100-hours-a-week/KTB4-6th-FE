@@ -20,7 +20,7 @@ export const buildRecordingMp4 = async (
   if (!meta) throw new Error('녹음 파일 정보를 찾을 수 없습니다.');
 
   const target = new BufferTarget();
-  const output = new Output({ format: new Mp4OutputFormat({ fastStart: 'in-memory' }), target });
+  const output = new Output({ format: new Mp4OutputFormat({ fastStart: 'fragmented' }), target });
   const source = new EncodedAudioPacketSource('aac');
   output.addAudioTrack(source);
   await output.start();
