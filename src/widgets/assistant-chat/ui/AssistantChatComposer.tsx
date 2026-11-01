@@ -1,17 +1,29 @@
-import type { FormEvent } from 'react';
+import type { FormEvent, KeyboardEvent } from 'react';
 import { ArrowUp } from 'lucide-react';
 import { cn } from '@/shared/lib';
 
 interface AssistantChatComposerProps {
   value: string;
+  isAnswering: boolean;
   onValueChange: (value: string) => void;
+  onSubmit: () => void;
 }
 
-export const AssistantChatComposer = ({ value, onValueChange }: AssistantChatComposerProps) => {
-  const canSubmit = value.trim().length > 0;
+export const AssistantChatComposer = ({
+  value,
+  isAnswering,
+  onValueChange,
+  onSubmit,
+}: AssistantChatComposerProps) => {
+  const canSubmit = !isAnswering && value.trim().length > 0;
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (canSubmit) onSubmit();
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter' && event.nativeEvent.isComposing) event.preventDefault();
   };
 
   return (
@@ -23,6 +35,7 @@ export const AssistantChatComposer = ({ value, onValueChange }: AssistantChatCom
         <input
           value={value}
           onChange={(event) => onValueChange(event.target.value)}
+          onKeyDown={handleKeyDown}
           placeholder="미티에게 물어보세요"
           aria-label="미티에게 보낼 질문"
           className="h-10 min-w-0 flex-1 bg-transparent text-sm text-cool-900 outline-none placeholder:text-cool-500"
