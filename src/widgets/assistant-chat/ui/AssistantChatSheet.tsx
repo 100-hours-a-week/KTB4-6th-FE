@@ -3,9 +3,12 @@
 import { useState } from 'react';
 import { Drawer } from '@base-ui/react/drawer';
 import { useAppFrameElement } from '@/shared/lib';
+import { useAssistantChatAutoScroll } from '../model/useAssistantChatAutoScroll';
+import { useAssistantChatTempFlow } from '../model/useAssistantChatTempFlow';
 import { AssistantChatComposer } from './AssistantChatComposer';
 import { AssistantChatHeader } from './AssistantChatHeader';
 import { AssistantChatHelpSheet } from './AssistantChatHelpSheet';
+import { AssistantChatMessageList } from './AssistantChatMessageList';
 import { AssistantChatWelcome } from './AssistantChatWelcome';
 
 interface AssistantChatSheetProps {
@@ -17,9 +20,16 @@ export const AssistantChatSheet = ({ isOpen, onClose }: AssistantChatSheetProps)
   const frame = useAppFrameElement();
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [draft, setDraft] = useState('');
+  const { messages, isAnswering, send } = useAssistantChatTempFlow();
+  const { setContainer, indicatorRef, handleScroll } = useAssistantChatAutoScroll(messages);
 
   const handleOpenChange = (open: boolean, eventDetails: Drawer.Root.ChangeEventDetails) => {
     if (!open && eventDetails.reason !== 'swipe') onClose();
+  };
+
+  const handleSubmit = () => {
+    send(draft.trim());
+    setDraft('');
   };
 
   const handlePickQuestion = (question: string) => {
@@ -36,11 +46,31 @@ export const AssistantChatSheet = ({ isOpen, onClose }: AssistantChatSheetProps)
           <Drawer.Popup className="flex h-full w-full flex-col bg-cool-50 outline-none transition-transform duration-[340ms] ease-[cubic-bezier(0.22,1,0.36,1)] data-ending-style:translate-y-full data-starting-style:translate-y-full">
             <AssistantChatHeader onHelpClick={() => setIsHelpOpen(true)} />
 
-            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 pt-[22px] pb-5">
-              <AssistantChatWelcome />
+            <div className="relative flex min-h-0 flex-1 flex-col">
+              <div
+                ref={setContainer}
+                onScroll={handleScroll}
+                className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 pt-[22px] pb-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              >
+                {messages.length === 0 ? (
+                  <AssistantChatWelcome />
+                ) : (
+                  <AssistantChatMessageList messages={messages} />
+                )}
+              </div>
+              <span
+                ref={indicatorRef}
+                aria-hidden="true"
+                className="pointer-events-none absolute top-0 right-1 h-[60px] w-1 rounded-full bg-brand-300 opacity-0 transition-opacity duration-200"
+              />
             </div>
 
-            <AssistantChatComposer value={draft} onValueChange={setDraft} />
+            <AssistantChatComposer
+              value={draft}
+              isAnswering={isAnswering}
+              onValueChange={setDraft}
+              onSubmit={handleSubmit}
+            />
 
             <AssistantChatHelpSheet
               isOpen={isHelpOpen}
