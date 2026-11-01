@@ -15,7 +15,7 @@ export const AssistantChatComposer = ({ value, onValueChange }: AssistantChatCom
   };
 
   return (
-    <footer className="shrink-0 border-t border-cool-200 bg-white px-3.5 pt-2.5 pb-6">
+    <footer className="shrink-0 border-t border-cool-200 bg-white px-3.5 py-3">
       <form
         onSubmit={handleSubmit}
         className="flex items-center gap-2 rounded-3xl border border-cool-200 bg-cool-50 py-[3px] pr-[3px] pl-4"
