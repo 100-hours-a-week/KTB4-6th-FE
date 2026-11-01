@@ -1,13 +1,16 @@
 'use client';
 
 import { useCallback, useEffect, useRef } from 'react';
-import type { AssistantChatMessage } from './types';
+import type { AssistantChatHistoryStatus, AssistantChatMessage } from './types';
 
 const BOTTOM_THRESHOLD_PX = 80;
 const INDICATOR_HEIGHT_PX = 60;
 const INDICATOR_INSET_PX = 16;
 
-export const useAssistantChatAutoScroll = (messages: AssistantChatMessage[]) => {
+export const useAssistantChatAutoScroll = (
+  messages: AssistantChatMessage[],
+  historyStatus: AssistantChatHistoryStatus,
+) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const indicatorRef = useRef<HTMLSpanElement>(null);
   const isAtBottomRef = useRef(true);
@@ -53,7 +56,15 @@ export const useAssistantChatAutoScroll = (messages: AssistantChatMessage[]) => 
 
     if (isAtBottomRef.current) container.scrollTo({ top: container.scrollHeight });
     updateIndicator();
-  }, [messages.length, lastMessage?.text, updateIndicator]);
+  }, [
+    messages.length,
+    lastMessage?.text,
+    lastMessage?.status,
+    lastMessage?.meetingDraftStatus,
+    lastMessage?.createdMeetingId,
+    historyStatus,
+    updateIndicator,
+  ]);
 
   const handleScroll = () => {
     const container = containerRef.current;
