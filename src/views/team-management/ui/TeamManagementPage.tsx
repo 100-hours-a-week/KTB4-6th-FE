@@ -42,7 +42,7 @@ export const TeamManagementPage = ({ teamId }: TeamManagementPageProps) => {
       </div>
 
       {status === 'success' && role && team && (
-        <footer className="shrink-0">
+        <footer data-floating-anchor className="shrink-0">
           {isLeader ? (
             <TeamDeleteAction hasActiveMeeting={team.hasActiveMeeting} teamId={teamId} />
           ) : (

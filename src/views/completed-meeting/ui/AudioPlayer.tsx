@@ -33,7 +33,10 @@ export const AudioPlayer = ({
   const currentSeconds = Math.min(Math.floor(displayMs / 1000), durationSeconds);
 
   return (
-    <div className="flex shrink-0 items-center gap-3 border-t border-cool-200 bg-white px-5 py-3.5">
+    <div
+      data-floating-anchor
+      className="flex shrink-0 items-center gap-3 border-t border-cool-200 bg-white px-5 py-3.5"
+    >
       <button
         type="button"
         aria-label={isPlaying ? '일시정지' : '재생'}
