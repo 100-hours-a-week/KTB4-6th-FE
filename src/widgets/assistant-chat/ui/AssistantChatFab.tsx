@@ -2,11 +2,19 @@ import Image from 'next/image';
 
 interface AssistantChatFabProps {
   isHintVisible: boolean;
+  bottomOffset: number;
   onOpen: () => void;
 }
 
-export const AssistantChatFab = ({ isHintVisible, onOpen }: AssistantChatFabProps) => (
-  <div className="absolute right-[18px] bottom-[26px] z-50 flex items-end gap-2">
+export const AssistantChatFab = ({
+  isHintVisible,
+  bottomOffset,
+  onOpen,
+}: AssistantChatFabProps) => (
+  <div
+    className="absolute right-[18px] bottom-[26px] z-50 flex items-end gap-2 transition-transform duration-200"
+    style={{ transform: `translateY(-${bottomOffset}px)` }}
+  >
     {isHintVisible && (
       <button
         type="button"
