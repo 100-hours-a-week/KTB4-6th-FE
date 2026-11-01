@@ -4,18 +4,18 @@ import { cn } from '@/shared/lib';
 
 interface AssistantChatComposerProps {
   value: string;
-  isAnswering: boolean;
+  isSendDisabled: boolean;
   onValueChange: (value: string) => void;
   onSubmit: () => void;
 }
 
 export const AssistantChatComposer = ({
   value,
-  isAnswering,
+  isSendDisabled,
   onValueChange,
   onSubmit,
 }: AssistantChatComposerProps) => {
-  const canSubmit = !isAnswering && value.trim().length > 0;
+  const canSubmit = !isSendDisabled && value.trim().length > 0;
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

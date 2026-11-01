@@ -8,20 +8,33 @@ import { useAssistantChatTempFlow } from '../model/useAssistantChatTempFlow';
 import { AssistantChatComposer } from './AssistantChatComposer';
 import { AssistantChatHeader } from './AssistantChatHeader';
 import { AssistantChatHelpSheet } from './AssistantChatHelpSheet';
+import { AssistantChatHistoryState } from './AssistantChatHistoryState';
 import { AssistantChatMessageList } from './AssistantChatMessageList';
 import { AssistantChatWelcome } from './AssistantChatWelcome';
 
 interface AssistantChatSheetProps {
   isOpen: boolean;
+  teamId: number;
   onClose: () => void;
 }
 
-export const AssistantChatSheet = ({ isOpen, onClose }: AssistantChatSheetProps) => {
+export const AssistantChatSheet = ({ isOpen, teamId, onClose }: AssistantChatSheetProps) => {
   const frame = useAppFrameElement();
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [draft, setDraft] = useState('');
-  const { messages, isAnswering, send } = useAssistantChatTempFlow();
-  const { setContainer, indicatorRef, handleScroll } = useAssistantChatAutoScroll(messages);
+  const {
+    messages,
+    historyStatus,
+    isAnswering,
+    send,
+    retryAnswer,
+    confirmMeetingDraft,
+    reloadHistory,
+  } = useAssistantChatTempFlow();
+  const { setContainer, indicatorRef, handleScroll } = useAssistantChatAutoScroll(
+    messages,
+    historyStatus,
+  );
 
   const handleOpenChange = (open: boolean, eventDetails: Drawer.Root.ChangeEventDetails) => {
     if (!open && eventDetails.reason !== 'swipe') onClose();
@@ -52,10 +65,18 @@ export const AssistantChatSheet = ({ isOpen, onClose }: AssistantChatSheetProps)
                 onScroll={handleScroll}
                 className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 pt-[22px] pb-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               >
-                {messages.length === 0 ? (
+                {historyStatus !== 'ready' ? (
+                  <AssistantChatHistoryState status={historyStatus} onRetry={reloadHistory} />
+                ) : messages.length === 0 ? (
                   <AssistantChatWelcome />
                 ) : (
-                  <AssistantChatMessageList messages={messages} />
+                  <AssistantChatMessageList
+                    messages={messages}
+                    teamId={teamId}
+                    onRetryAnswer={retryAnswer}
+                    onConfirmMeetingDraft={confirmMeetingDraft}
+                    onMeetingLinkClick={onClose}
+                  />
                 )}
               </div>
               <span
@@ -67,7 +88,7 @@ export const AssistantChatSheet = ({ isOpen, onClose }: AssistantChatSheetProps)
 
             <AssistantChatComposer
               value={draft}
-              isAnswering={isAnswering}
+              isSendDisabled={isAnswering || historyStatus !== 'ready'}
               onValueChange={setDraft}
               onSubmit={handleSubmit}
             />
