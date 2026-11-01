@@ -1,7 +1,7 @@
 import Image from 'next/image';
+import { ChatMarkdown } from '@/shared/markdown';
 import type { ChatMessageViewModel } from '../model/meeting-chat-messages';
 import { ChatCitationList } from './ChatCitationList';
-import { ChatMarkdown } from './ChatMarkdown';
 
 const getInitial = (displayName: string) => displayName.trim().charAt(0) || '?';
 
