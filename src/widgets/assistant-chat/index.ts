@@ -1,1 +1,1 @@
-export { AssistantChatSheet } from './ui/AssistantChatSheet';
+export { AssistantChatLauncher } from './ui/AssistantChatLauncher';
