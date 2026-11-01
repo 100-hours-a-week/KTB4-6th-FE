@@ -16,9 +16,15 @@ interface AssistantChatSheetProps {
   isOpen: boolean;
   teamId: number;
   onClose: () => void;
+  onMeetingLinkClick: () => void;
 }
 
-export const AssistantChatSheet = ({ isOpen, teamId, onClose }: AssistantChatSheetProps) => {
+export const AssistantChatSheet = ({
+  isOpen,
+  teamId,
+  onClose,
+  onMeetingLinkClick,
+}: AssistantChatSheetProps) => {
   const frame = useAppFrameElement();
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [draft, setDraft] = useState('');
@@ -75,7 +81,7 @@ export const AssistantChatSheet = ({ isOpen, teamId, onClose }: AssistantChatShe
                     teamId={teamId}
                     onRetryAnswer={retryAnswer}
                     onConfirmMeetingDraft={confirmMeetingDraft}
-                    onMeetingLinkClick={onClose}
+                    onMeetingLinkClick={onMeetingLinkClick}
                   />
                 )}
               </div>
