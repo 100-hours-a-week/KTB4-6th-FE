@@ -94,6 +94,7 @@ export const AssistantChatMessageItem = ({
         {message.createdMeetingId !== undefined && (
           <Link
             href={`/teams/${teamId}/meetings/${message.createdMeetingId}`}
+            replace
             onClick={onMeetingLinkClick}
             className="flex min-h-9 items-center gap-0.5 rounded-[18px] border border-brand-200 bg-white pr-2.5 pl-3.5 text-[13px] leading-none font-semibold text-brand-600 transition-colors hover:bg-brand-50"
           >

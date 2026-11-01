@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useFloatingAnchorOffset } from '@/shared/lib';
 import { useAssistantChatAvailability } from '../model/useAssistantChatAvailability';
@@ -11,6 +11,8 @@ const AssistantChatSheet = dynamic(
   () => import('./AssistantChatSheet').then((module) => module.AssistantChatSheet),
   { ssr: false },
 );
+
+const CHAT_HISTORY_STATE_KEY = 'assistantChatOpen';
 
 interface AssistantChatLauncherProps {
   teamId: number;
@@ -23,10 +25,29 @@ export const AssistantChatLauncher = ({ teamId }: AssistantChatLauncherProps) =>
   const bottomOffset = useFloatingAnchorOffset();
   const { isHintVisible, dismissHint } = useAssistantChatHint(isAvailable && !isOpen);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handlePopState = () => setIsOpen(false);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [isOpen]);
+
   const open = () => {
     dismissHint();
     setHasOpened(true);
     setIsOpen(true);
+    window.history.pushState({ [CHAT_HISTORY_STATE_KEY]: true }, '');
+  };
+
+  const close = () => {
+    if (window.history.state?.[CHAT_HISTORY_STATE_KEY]) {
+      window.history.back();
+      return;
+    }
+
+    setIsOpen(false);
   };
 
   return (
@@ -35,7 +56,12 @@ export const AssistantChatLauncher = ({ teamId }: AssistantChatLauncherProps) =>
         <AssistantChatFab isHintVisible={isHintVisible} bottomOffset={bottomOffset} onOpen={open} />
       )}
       {hasOpened && (
-        <AssistantChatSheet isOpen={isOpen} teamId={teamId} onClose={() => setIsOpen(false)} />
+        <AssistantChatSheet
+          isOpen={isOpen}
+          teamId={teamId}
+          onClose={close}
+          onMeetingLinkClick={() => setIsOpen(false)}
+        />
       )}
     </>
   );
