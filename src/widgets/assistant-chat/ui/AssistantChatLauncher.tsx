@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useFloatingAnchorOffset } from '@/shared/lib';
 import { useAssistantChatAvailability } from '../model/useAssistantChatAvailability';
+import { useAssistantChatFabDrag } from '../model/useAssistantChatFabDrag';
 import { useAssistantChatHint } from '../model/useAssistantChatHint';
 import { AssistantChatFab } from './AssistantChatFab';
 
@@ -23,6 +24,7 @@ export const AssistantChatLauncher = ({ teamId }: AssistantChatLauncherProps) =>
   const [hasOpened, setHasOpened] = useState(false);
   const isAvailable = useAssistantChatAvailability();
   const bottomOffset = useFloatingAnchorOffset();
+  const fabDrag = useAssistantChatFabDrag(bottomOffset, isAvailable && !isOpen);
   const { isHintVisible, dismissHint } = useAssistantChatHint(isAvailable && !isOpen);
 
   useEffect(() => {
@@ -52,8 +54,13 @@ export const AssistantChatLauncher = ({ teamId }: AssistantChatLauncherProps) =>
 
   return (
     <>
-      {isAvailable && !isOpen && (
-        <AssistantChatFab isHintVisible={isHintVisible} bottomOffset={bottomOffset} onOpen={open} />
+      {isAvailable && !isOpen && fabDrag.isReady && (
+        <AssistantChatFab
+          isHintVisible={isHintVisible}
+          bottomOffset={bottomOffset}
+          drag={fabDrag}
+          onOpen={open}
+        />
       )}
       {hasOpened && (
         <AssistantChatSheet
