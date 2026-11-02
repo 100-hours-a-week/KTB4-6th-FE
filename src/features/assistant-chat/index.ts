@@ -7,8 +7,11 @@ export type {
   AssistantChatFailureCode,
   AssistantChatMeetingDraftData,
   AssistantChatPhase,
+  AssistantChatQuestionState,
+  AssistantChatQuestionStatus,
   AssistantChatRequestStatus,
   AssistantChatTurnData,
   AssistantChatTurnListData,
 } from './model/types';
+export { useAssistantChatQuestion } from './model/useAssistantChatQuestion';
 export { useAssistantChatTurns } from './model/useAssistantChatTurns';
