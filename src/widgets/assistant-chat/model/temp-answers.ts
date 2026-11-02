@@ -1,4 +1,8 @@
-import type { AssistantChatPhase } from './types';
+import type {
+  AssistantChatMeetingDraft,
+  AssistantChatPhase,
+  AssistantChatReferencedMeeting,
+} from './types';
 
 const ANALYZE_ANSWER = `## QA 이슈 점검 회의 정리
 
@@ -27,12 +31,26 @@ const CREATE_ANSWER = `좋아요, 회의를 만들어 드릴게요.
 
 const MEETING_DRAFT_ANSWER = `회의 초안을 만들었어요.
 
-- **회의 이름**: 주간 싱크
-- **예정 시각**: 오늘 15:00
-- **목표 시간**: 30분
-- **참여자**: 김민수, 이지은, 박서연
-
 내용이 맞으면 확인을 눌러 주세요. 바꿀 부분이 있으면 말로 알려 주셔도 돼요.`;
+
+const MEETING_DRAFT: AssistantChatMeetingDraft = {
+  title: '주간 싱크',
+  purpose: '이번 주 진행 상황 공유',
+  note: null,
+  targetDurationMinutes: 30,
+  attendeeTeamMemberIds: [1, 2, 3],
+  customAttendeeNames: ['외부 디자이너'],
+  scheduledAt: '2026-11-03T15:00:00',
+};
+
+const ANALYZE_REFERENCED_MEETINGS: AssistantChatReferencedMeeting[] = [
+  { meetingId: 101, title: 'QA 이슈 점검', startedAt: '2026-11-02T08:30:00' },
+];
+
+const FIND_REFERENCED_MEETINGS: AssistantChatReferencedMeeting[] = [
+  { meetingId: 102, title: '스프린트 회고', startedAt: '2026-10-20T16:00:00' },
+  { meetingId: 103, title: '주간 싱크', startedAt: '2026-10-13T10:00:00' },
+];
 
 const FALLBACK_ANSWER = `아직 그 질문은 배우는 중이에요.
 
@@ -47,8 +65,20 @@ export const TEMP_CREATED_MEETING_ID = 101;
 const MEETING_LOOKUP_PHASES: AssistantChatPhase[] = ['SEARCHING_MEETINGS', 'READING_MEETING'];
 
 export type TempReply =
-  | { kind: 'answer'; text: string; asksMeetingDetails: boolean; phases: AssistantChatPhase[] }
-  | { kind: 'meetingDraft'; text: string; willFail: boolean; phases: AssistantChatPhase[] }
+  | {
+      kind: 'answer';
+      text: string;
+      asksMeetingDetails: boolean;
+      phases: AssistantChatPhase[];
+      referencedMeetings?: AssistantChatReferencedMeeting[];
+    }
+  | {
+      kind: 'meetingDraft';
+      text: string;
+      meetingDraft: AssistantChatMeetingDraft;
+      willFail: boolean;
+      phases: AssistantChatPhase[];
+    }
   | { kind: 'answerFailure' }
   | { kind: 'historyFailure' };
 
@@ -59,6 +89,7 @@ export const getTempReply = (question: string, isAwaitingMeetingDetails: boolean
     return {
       kind: 'meetingDraft',
       text: MEETING_DRAFT_ANSWER,
+      meetingDraft: MEETING_DRAFT,
       willFail: /실패/.test(question),
       phases: ['PREPARING_MEETING'],
     };
@@ -72,6 +103,7 @@ export const getTempReply = (question: string, isAwaitingMeetingDetails: boolean
       text: ANALYZE_ANSWER,
       asksMeetingDetails: false,
       phases: MEETING_LOOKUP_PHASES,
+      referencedMeetings: ANALYZE_REFERENCED_MEETINGS,
     };
   }
   if (/찾|지난|과거/.test(question)) {
@@ -80,6 +112,7 @@ export const getTempReply = (question: string, isAwaitingMeetingDetails: boolean
       text: FIND_ANSWER,
       asksMeetingDetails: false,
       phases: MEETING_LOOKUP_PHASES,
+      referencedMeetings: FIND_REFERENCED_MEETINGS,
     };
   }
   return { kind: 'answer', text: FALLBACK_ANSWER, asksMeetingDetails: false, phases: [] };
