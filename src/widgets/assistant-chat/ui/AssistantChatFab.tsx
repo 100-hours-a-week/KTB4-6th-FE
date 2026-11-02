@@ -28,14 +28,14 @@ export const AssistantChatFab = ({
       type="button"
       aria-label="미티 채팅 열기"
       onClick={onOpen}
-      className="-mr-2.5 -mb-2.5 size-[92px] shrink-0 transition-transform active:scale-95"
+      className="-mr-[5px] -mb-[5px] size-[81px] shrink-0 transition-transform active:scale-95"
     >
       <Image
-        src="/brand/mascot/meety-12-chat-bubble-transparent.png"
+        src="/brand/mascot/meety-12-chat-button-transparent.png"
         alt=""
-        width={92}
-        height={92}
-        className="size-[92px] drop-shadow-[0_6px_12px_rgba(22,30,43,0.16)]"
+        width={81}
+        height={81}
+        className="size-[81px] drop-shadow-[0_6px_12px_rgba(22,30,43,0.16)]"
       />
     </button>
   </div>

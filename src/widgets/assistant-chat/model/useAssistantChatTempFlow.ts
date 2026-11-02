@@ -6,6 +6,7 @@ import type { AssistantChatHistoryStatus, AssistantChatMessage } from './types';
 
 const HISTORY_LOAD_DELAY_MS = 700;
 const FIRST_TOKEN_DELAY_MS = 900;
+const PHASE_DURATION_MS = 1200;
 const STREAM_INTERVAL_MS = 40;
 const STREAM_CHUNK_LENGTH = 3;
 const MEETING_CREATE_DELAY_MS = 900;
@@ -20,6 +21,7 @@ export const useAssistantChatTempFlow = () => {
   const timersRef = useRef(new Set<ReturnType<typeof setTimeout>>());
   const isAwaitingMeetingDetailsRef = useRef(false);
   const failingDraftIdsRef = useRef(new Set<string>());
+  const resentQuestionsRef = useRef(new Set<string>());
   const isAnswering = messages.some((message) => message.status === 'streaming');
 
   useEffect(() => {
@@ -69,31 +71,42 @@ export const useAssistantChatTempFlow = () => {
   };
 
   const reply = (answerId: string, question: string) => {
-    const tempReply = getTempReply(question, isAwaitingMeetingDetailsRef.current);
+    const tempQuestion = resentQuestionsRef.current.delete(question)
+      ? question.replace(/답변\s*실패/, '')
+      : question;
+    const tempReply = getTempReply(tempQuestion, isAwaitingMeetingDetailsRef.current);
+    const phases = 'phases' in tempReply ? tempReply.phases : [];
 
-    schedule(() => {
-      if (tempReply.kind === 'answerFailure' || tempReply.kind === 'historyFailure') {
-        updateMessage(answerId, { status: 'failed' });
-        return;
-      }
+    phases.forEach((phase, index) => {
+      schedule(() => updateMessage(answerId, { phase }), index * PHASE_DURATION_MS);
+    });
 
-      if (tempReply.kind === 'meetingDraft') {
-        isAwaitingMeetingDetailsRef.current = false;
-        if (tempReply.willFail) failingDraftIdsRef.current.add(answerId);
-        setMessages((prev) =>
-          prev.map((message) =>
-            message.meetingDraftStatus === 'pending' || message.meetingDraftStatus === 'failed'
-              ? { ...message, meetingDraftStatus: 'expired' }
-              : message,
-          ),
-        );
-        streamText(answerId, tempReply.text, { meetingDraftStatus: 'pending' });
-        return;
-      }
+    schedule(
+      () => {
+        if (tempReply.kind === 'answerFailure' || tempReply.kind === 'historyFailure') {
+          updateMessage(answerId, { status: 'failed' });
+          return;
+        }
 
-      isAwaitingMeetingDetailsRef.current = tempReply.asksMeetingDetails;
-      streamText(answerId, tempReply.text);
-    }, FIRST_TOKEN_DELAY_MS);
+        if (tempReply.kind === 'meetingDraft') {
+          isAwaitingMeetingDetailsRef.current = false;
+          if (tempReply.willFail) failingDraftIdsRef.current.add(answerId);
+          setMessages((prev) =>
+            prev.map((message) =>
+              message.meetingDraftStatus === 'pending' || message.meetingDraftStatus === 'failed'
+                ? { ...message, meetingDraftStatus: 'expired' }
+                : message,
+            ),
+          );
+          streamText(answerId, tempReply.text, { meetingDraftStatus: 'pending' });
+          return;
+        }
+
+        isAwaitingMeetingDetailsRef.current = tempReply.asksMeetingDetails;
+        streamText(answerId, tempReply.text);
+      },
+      FIRST_TOKEN_DELAY_MS + phases.length * PHASE_DURATION_MS,
+    );
   };
 
   const send = (question: string) => {
@@ -113,18 +126,15 @@ export const useAssistantChatTempFlow = () => {
     reply(answerId, question);
   };
 
-  const retryAnswer = (answerId: string) => {
-    if (isAnswering) return;
-
+  const resendQuestion = (answerId: string) => {
     const answerIndex = messages.findIndex((message) => message.id === answerId);
-    const question =
-      messages
-        .slice(0, answerIndex)
-        .findLast((message) => message.role === 'user')
-        ?.text.replace(/답변\s*실패/, '') ?? '';
+    const question = messages
+      .slice(0, answerIndex)
+      .findLast((message) => message.role === 'user')?.text;
+    if (!question) return;
 
-    updateMessage(answerId, { text: '', status: 'streaming' });
-    reply(answerId, question);
+    resentQuestionsRef.current.add(question);
+    send(question);
   };
 
   const confirmMeetingDraft = (messageId: string) => {
@@ -163,7 +173,7 @@ export const useAssistantChatTempFlow = () => {
     historyStatus,
     isAnswering,
     send,
-    retryAnswer,
+    resendQuestion,
     confirmMeetingDraft,
     reloadHistory,
   };

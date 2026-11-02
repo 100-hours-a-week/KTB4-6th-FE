@@ -1,3 +1,5 @@
+import type { AssistantChatPhase } from './types';
+
 const ANALYZE_ANSWER = `## QA 이슈 점검 회의 정리
 
 **시간**: 목표 45분 · 실제 51분 (6분 초과)
@@ -42,9 +44,11 @@ export const TEMP_MEETING_CREATED_ANSWER = `'주간 싱크' 회의를 만들었�
 
 export const TEMP_CREATED_MEETING_ID = 101;
 
+const MEETING_LOOKUP_PHASES: AssistantChatPhase[] = ['SEARCHING_MEETINGS', 'READING_MEETING'];
+
 export type TempReply =
-  | { kind: 'answer'; text: string; asksMeetingDetails: boolean }
-  | { kind: 'meetingDraft'; text: string; willFail: boolean }
+  | { kind: 'answer'; text: string; asksMeetingDetails: boolean; phases: AssistantChatPhase[] }
+  | { kind: 'meetingDraft'; text: string; willFail: boolean; phases: AssistantChatPhase[] }
   | { kind: 'answerFailure' }
   | { kind: 'historyFailure' };
 
@@ -52,16 +56,31 @@ export const getTempReply = (question: string, isAwaitingMeetingDetails: boolean
   if (/불러오기\s*실패/.test(question)) return { kind: 'historyFailure' };
   if (/답변\s*실패/.test(question)) return { kind: 'answerFailure' };
   if (isAwaitingMeetingDetails) {
-    return { kind: 'meetingDraft', text: MEETING_DRAFT_ANSWER, willFail: /실패/.test(question) };
+    return {
+      kind: 'meetingDraft',
+      text: MEETING_DRAFT_ANSWER,
+      willFail: /실패/.test(question),
+      phases: ['PREPARING_MEETING'],
+    };
   }
   if (/생성|만들/.test(question)) {
-    return { kind: 'answer', text: CREATE_ANSWER, asksMeetingDetails: true };
+    return { kind: 'answer', text: CREATE_ANSWER, asksMeetingDetails: true, phases: [] };
   }
   if (/분석|정리/.test(question)) {
-    return { kind: 'answer', text: ANALYZE_ANSWER, asksMeetingDetails: false };
+    return {
+      kind: 'answer',
+      text: ANALYZE_ANSWER,
+      asksMeetingDetails: false,
+      phases: MEETING_LOOKUP_PHASES,
+    };
   }
   if (/찾|지난|과거/.test(question)) {
-    return { kind: 'answer', text: FIND_ANSWER, asksMeetingDetails: false };
+    return {
+      kind: 'answer',
+      text: FIND_ANSWER,
+      asksMeetingDetails: false,
+      phases: MEETING_LOOKUP_PHASES,
+    };
   }
-  return { kind: 'answer', text: FALLBACK_ANSWER, asksMeetingDetails: false };
+  return { kind: 'answer', text: FALLBACK_ANSWER, asksMeetingDetails: false, phases: [] };
 };

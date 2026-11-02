@@ -7,11 +7,14 @@ export type AssistantChatMeetingDraftStatus =
 
 export type AssistantChatHistoryStatus = 'loading' | 'error' | 'ready';
 
+export type AssistantChatPhase = 'SEARCHING_MEETINGS' | 'READING_MEETING' | 'PREPARING_MEETING';
+
 export interface AssistantChatMessage {
   id: string;
   role: AssistantChatMessageRole;
   text: string;
   status: AssistantChatMessageStatus;
+  phase?: AssistantChatPhase;
   meetingDraftStatus?: AssistantChatMeetingDraftStatus;
   createdMeetingId?: number;
 }
