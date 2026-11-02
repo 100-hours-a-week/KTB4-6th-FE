@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Drawer } from '@base-ui/react/drawer';
 import { useAppFrameElement } from '@/shared/lib';
 import { useAssistantChatAutoScroll } from '../model/useAssistantChatAutoScroll';
+import { useAssistantChatMemberNames } from '../model/useAssistantChatMemberNames';
 import { useAssistantChatTempFlow } from '../model/useAssistantChatTempFlow';
 import { AssistantChatComposer } from './AssistantChatComposer';
 import { AssistantChatHeader } from './AssistantChatHeader';
@@ -35,8 +36,13 @@ export const AssistantChatSheet = ({
     send,
     resendQuestion,
     confirmMeetingDraft,
+    cancelMeetingDraft,
     reloadHistory,
   } = useAssistantChatTempFlow();
+  const memberNames = useAssistantChatMemberNames(
+    teamId,
+    messages.some((message) => message.meetingDraft),
+  );
   const { setContainer, indicatorRef, handleScroll } = useAssistantChatAutoScroll(
     messages,
     historyStatus,
@@ -79,8 +85,10 @@ export const AssistantChatSheet = ({
                   <AssistantChatMessageList
                     messages={messages}
                     teamId={teamId}
+                    memberNames={memberNames}
                     onResendQuestion={resendQuestion}
                     onConfirmMeetingDraft={confirmMeetingDraft}
+                    onCancelMeetingDraft={cancelMeetingDraft}
                     onMeetingLinkClick={onMeetingLinkClick}
                   />
                 )}

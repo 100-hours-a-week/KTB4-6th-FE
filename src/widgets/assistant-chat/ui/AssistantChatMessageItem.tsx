@@ -4,7 +4,8 @@ import { cn } from '@/shared/lib';
 import { ChatMarkdown } from '@/shared/markdown';
 import type { AssistantChatMessage, AssistantChatPhase } from '../model/types';
 import { AssistantChatAvatar } from './AssistantChatAvatar';
-import { AssistantChatMeetingDraftActions } from './AssistantChatMeetingDraftActions';
+import { AssistantChatMeetingDraftCard } from './AssistantChatMeetingDraftCard';
+import { AssistantChatReferencedMeetings } from './AssistantChatReferencedMeetings';
 
 const MESSAGE_ENTER_CLASS_NAME =
   'motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1.5 motion-safe:duration-200';
@@ -77,18 +78,22 @@ const UserMessage = ({ text }: { text: string }) => (
 interface AssistantChatMessageItemProps {
   message: AssistantChatMessage;
   teamId: number;
+  memberNames: ReadonlyMap<number, string>;
   canResend: boolean;
   onResendQuestion: (messageId: string) => void;
   onConfirmMeetingDraft: (messageId: string) => void;
+  onCancelMeetingDraft: (messageId: string) => void;
   onMeetingLinkClick: () => void;
 }
 
 export const AssistantChatMessageItem = ({
   message,
   teamId,
+  memberNames,
   canResend,
   onResendQuestion,
   onConfirmMeetingDraft,
+  onCancelMeetingDraft,
   onMeetingLinkClick,
 }: AssistantChatMessageItemProps) => {
   if (message.role === 'user') return <UserMessage text={message.text} />;
@@ -107,10 +112,20 @@ export const AssistantChatMessageItem = ({
         ) : (
           <TypingIndicator phase={message.phase} />
         )}
-        {message.meetingDraftStatus && (
-          <AssistantChatMeetingDraftActions
+        {message.referencedMeetings && message.referencedMeetings.length > 0 && (
+          <AssistantChatReferencedMeetings
+            meetings={message.referencedMeetings}
+            teamId={teamId}
+            onMeetingLinkClick={onMeetingLinkClick}
+          />
+        )}
+        {message.meetingDraft && message.meetingDraftStatus && (
+          <AssistantChatMeetingDraftCard
+            draft={message.meetingDraft}
             status={message.meetingDraftStatus}
+            memberNames={memberNames}
             onConfirm={() => onConfirmMeetingDraft(message.id)}
+            onCancel={() => onCancelMeetingDraft(message.id)}
           />
         )}
         {message.createdMeetingId !== undefined && (

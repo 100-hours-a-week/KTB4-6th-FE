@@ -98,12 +98,15 @@ export const useAssistantChatTempFlow = () => {
                 : message,
             ),
           );
-          streamText(answerId, tempReply.text, { meetingDraftStatus: 'pending' });
+          streamText(answerId, tempReply.text, {
+            meetingDraft: tempReply.meetingDraft,
+            meetingDraftStatus: 'pending',
+          });
           return;
         }
 
         isAwaitingMeetingDetailsRef.current = tempReply.asksMeetingDetails;
-        streamText(answerId, tempReply.text);
+        streamText(answerId, tempReply.text, { referencedMeetings: tempReply.referencedMeetings });
       },
       FIRST_TOKEN_DELAY_MS + phases.length * PHASE_DURATION_MS,
     );
@@ -135,6 +138,10 @@ export const useAssistantChatTempFlow = () => {
 
     resentQuestionsRef.current.add(question);
     send(question);
+  };
+
+  const cancelMeetingDraft = (messageId: string) => {
+    updateMessage(messageId, { meetingDraftStatus: 'cancelled' });
   };
 
   const confirmMeetingDraft = (messageId: string) => {
@@ -175,6 +182,7 @@ export const useAssistantChatTempFlow = () => {
     send,
     resendQuestion,
     confirmMeetingDraft,
+    cancelMeetingDraft,
     reloadHistory,
   };
 };
