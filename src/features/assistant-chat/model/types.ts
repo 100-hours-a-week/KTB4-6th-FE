@@ -1,3 +1,5 @@
+import type { AssistantChatApiError } from './errors';
+
 export type AssistantChatRequestStatus = 'ACCEPTED' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
 
 export type AssistantChatPhase = 'SEARCHING_MEETINGS' | 'READING_MEETING' | 'PREPARING_MEETING';
@@ -47,6 +49,43 @@ export interface AssistantChatTurnListData {
   messages: AssistantChatTurnData[];
   nextCursor: number | null;
   hasNext: boolean;
+}
+
+export type AssistantChatStreamEvent =
+  | { type: 'status'; aiRequestId: number; status: AssistantChatRequestStatus }
+  | { type: 'phase'; phase: AssistantChatPhase }
+  | { type: 'delta'; text: string }
+  | {
+      type: 'completed';
+      answer: string;
+      referencedMeetingIds: number[];
+      meetingDraft: AssistantChatMeetingDraftData | null;
+    }
+  | { type: 'failed'; failureCode: AssistantChatFailureCode | null };
+
+export interface AssistantChatStream {
+  requestId: number | null;
+  events: AsyncGenerator<AssistantChatStreamEvent, void, undefined>;
+}
+
+export interface PostAssistantChatQuestionParams {
+  teamId: number;
+  question: string;
+  idempotencyKey: string;
+}
+
+export type AssistantChatQuestionStatus = 'sending' | 'streaming' | 'completed' | 'failed';
+
+export interface AssistantChatQuestionState {
+  requestId: number | null;
+  question: string;
+  status: AssistantChatQuestionStatus;
+  phase: AssistantChatPhase | null;
+  answer: string;
+  referencedMeetingIds: number[];
+  meetingDraft: AssistantChatMeetingDraftData | null;
+  failureCode: AssistantChatFailureCode | null;
+  error: AssistantChatApiError | null;
 }
 
 interface AssistantChatApiErrorPayload {
