@@ -15,15 +15,15 @@ const INT16_FULL_SCALE = 32_768;
 const CLIPPED_SAMPLE = 32_000;
 const SILENCE_DB = -100;
 
-const RECENT_CHUNKS = 20;
-const MIN_RECENT_CHUNKS = 10;
+const RECENT_CHUNKS = 30;
+const MIN_RECENT_CHUNKS = 15;
 const SPEECH_DB = -50;
-const QUIET_SPEECH_DB = -35;
-const NOISY_FLOOR_DB = -42;
-const CLIPPING_RATIO = 0.005;
-const MIN_SPEECH_CHUNKS = 5;
-const NO_SPEECH_MIN_CHUNKS = 30;
-const NO_SPEECH_RATIO = 0.15;
+const QUIET_SPEECH_DB = -45;
+const NOISY_FLOOR_DB = -35;
+const CLIPPING_RATIO = 0.02;
+const MIN_SPEECH_CHUNKS = 8;
+const NO_SPEECH_MIN_CHUNKS = 50;
+const NO_SPEECH_RATIO = 0.08;
 
 export const EMPTY_VOICE_QUALITY_TRACKER: VoiceQualityTracker = {
   recent: [],
