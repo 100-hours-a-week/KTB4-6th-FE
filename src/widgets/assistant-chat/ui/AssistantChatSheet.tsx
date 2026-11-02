@@ -33,7 +33,7 @@ export const AssistantChatSheet = ({
     historyStatus,
     isAnswering,
     send,
-    retryAnswer,
+    resendQuestion,
     confirmMeetingDraft,
     reloadHistory,
   } = useAssistantChatTempFlow();
@@ -79,7 +79,7 @@ export const AssistantChatSheet = ({
                   <AssistantChatMessageList
                     messages={messages}
                     teamId={teamId}
-                    onRetryAnswer={retryAnswer}
+                    onResendQuestion={resendQuestion}
                     onConfirmMeetingDraft={confirmMeetingDraft}
                     onMeetingLinkClick={onMeetingLinkClick}
                   />
