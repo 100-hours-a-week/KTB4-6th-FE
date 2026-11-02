@@ -4,21 +4,32 @@ import type { AssistantChatMeetingDraftStatus } from '../model/types';
 interface AssistantChatMeetingDraftActionsProps {
   status: AssistantChatMeetingDraftStatus;
   onConfirm: () => void;
+  onCancel: () => void;
 }
 
-const ACTION_BUTTON_CLASS_NAME =
+const CONFIRM_BUTTON_CLASS_NAME =
   'flex min-h-9 items-center gap-1.5 rounded-[18px] bg-brand-600 px-3.5 text-[13px] leading-none font-semibold text-white transition-[background-color,transform] hover:bg-brand-700 active:scale-[0.97]';
 
 export const AssistantChatMeetingDraftActions = ({
   status,
   onConfirm,
+  onCancel,
 }: AssistantChatMeetingDraftActionsProps) => {
   if (status === 'pending') {
     return (
-      <button type="button" onClick={onConfirm} className={ACTION_BUTTON_CLASS_NAME}>
-        <Check className="size-[13px]" strokeWidth={2.4} />
-        확인
-      </button>
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="flex min-h-9 items-center rounded-[18px] border border-cool-200 bg-white px-3.5 text-[13px] leading-none font-semibold text-cool-600 transition-colors hover:bg-cool-50"
+        >
+          취소
+        </button>
+        <button type="button" onClick={onConfirm} className={CONFIRM_BUTTON_CLASS_NAME}>
+          <Check className="size-[13px]" strokeWidth={2.4} />
+          확인
+        </button>
+      </div>
     );
   }
 
@@ -46,20 +57,20 @@ export const AssistantChatMeetingDraftActions = ({
     );
   }
 
-  if (status === 'expired') {
+  if (status === 'cancelled' || status === 'expired') {
     return (
       <span className="flex min-h-9 items-center rounded-[18px] border border-cool-200 bg-cool-50 px-[13px] text-[12.5px] leading-none font-medium text-cool-400">
-        새 초안으로 바뀌었어요
+        {status === 'cancelled' ? '취소함' : '새 초안으로 바뀌었어요'}
       </span>
     );
   }
 
   return (
-    <div role="alert" className="flex flex-wrap items-center gap-1.5">
+    <div role="alert" className="flex flex-wrap items-center justify-end gap-1.5">
       <span className="flex min-h-9 items-center rounded-[18px] bg-danger-bg px-[13px] text-[12.5px] leading-none font-semibold text-danger">
         회의를 만들지 못했어요
       </span>
-      <button type="button" onClick={onConfirm} className={ACTION_BUTTON_CLASS_NAME}>
+      <button type="button" onClick={onConfirm} className={CONFIRM_BUTTON_CLASS_NAME}>
         <RotateCw className="size-[13px]" strokeWidth={2.2} />
         다시 시도
       </button>

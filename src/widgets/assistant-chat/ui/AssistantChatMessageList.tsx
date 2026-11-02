@@ -4,8 +4,10 @@ import { AssistantChatMessageItem } from './AssistantChatMessageItem';
 interface AssistantChatMessageListProps {
   messages: AssistantChatMessage[];
   teamId: number;
+  memberNames: ReadonlyMap<number, string>;
   onResendQuestion: (messageId: string) => void;
   onConfirmMeetingDraft: (messageId: string) => void;
+  onCancelMeetingDraft: (messageId: string) => void;
   onMeetingLinkClick: () => void;
 }
 
