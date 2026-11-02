@@ -20,6 +20,37 @@ interface DragSession {
   hasDragged: boolean;
 }
 
+interface SavedFabPosition {
+  side: AssistantChatFabSide;
+  y: number;
+}
+
+const FAB_POSITION_STORAGE_KEY = 'meety:assistant-chat-fab-position';
+
+const readSavedFabPosition = (): SavedFabPosition | null => {
+  try {
+    const stored = window.localStorage.getItem(FAB_POSITION_STORAGE_KEY);
+    if (!stored) return null;
+
+    const parsed: unknown = JSON.parse(stored);
+    if (!parsed || typeof parsed !== 'object') return null;
+
+    const { side, y } = parsed as Record<string, unknown>;
+    if ((side !== 'left' && side !== 'right') || typeof y !== 'number' || !Number.isFinite(y)) {
+      return null;
+    }
+    return { side, y };
+  } catch {
+    return null;
+  }
+};
+
+const saveFabPosition = (position: SavedFabPosition) => {
+  try {
+    window.localStorage.setItem(FAB_POSITION_STORAGE_KEY, JSON.stringify(position));
+  } catch {}
+};
+
 export interface AssistantChatFabDrag {
   position: AssistantChatFabPosition | null;
   side: AssistantChatFabSide;
@@ -42,6 +73,8 @@ export const useAssistantChatFabDrag = (
   const [isDragging, setIsDragging] = useState(false);
   const positionRef = useRef(position);
   const sideRef = useRef(side);
+  const preferredYRef = useRef<number | null>(null);
+  const hasRestoredRef = useRef(false);
   const sessionRef = useRef<DragSession | null>(null);
   const suppressClickRef = useRef(false);
   const hasPosition = position !== null;
@@ -79,7 +112,13 @@ export const useAssistantChatFabDrag = (
       const bounds = measureBounds();
       if (!current || !bounds) return;
 
-      const next = clampAssistantChatFabPosition(current, bounds);
+      const next = clampAssistantChatFabPosition(
+        {
+          x: current.x,
+          y: sessionRef.current?.hasDragged ? current.y : (preferredYRef.current ?? current.y),
+        },
+        bounds,
+      );
       if (!sessionRef.current?.hasDragged) {
         next.x = sideRef.current === 'left' ? bounds.minX : bounds.maxX;
       }
@@ -110,6 +149,39 @@ export const useAssistantChatFabDrag = (
       window.removeEventListener('resize', syncPosition);
     };
   }, [hasPosition, isVisible, measureBounds, pathname]);
+
+  useEffect(() => {
+    if (hasRestoredRef.current) return;
+
+    const bounds = measureBounds();
+    if (!bounds) return;
+
+    const saved = readSavedFabPosition();
+    if (!saved) {
+      hasRestoredRef.current = true;
+      return;
+    }
+
+    let isCancelled = false;
+    queueMicrotask(() => {
+      if (isCancelled) return;
+
+      hasRestoredRef.current = true;
+      const currentBounds = measureBounds() ?? bounds;
+      preferredYRef.current = saved.y;
+      updateSide(saved.side);
+      updatePosition(
+        clampAssistantChatFabPosition(
+          { x: saved.side === 'left' ? currentBounds.minX : currentBounds.maxX, y: saved.y },
+          currentBounds,
+        ),
+      );
+    });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [measureBounds]);
 
   const getPositionFromPointer = (
     event: PointerEvent<HTMLButtonElement>,
@@ -178,8 +250,10 @@ export const useAssistantChatFabDrag = (
         ? (positionRef.current ?? session.startPosition)
         : getPositionFromPointer(event, session, bounds);
       const snapped = snapAssistantChatFabPosition(current, bounds);
+      preferredYRef.current = snapped.position.y;
       updatePosition(snapped.position);
       updateSide(snapped.side);
+      saveFabPosition({ side: snapped.side, y: snapped.position.y });
     }
     setIsDragging(false);
     if (!isCancelled) suppressClickRef.current = true;
