@@ -54,7 +54,7 @@ export const AssistantChatLauncher = ({ teamId }: AssistantChatLauncherProps) =>
 
   return (
     <>
-      {isAvailable && !isOpen && (
+      {isAvailable && !isOpen && fabDrag.isReady && (
         <AssistantChatFab
           isHintVisible={isHintVisible}
           bottomOffset={bottomOffset}

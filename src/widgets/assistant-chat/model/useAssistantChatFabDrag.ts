@@ -29,7 +29,7 @@ const FAB_POSITION_STORAGE_KEY = 'meety:assistant-chat-fab-position';
 
 const readSavedFabPosition = (): SavedFabPosition | null => {
   try {
-    const stored = window.localStorage.getItem(FAB_POSITION_STORAGE_KEY);
+    const stored = window.sessionStorage.getItem(FAB_POSITION_STORAGE_KEY);
     if (!stored) return null;
 
     const parsed: unknown = JSON.parse(stored);
@@ -47,11 +47,12 @@ const readSavedFabPosition = (): SavedFabPosition | null => {
 
 const saveFabPosition = (position: SavedFabPosition) => {
   try {
-    window.localStorage.setItem(FAB_POSITION_STORAGE_KEY, JSON.stringify(position));
+    window.sessionStorage.setItem(FAB_POSITION_STORAGE_KEY, JSON.stringify(position));
   } catch {}
 };
 
 export interface AssistantChatFabDrag {
+  isReady: boolean;
   position: AssistantChatFabPosition | null;
   side: AssistantChatFabSide;
   isDragging: boolean;
@@ -70,6 +71,7 @@ export const useAssistantChatFabDrag = (
   const pathname = usePathname();
   const [position, setPosition] = useState<AssistantChatFabPosition | null>(null);
   const [side, setSide] = useState<AssistantChatFabSide>('right');
+  const [isReady, setIsReady] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const positionRef = useRef(position);
   const sideRef = useRef(side);
@@ -153,29 +155,24 @@ export const useAssistantChatFabDrag = (
   useEffect(() => {
     if (hasRestoredRef.current) return;
 
-    const bounds = measureBounds();
-    if (!bounds) return;
-
-    const saved = readSavedFabPosition();
-    if (!saved) {
-      hasRestoredRef.current = true;
-      return;
-    }
-
     let isCancelled = false;
     queueMicrotask(() => {
       if (isCancelled) return;
 
+      const saved = readSavedFabPosition();
+      const bounds = measureBounds();
+      if (saved && bounds) {
+        preferredYRef.current = saved.y;
+        updateSide(saved.side);
+        updatePosition(
+          clampAssistantChatFabPosition(
+            { x: saved.side === 'left' ? bounds.minX : bounds.maxX, y: saved.y },
+            bounds,
+          ),
+        );
+      }
       hasRestoredRef.current = true;
-      const currentBounds = measureBounds() ?? bounds;
-      preferredYRef.current = saved.y;
-      updateSide(saved.side);
-      updatePosition(
-        clampAssistantChatFabPosition(
-          { x: saved.side === 'left' ? currentBounds.minX : currentBounds.maxX, y: saved.y },
-          currentBounds,
-        ),
-      );
+      setIsReady(true);
     });
 
     return () => {
@@ -260,6 +257,7 @@ export const useAssistantChatFabDrag = (
   };
 
   return {
+    isReady,
     position,
     side,
     isDragging,
