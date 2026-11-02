@@ -19,13 +19,14 @@ import { createListenerRegistry } from './listener-registry';
 import { RECORDING_SSE_EVENT_TYPES, type RecordingSseEventType } from './recording-event';
 import type { TranscriptCreatedEventData } from './transcript-event';
 import { useMeetingChatEvents } from './use-meeting-chat-events';
-import { useMeetingTranscripts } from './use-meeting-transcripts';
+import { useMeetingTranscripts, type SpeakerNames } from './use-meeting-transcripts';
 
 export type MeetingSseStatus = 'idle' | 'unconfigured' | 'connecting' | 'connected' | 'error';
 
 interface MeetingSseContextValue {
   statuses: Record<string, MeetingSseStatus>;
   transcriptsByMeetingId: Record<string, TranscriptCreatedEventData[]>;
+  speakerNamesByMeetingId: Record<string, SpeakerNames>;
   connect: (meetingId: string) => void;
   disconnect: (meetingId: string) => void;
   subscribeChatEvent: (
@@ -59,8 +60,13 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
   const [recordingListeners] = useState(() => createListenerRegistry<[RecordingSseEventType]>());
   const [statuses, setStatuses] = useState<Record<string, MeetingSseStatus>>({});
   const { subscribeChatEvent, receiveChatEvent } = useMeetingChatEvents();
-  const { transcriptsByMeetingId, subscribeTranscriptCreated, receiveTranscript } =
-    useMeetingTranscripts();
+  const {
+    transcriptsByMeetingId,
+    speakerNamesByMeetingId,
+    subscribeTranscriptCreated,
+    receiveTranscript,
+    receiveSpeakerMapping,
+  } = useMeetingTranscripts();
 
   const disconnect = useCallback((meetingId: string) => {
     const pendingJoin = joining.current.get(meetingId);
@@ -139,6 +145,11 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
             receiveTranscript(meetingId, event.data);
           });
 
+          source.addEventListener('SPEAKER_MAPPING_UPDATED', (event) => {
+            if (sources.current.get(meetingId) !== source) return;
+            receiveSpeakerMapping(meetingId, event.data);
+          });
+
           CHAT_SSE_EVENT_TYPES.forEach((type) => {
             source.addEventListener(type, (event) => {
               if (sources.current.get(meetingId) !== source) return;
@@ -211,6 +222,7 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
       disconnect,
       queryClient,
       receiveChatEvent,
+      receiveSpeakerMapping,
       receiveTranscript,
       recordingListeners,
     ],
@@ -238,6 +250,7 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
     () => ({
       statuses,
       transcriptsByMeetingId,
+      speakerNamesByMeetingId,
       connect,
       disconnect,
       subscribeChatEvent,
@@ -248,6 +261,7 @@ export function MeetingSseProvider({ children }: MeetingSseProviderProps) {
     [
       statuses,
       transcriptsByMeetingId,
+      speakerNamesByMeetingId,
       connect,
       disconnect,
       deletedListeners.subscribe,

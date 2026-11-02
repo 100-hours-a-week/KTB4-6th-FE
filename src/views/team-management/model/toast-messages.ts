@@ -5,8 +5,6 @@ export interface ToastMessage {
   variant: AppToastVariant;
 }
 
-// 확인된 토스트 문구 모음. 실제 노출 트리거는 서브 이슈 4(동작 연결)·5(데이터 연결)에서 연결한다.
-// 초대 코드 복사 결과 문구는 entities/invite-code의 useCopyInviteCode가 직접 노출하므로 여기 두지 않는다.
 export const teamManagementToastMessages: Record<string, ToastMessage> = {
   inviteCodeRegenerateLimitExceeded: {
     text: '초대코드 재생성 횟수를 초과했습니다.',
@@ -57,9 +55,9 @@ export const teamManagementToastMessages: Record<string, ToastMessage> = {
     variant: 'danger',
   },
   participationRevoked: { text: '참여 권한이 해제되었습니다.', variant: 'neutral' },
+  voiceProfileReenrollSuccess: { text: '음성 정보가 새로 등록되었습니다', variant: 'success' },
 };
 
-// 강퇴 성공 메시지는 대상자 이름이 들어가야 해서 함수로 제공한다.
 export const getMemberKickSuccessToast = (memberName: string): ToastMessage => ({
   text: `${memberName}님을 팀에서 내보냈습니다.`,
   variant: 'success',

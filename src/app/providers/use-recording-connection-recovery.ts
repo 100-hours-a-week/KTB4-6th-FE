@@ -36,6 +36,7 @@ export const useRecordingConnectionRecovery = ({
   const operation = useRecordingSessionStore((state) => state.operation);
   const setOperation = useRecordingSessionStore((state) => state.setOperation);
   const clearActiveRecording = useRecordingSessionStore((state) => state.clearActiveRecording);
+  const markRecordingElsewhere = useRecordingSessionStore((state) => state.markRecordingElsewhere);
   const recorderStatus = useMediaRecorder((state) => state.status);
   const prepareMicrophone = useMediaRecorder((state) => state.prepare);
   const releaseMicrophone = useMediaRecorder((state) => state.release);
@@ -84,6 +85,7 @@ export const useRecordingConnectionRecovery = ({
     if (socketStatus === 'closed' || socketStatus === 'superseded') {
       if (recorderStatus !== 'idle') releaseMicrophone();
       disconnect(recordingSessionId);
+      if (socketStatus === 'superseded') markRecordingElsewhere(recordingSessionId);
       clearActiveRecording(recordingSessionId);
       if (socketStatus === 'closed') {
         void queryClient.invalidateQueries({
@@ -150,6 +152,7 @@ export const useRecordingConnectionRecovery = ({
     connect,
     disconnect,
     isPausedByUser,
+    markRecordingElsewhere,
     meetingId,
     operation,
     prepareMicrophone,

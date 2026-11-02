@@ -1,5 +1,6 @@
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkCjkFriendly from 'remark-cjk-friendly';
 import remarkGfm from 'remark-gfm';
 
 interface ChatMarkdownProps {
@@ -41,7 +42,7 @@ const SafeLink = ({ href, children }: ComponentPropsWithoutRef<'a'>) => {
 export const ChatMarkdown = ({ children }: ChatMarkdownProps) => (
   <ReactMarkdown
     skipHtml
-    remarkPlugins={[remarkGfm]}
+    remarkPlugins={[remarkGfm, remarkCjkFriendly]}
     components={{
       h1: ({ children: content }) => (
         <h1 className="mt-4 mb-2 text-lg font-bold first:mt-0">{content}</h1>

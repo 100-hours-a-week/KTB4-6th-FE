@@ -8,11 +8,13 @@ import { CreateMeetingButton } from './CreateMeetingButton';
 import { HomeErrorState } from './HomeErrorState';
 import { HomeHeader } from './HomeHeader';
 import { HomePageSkeleton } from './HomePageSkeleton';
+import { HomeVoiceEnrollSheet } from './HomeVoiceEnrollSheet';
 import { MeetingListSection } from './MeetingListSection';
 import { TeamSummaryCard } from './TeamSummaryCard';
 import { toHomeViewModel } from '../model/home-view-model';
 import { useHomeNotice } from '../model/useHomeNotice';
 import { useRedirectToActiveTeam } from '../model/useRedirectToActiveTeam';
+import { useRedirectToVoiceConsent } from '../model/useRedirectToVoiceConsent';
 
 interface HomePageProps {
   teamId: number;
@@ -35,6 +37,10 @@ export const HomePage = ({ teamId, notice }: HomePageProps) => {
     refetch,
     urlTeamId: teamId,
   });
+  const canShowHome = useRedirectToVoiceConsent({
+    teamId,
+    hasVoiceConsent: home?.team.teamId === teamId ? home.hasVoiceConsent : undefined,
+  });
 
   if (!home || home.team.teamId !== teamId) {
     if (isError && !isFetching) {
@@ -43,6 +49,8 @@ export const HomePage = ({ teamId, notice }: HomePageProps) => {
 
     return <HomePageSkeleton />;
   }
+
+  if (!canShowHome) return <HomePageSkeleton />;
 
   const { team, meetings } = toHomeViewModel(home);
 
@@ -66,6 +74,12 @@ export const HomePage = ({ teamId, notice }: HomePageProps) => {
         onOpenChange={setIsSidebarOpen}
         teamId={teamId}
         teamName={team.name}
+      />
+
+      <HomeVoiceEnrollSheet
+        teamId={teamId}
+        hasVoiceProfile={home.hasVoiceProfile}
+        hasVoiceConsent={home.hasVoiceConsent}
       />
     </div>
   );

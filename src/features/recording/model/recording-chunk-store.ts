@@ -1,4 +1,4 @@
-import { countPcmSamples } from './pcm-capture';
+import { countPcmSamples } from '@/shared/lib';
 import {
   CHUNK_STORE_NAME,
   getRecordingDb,

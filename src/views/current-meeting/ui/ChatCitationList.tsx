@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { AudioWaveform, ChevronRight, FileText } from 'lucide-react';
 import type { MeetingChatCitation } from '@/features/meeting-chat';
-import { cn } from '@/shared/lib';
+import { cn, parseServerDate } from '@/shared/lib';
 import { useCurrentMeetingContext } from '../model/current-meeting-context';
 
 const citationDateFormatter = new Intl.DateTimeFormat('ko-KR', {
@@ -16,7 +16,7 @@ const citationDateFormatter = new Intl.DateTimeFormat('ko-KR', {
 });
 
 const formatCitationDate = (value: string) => {
-  const date = new Date(value);
+  const date = parseServerDate(value);
   if (Number.isNaN(date.getTime())) return '날짜 정보 없음';
 
   const parts = Object.fromEntries(

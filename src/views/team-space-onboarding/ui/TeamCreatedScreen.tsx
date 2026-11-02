@@ -16,7 +16,7 @@ export const TeamCreatedScreen = () => {
 
   const handleMoveToTeamSpace = () => {
     resetCreate();
-    router.push(`/teams/${createdTeam.teamId}`);
+    router.push(`/teams/${createdTeam.teamId}/voice-consent`);
   };
 
   return (

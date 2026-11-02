@@ -73,7 +73,7 @@ const MeetyAnswer = ({ message }: { message: ChatMessageViewModel }) => (
       <div className="flex items-baseline gap-2">
         <h3 className="text-sm font-bold text-brand-700">Meety</h3>
         {message.answerState === 'completed' && (
-          <time className="text-xs text-cool-500">{message.createdAtLabel}</time>
+          <time className="text-xs text-cool-500">{message.answeredAtLabel}</time>
         )}
       </div>
       {message.answerState === 'pending' ? (

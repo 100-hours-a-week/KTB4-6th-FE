@@ -4,14 +4,13 @@ import {
   TRANSCRIPT_SEARCH_KEYWORD_MIN_LENGTH,
 } from '@/features/meeting';
 import { useTranscriptSearch } from '../model/useTranscriptSearch';
-import type { TranscriptEntry } from '../model/preview-meeting-transcript';
+import type { TranscriptEntry } from '../model/types';
 import { TranscriptEmptyState } from './TranscriptEmptyState';
 import { TranscriptItem } from './TranscriptItem';
 
 interface TranscriptTabProps {
   meetingId: number;
   entries: TranscriptEntry[];
-  isPreview: boolean;
   activeEntryId: string | null;
   highlightedEntryId: string | null;
 }
@@ -19,7 +18,6 @@ interface TranscriptTabProps {
 export const TranscriptTab = ({
   meetingId,
   entries,
-  isPreview,
   activeEntryId,
   highlightedEntryId,
 }: TranscriptTabProps) => {
@@ -102,7 +100,6 @@ export const TranscriptTab = ({
               key={entry.id}
               meetingId={meetingId}
               entry={entry}
-              isPreview={isPreview}
               isActive={entry.id === activeEntryId}
               isSearchMatch={entry.id === currentMatchId}
               isDeepLinkTarget={entry.id === highlightedEntryId}

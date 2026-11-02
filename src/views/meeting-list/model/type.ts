@@ -43,6 +43,7 @@ export interface MeetingSearchResultsData {
   hasMore: boolean;
   loadMoreStatus: MeetingListLoadMoreStatus;
   loadMore: () => void;
+  retry: () => void;
 }
 
 export interface MeetingDateGroup {

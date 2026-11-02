@@ -1,7 +1,7 @@
 import { Menu } from 'lucide-react';
 import { cn } from '@/shared/lib';
 import { formatMeetingPeriod } from '../model/format-meeting-period';
-import type { CompletedMeetingViewerRole } from '../model/preview-completed-meeting';
+import type { CompletedMeetingViewerRole } from '../model/types';
 import type { AudioViewState } from '../model/useAudioViewState';
 import { CompletedMeetingMoreMenu } from './CompletedMeetingMoreMenu';
 
@@ -25,7 +25,6 @@ export const CompletedMeetingHeader = ({
   onMenuClick,
 }: CompletedMeetingHeaderProps) => {
   const isAudioExpired = audio.kind === 'expired';
-  // 불러오는 중이거나 조회에 실패하면 저장 기한을 알 수 없어 표시하지 않는다.
   const isAudioDeadlineKnown = audio.kind === 'available' || audio.kind === 'expired';
 
   return (

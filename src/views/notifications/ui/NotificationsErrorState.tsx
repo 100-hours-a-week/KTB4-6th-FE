@@ -1,4 +1,8 @@
-export const NotificationsErrorState = () => (
+interface NotificationsErrorStateProps {
+  onRetry: () => void;
+}
+
+export const NotificationsErrorState = ({ onRetry }: NotificationsErrorStateProps) => (
   <div className="flex flex-1 flex-col px-5 pt-6 pb-8">
     <section
       role="alert"
@@ -6,6 +10,13 @@ export const NotificationsErrorState = () => (
     >
       <h2 className="text-base font-bold text-cool-900">알림을 불러오지 못했어요</h2>
       <p className="mt-2 text-sm leading-6 text-cool-600">잠시 후 다시 시도해주세요.</p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="mt-4 inline-flex min-w-24 items-center justify-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-700"
+      >
+        다시 시도
+      </button>
     </section>
   </div>
 );

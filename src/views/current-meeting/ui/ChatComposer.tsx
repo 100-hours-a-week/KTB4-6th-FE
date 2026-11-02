@@ -1,6 +1,6 @@
 'use client';
 
-import type { FormEvent, KeyboardEvent } from 'react';
+import { useLayoutEffect, useRef, type FormEvent, type KeyboardEvent } from 'react';
 import { ArrowUp, CircleDollarSign } from 'lucide-react';
 import { cn } from '@/shared/lib';
 
@@ -29,6 +29,7 @@ export const ChatComposer = ({
   onQuestionChange,
   onSubmit,
 }: ChatComposerProps) => {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isCreditInsufficient = creditBalance !== null && creditBalance < creditCost;
   const normalizedQuestion = question.trim();
   const isCreditUnavailable = creditBalance === null;
@@ -48,6 +49,15 @@ export const ChatComposer = ({
           : isCreditInsufficient
             ? '크레딧이 부족합니다'
             : '회의 내용에 대해 질문해보세요';
+
+  useLayoutEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    textarea.style.height = 'auto';
+    const borderHeight = textarea.offsetHeight - textarea.clientHeight;
+    textarea.style.height = `${textarea.scrollHeight + borderHeight}px`;
+  }, [question]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -88,6 +98,7 @@ export const ChatComposer = ({
           AI 채팅 질문
         </label>
         <textarea
+          ref={textareaRef}
           id="chat-question"
           name="question"
           rows={1}

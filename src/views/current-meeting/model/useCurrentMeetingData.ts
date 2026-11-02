@@ -17,7 +17,7 @@ export const useCurrentMeetingData = (
   meetingId: number,
   teamMembers: TeamMemberData[] | undefined,
 ) => {
-  const { transcriptsByMeetingId } = useMeetingSse();
+  const { transcriptsByMeetingId, speakerNamesByMeetingId } = useMeetingSse();
   const currentMeetingQuery = useQuery({
     queryKey: getCurrentMeetingQueryKey(meetingId),
     queryFn: () => getCurrentMeetingState(meetingId),
@@ -65,6 +65,7 @@ export const useCurrentMeetingData = (
           ? mergeTranscriptSegments(
               transcriptHistoryQuery.data ?? [],
               transcriptsByMeetingId[String(meetingId)] ?? [],
+              speakerNamesByMeetingId[String(meetingId)] ?? {},
             )
           : [],
       }

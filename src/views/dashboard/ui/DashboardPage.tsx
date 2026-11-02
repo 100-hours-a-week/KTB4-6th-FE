@@ -93,7 +93,6 @@ export const DashboardPage = ({ teamId }: DashboardPageProps) => {
             <DashboardSummaryCard
               period={period}
               totalMeetings={summary.totalMeetings}
-              totalDurationSeconds={summary.totalMeetingDurationSeconds}
               averageDurationSeconds={summary.averageMeetingDurationSeconds}
               overtimeMeetings={summary.overtimeMeetings}
               contextOutSeconds={summary.totalContextOutSeconds}

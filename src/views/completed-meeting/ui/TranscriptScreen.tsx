@@ -2,7 +2,6 @@
 
 import { ArrowDown } from 'lucide-react';
 import { getActiveTranscriptId } from '../model/get-active-transcript-id';
-import type { TranscriptEntry } from '../model/preview-meeting-transcript';
 import { useAudioPlayer } from '../model/useAudioPlayer';
 import type { AudioViewState } from '../model/useAudioViewState';
 import { useAudioSource } from '../model/useAudioSource';
@@ -20,7 +19,6 @@ import { TranscriptTab } from './TranscriptTab';
 interface TranscriptScreenProps {
   meetingId: number;
   targetEntryId: string | null;
-  previewEntries?: TranscriptEntry[];
   audio: AudioViewState;
   onAudioFileRetry: () => void;
 }
@@ -28,11 +26,10 @@ interface TranscriptScreenProps {
 export const TranscriptScreen = ({
   meetingId,
   targetEntryId,
-  previewEntries,
   audio,
   onAudioFileRetry,
 }: TranscriptScreenProps) => {
-  const { status, entries, retry } = useTranscriptViewState({ meetingId, previewEntries });
+  const { status, entries, retry } = useTranscriptViewState({ meetingId });
   const hasTranscript = entries.length > 0;
   const audioDurationSeconds = audio.kind === 'available' ? audio.durationSeconds : 0;
   const {
@@ -69,7 +66,6 @@ export const TranscriptScreen = ({
     isEnabled: status === 'ready',
   });
 
-  // 재생 위치를 직접 옮기는 것은 그 위치를 보겠다는 뜻이라, 스크롤이 멈춰 있었어도 다시 따라간다.
   const handleSeek = (ms: number) => {
     resumeFollowing();
     seek(ms);
@@ -94,7 +90,6 @@ export const TranscriptScreen = ({
             <TranscriptTab
               meetingId={meetingId}
               entries={entries}
-              isPreview={previewEntries !== undefined}
               activeEntryId={activeEntryId}
               highlightedEntryId={highlightedEntryId}
             />

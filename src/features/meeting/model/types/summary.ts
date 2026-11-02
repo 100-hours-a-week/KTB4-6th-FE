@@ -5,6 +5,7 @@ export interface MeetingSummaryData {
   content: string | null;
   version: number;
   status: string;
+  failureReason: 'TRANSCRIPT_EMPTY' | 'AI_CALL_FAILED' | 'AUDIO_FILE_MISSING' | null;
   createdAt: string;
 }
 

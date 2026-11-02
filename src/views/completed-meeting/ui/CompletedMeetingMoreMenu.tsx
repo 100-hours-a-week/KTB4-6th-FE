@@ -18,7 +18,7 @@ import { formatTimestamp } from '../model/format-timestamp';
 import { mapTranscriptSegments } from '../model/map-transcript-segments';
 import { useMeetingDelete } from '../model/useMeetingDelete';
 import { useMeetingRename } from '../model/useMeetingRename';
-import type { CompletedMeetingViewerRole } from '../model/preview-completed-meeting';
+import type { CompletedMeetingViewerRole } from '../model/types';
 import type { AudioViewState } from '../model/useAudioViewState';
 import { MeetingRenameDialog } from './MeetingRenameDialog';
 
@@ -109,7 +109,7 @@ export const CompletedMeetingMoreMenu = ({
 
   const handleConfirmAudioDelete = () => {
     closeDialog();
-    if (audio.kind !== 'available' || audio.audioFileId === null) return;
+    if (audio.kind !== 'available') return;
 
     deleteAudio(audio.audioFileId, {
       onSuccess: () => {

@@ -12,6 +12,29 @@ export { downloadFile, downloadTextFile } from './download-file';
 export { useBeforeUnloadWarning } from './use-before-unload-warning';
 export { useWakeLock } from './use-wake-lock';
 export {
+  countPcmSamples,
+  createPcmCapture,
+  flushPcmCapture,
+  PCM_SAMPLE_RATE,
+  releasePcmCapture,
+  resumePcmCapture,
+  startPcmCapture,
+} from './audio/pcm-capture';
+export type { PcmCapture } from './audio/pcm-capture';
+export {
+  AAC_ENCODER_CONFIG,
+  AAC_FRAME_SAMPLES,
+  closeAacEncoder,
+  encodeAacSamples,
+  ensureAacEncodingSupported,
+  isSameAacEncoding,
+  toAacSample,
+  UPSAMPLE_FACTOR,
+  upsamplePcmChunk,
+} from './audio/aac-encoder';
+export { toAudioSpecificConfig } from './audio/aac-description';
+export { UnsupportedRecordingBrowserError } from './audio/unsupported-recording-browser-error';
+export {
   captureException,
   captureMessage,
   captureRouterTransitionStart,

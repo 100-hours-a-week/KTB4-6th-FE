@@ -1,13 +1,12 @@
 import { memo } from 'react';
 import { cn } from '@/shared/lib';
 import { formatTimestamp } from '../model/format-timestamp';
-import type { TranscriptEntry } from '../model/preview-meeting-transcript';
+import type { TranscriptEntry } from '../model/types';
 import { TranscriptSpeakerButton } from './TranscriptSpeakerButton';
 
 interface TranscriptItemProps {
   meetingId: number;
   entry: TranscriptEntry;
-  isPreview: boolean;
   isActive: boolean;
   isSearchMatch?: boolean;
   isDeepLinkTarget?: boolean;
@@ -17,7 +16,6 @@ export const TranscriptItem = memo(
   ({
     meetingId,
     entry,
-    isPreview,
     isActive,
     isSearchMatch = false,
     isDeepLinkTarget = false,
@@ -37,7 +35,7 @@ export const TranscriptItem = memo(
       )}
     >
       <div className="w-[68px] shrink-0">
-        <TranscriptSpeakerButton meetingId={meetingId} entry={entry} isPreview={isPreview} />
+        <TranscriptSpeakerButton meetingId={meetingId} entry={entry} />
         <p className="mt-1 font-mono text-xs text-cool-500 tabular-nums">
           {formatTimestamp(Math.floor(entry.startedAtMs / 1000))}
         </p>

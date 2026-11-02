@@ -5,8 +5,10 @@ import {
   type MeetingChatListData,
   type MeetingChatMessageData,
 } from '@/features/meeting-chat';
+import { parseServerDate } from '@/shared/lib';
 
 const chatTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
+  timeZone: 'Asia/Seoul',
   hour: '2-digit',
   minute: '2-digit',
   hour12: false,
@@ -18,14 +20,15 @@ export interface ChatMessageViewModel {
   askerTeamMemberId: number | null;
   askerDisplayName: string;
   createdAtLabel: string;
+  answeredAtLabel: string;
   question: string;
   answerState: MeetingChatAnswerState;
   answer: string | null;
   citations: MeetingChatCitation[] | null;
 }
 
-export const formatChatMessageTime = (createdAt: string | Date) =>
-  chatTimeFormatter.format(new Date(createdAt));
+export const formatChatMessageTime = (value: string | Date) =>
+  chatTimeFormatter.format(typeof value === 'string' ? parseServerDate(value) : value);
 
 const toChatMessageViewModel = (
   message: MeetingChatMessageData,
@@ -36,6 +39,7 @@ const toChatMessageViewModel = (
   askerTeamMemberId: message.askerTeamMemberId,
   askerDisplayName: message.askerDisplayName,
   createdAtLabel: formatChatMessageTime(message.createdAt),
+  answeredAtLabel: formatChatMessageTime(message.answeredAt ?? message.createdAt),
   question: message.question,
   answerState: getMeetingChatAnswerState(message, now),
   answer: message.answer,

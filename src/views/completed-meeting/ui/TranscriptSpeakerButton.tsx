@@ -1,20 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import type { TranscriptEntry } from '../model/preview-meeting-transcript';
+import type { TranscriptEntry } from '../model/types';
 import { SpeakerLinkDialog } from './SpeakerLinkDialog';
 
 interface TranscriptSpeakerButtonProps {
   meetingId: number;
   entry: TranscriptEntry;
-  isPreview: boolean;
 }
 
-export const TranscriptSpeakerButton = ({
-  meetingId,
-  entry,
-  isPreview,
-}: TranscriptSpeakerButtonProps) => {
+export const TranscriptSpeakerButton = ({ meetingId, entry }: TranscriptSpeakerButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const closeDialog = () => setIsOpen(false);
@@ -28,14 +23,7 @@ export const TranscriptSpeakerButton = ({
       >
         {entry.speakerName}
       </button>
-      {isOpen && (
-        <SpeakerLinkDialog
-          meetingId={meetingId}
-          entry={entry}
-          isPreview={isPreview}
-          onClose={closeDialog}
-        />
-      )}
+      {isOpen && <SpeakerLinkDialog meetingId={meetingId} entry={entry} onClose={closeDialog} />}
     </>
   );
 };

@@ -3,6 +3,7 @@ import type {
   CreditLedgerListData,
   CreditLedgerSourceType,
 } from '@/features/credit-management';
+import { parseServerDate } from '@/shared/lib';
 
 const CREDIT_LEDGER_SOURCE_LABELS: Record<CreditLedgerSourceType, string> = {
   AI_CHAT: 'AI 채팅 질의응답',
@@ -18,14 +19,23 @@ const formatCreditAmount = (amount: number) => {
   return `${sign}${amount.toLocaleString('ko-KR')}`;
 };
 
-const formatCreditLedgerDate = (createdAt: string) => {
-  const date = new Date(createdAt);
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hour = String(date.getHours()).padStart(2, '0');
-  const minute = String(date.getMinutes()).padStart(2, '0');
+const creditLedgerDateFormatter = new Intl.DateTimeFormat('ko-KR', {
+  timeZone: 'Asia/Seoul',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+});
 
-  return `${month}.${day} ${hour}:${minute}`;
+const formatCreditLedgerDate = (createdAt: string) => {
+  const parts = Object.fromEntries(
+    creditLedgerDateFormatter
+      .formatToParts(parseServerDate(createdAt))
+      .map(({ type, value }) => [type, value]),
+  );
+
+  return `${parts.month}.${parts.day} ${parts.hour}:${parts.minute}`;
 };
 
 export interface CreditLedgerViewModel {
