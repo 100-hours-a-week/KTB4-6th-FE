@@ -51,7 +51,7 @@ export const AssistantChatMeetingDraftActions = ({
   if (status === 'expired') {
     return (
       <span className="flex min-h-9 items-center rounded-[18px] border border-cool-200 bg-cool-50 px-[13px] text-[12.5px] leading-none font-medium text-cool-400">
-        새 초안으로 바뀌었어요
+        회의 내용이 수정되었어요
       </span>
     );
   }
