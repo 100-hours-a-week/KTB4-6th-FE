@@ -10,9 +10,9 @@ const UNKNOWN_MEMBER_NAME = '알 수 없는 팀원';
 interface AssistantChatMeetingDraftCardProps {
   draft: AssistantChatMeetingDraft;
   status: AssistantChatMeetingDraftStatus;
+  errorMessage?: string;
   memberNames: ReadonlyMap<number, string>;
   onConfirm: () => void;
-  onCancel: () => void;
 }
 
 const DraftRow = ({ label, children }: { label: string; children: ReactNode }) => (
@@ -27,11 +27,11 @@ const DraftRow = ({ label, children }: { label: string; children: ReactNode }) =
 export const AssistantChatMeetingDraftCard = ({
   draft,
   status,
+  errorMessage,
   memberNames,
   onConfirm,
-  onCancel,
 }: AssistantChatMeetingDraftCardProps) => {
-  const isInactive = status === 'cancelled' || status === 'expired';
+  const isInactive = status === 'expired';
 
   return (
     <section
@@ -71,11 +71,11 @@ export const AssistantChatMeetingDraftCard = ({
           </DraftRow>
         </dl>
       </div>
-      <div className="flex justify-end border-t border-cool-100 px-3 py-2.5">
+      <div className="flex border-t border-cool-100 px-3 py-2.5">
         <AssistantChatMeetingDraftActions
           status={status}
+          errorMessage={errorMessage}
           onConfirm={onConfirm}
-          onCancel={onCancel}
         />
       </div>
     </section>

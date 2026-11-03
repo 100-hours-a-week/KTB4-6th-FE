@@ -3,18 +3,25 @@ import { apiClient } from '@/shared/api';
 import { toMeetingApiError } from '../model/errors';
 import type {
   CreateMeetingData,
+  CreateMeetingDraftRequest,
   CreateMeetingRequest,
   CreateMeetingResponse,
 } from '../model/types';
 
+interface CreateMeetingOptions {
+  aiRequestId?: number;
+}
+
 export const createMeeting = async (
   teamId: number,
-  request: CreateMeetingRequest,
+  request: CreateMeetingRequest | CreateMeetingDraftRequest,
+  { aiRequestId }: CreateMeetingOptions = {},
 ): Promise<CreateMeetingData> => {
   try {
     const response = await apiClient.post<CreateMeetingResponse>(
       `/api/v1/teams/${teamId}/meetings`,
       request,
+      aiRequestId === undefined ? undefined : { headers: { 'X-Ai-Request-Id': aiRequestId } },
     );
     const result = response.data;
 
