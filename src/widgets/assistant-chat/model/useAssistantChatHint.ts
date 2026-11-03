@@ -13,7 +13,7 @@ const getToday = () => {
 
 const readHintDate = () => {
   try {
-    return window.localStorage.getItem(HINT_DATE_STORAGE_KEY);
+    return window.sessionStorage.getItem(HINT_DATE_STORAGE_KEY);
   } catch {
     return undefined;
   }
@@ -21,7 +21,7 @@ const readHintDate = () => {
 
 const writeHintDate = () => {
   try {
-    window.localStorage.setItem(HINT_DATE_STORAGE_KEY, getToday());
+    window.sessionStorage.setItem(HINT_DATE_STORAGE_KEY, getToday());
   } catch {}
 };
 

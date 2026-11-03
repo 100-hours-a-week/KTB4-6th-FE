@@ -26,7 +26,7 @@ export const TeamManagementPage = ({ teamId }: TeamManagementPageProps) => {
     <div className="flex min-h-0 flex-1 flex-col bg-cool-50">
       <TeamManagementHeader isMenuDisabled={!team} onMenuClick={() => setIsSidebarOpen(true)} />
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {status === 'loading' ? (
           <TeamManagementContentSkeleton />
         ) : status === 'error' || !role || !team ? (
@@ -42,7 +42,7 @@ export const TeamManagementPage = ({ teamId }: TeamManagementPageProps) => {
       </div>
 
       {status === 'success' && role && team && (
-        <footer data-floating-anchor className="shrink-0">
+        <footer className="shrink-0">
           {isLeader ? (
             <TeamDeleteAction hasActiveMeeting={team.hasActiveMeeting} teamId={teamId} />
           ) : (
