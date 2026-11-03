@@ -82,7 +82,7 @@ export const TranscriptScreen = ({
           ref={containerRef}
           data-tab="transcript"
           data-clarity-mask="true"
-          className="flex min-h-0 flex-1 flex-col overflow-y-auto"
+          className="flex min-h-0 flex-1 flex-col overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {status === 'loading' && <TranscriptLoadingState />}
           {status === 'error' && <TranscriptLoadErrorState onRetry={retry} />}
