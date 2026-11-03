@@ -82,7 +82,6 @@ interface AssistantChatMessageItemProps {
   canResend: boolean;
   onResendQuestion: (messageId: string) => void;
   onConfirmMeetingDraft: (messageId: string) => void;
-  onCancelMeetingDraft: (messageId: string) => void;
   onMeetingLinkClick: () => void;
 }
 
@@ -93,7 +92,6 @@ export const AssistantChatMessageItem = ({
   canResend,
   onResendQuestion,
   onConfirmMeetingDraft,
-  onCancelMeetingDraft,
   onMeetingLinkClick,
 }: AssistantChatMessageItemProps) => {
   if (message.role === 'user') return <UserMessage text={message.text} />;
@@ -123,9 +121,9 @@ export const AssistantChatMessageItem = ({
           <AssistantChatMeetingDraftCard
             draft={message.meetingDraft}
             status={message.meetingDraftStatus}
+            errorMessage={message.meetingDraftError}
             memberNames={memberNames}
             onConfirm={() => onConfirmMeetingDraft(message.id)}
-            onCancel={() => onCancelMeetingDraft(message.id)}
           />
         )}
         {message.createdMeetingId !== undefined && (

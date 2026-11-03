@@ -7,6 +7,7 @@ import {
   useAssistantChatTurns,
 } from '@/features/assistant-chat';
 import { toAssistantChatMessages } from './to-assistant-chat-messages';
+import { useAssistantChatMeetingDraftConfirm } from './useAssistantChatMeetingDraftConfirm';
 import type { AssistantChatHistoryStatus } from './types';
 
 const IN_PROGRESS_STATUSES: ReadonlySet<AssistantChatRequestStatus> = new Set([
@@ -19,6 +20,7 @@ export const useAssistantChatConversation = (teamId: number) => {
     useAssistantChatTurns(teamId);
   const { currentQuestion, isProcessing, sendQuestion, resumeQuestion } =
     useAssistantChatQuestion(teamId);
+  const { draftResults, confirmMeetingDraft } = useAssistantChatMeetingDraftConfirm(teamId);
   const turns = useMemo(
     () =>
       (data?.pages ?? [])
@@ -28,8 +30,8 @@ export const useAssistantChatConversation = (teamId: number) => {
   );
   const latestTurn = turns.at(-1);
   const messages = useMemo(
-    () => toAssistantChatMessages(turns, currentQuestion),
-    [turns, currentQuestion],
+    () => toAssistantChatMessages(turns, currentQuestion, draftResults),
+    [turns, currentQuestion, draftResults],
   );
   const historyStatus: AssistantChatHistoryStatus = data
     ? 'ready'
@@ -55,6 +57,12 @@ export const useAssistantChatConversation = (teamId: number) => {
     if (question) send(question);
   };
 
+  const confirmDraft = (messageId: string) => {
+    const message = messages.find((item) => item.id === messageId);
+    if (message?.requestId === undefined || !message.meetingDraft) return;
+    confirmMeetingDraft(message.requestId, message.meetingDraft);
+  };
+
   const loadOlderMessages = () => {
     if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
   };
@@ -66,6 +74,7 @@ export const useAssistantChatConversation = (teamId: number) => {
     isLoadingOlderMessages: isFetchingNextPage,
     send,
     resendQuestion,
+    confirmMeetingDraft: confirmDraft,
     reloadHistory: () => void refetch(),
     loadOlderMessages,
   };

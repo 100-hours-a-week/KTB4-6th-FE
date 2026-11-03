@@ -36,6 +36,7 @@ export const AssistantChatSheet = ({
     isLoadingOlderMessages,
     send,
     resendQuestion,
+    confirmMeetingDraft,
     reloadHistory,
     loadOlderMessages,
   } = useAssistantChatConversation(teamId);
@@ -88,8 +89,7 @@ export const AssistantChatSheet = ({
                     teamId={teamId}
                     memberNames={memberNames}
                     onResendQuestion={resendQuestion}
-                    onConfirmMeetingDraft={() => {}}
-                    onCancelMeetingDraft={() => {}}
+                    onConfirmMeetingDraft={confirmMeetingDraft}
                     onMeetingLinkClick={onMeetingLinkClick}
                   />
                 )}
