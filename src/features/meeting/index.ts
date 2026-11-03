@@ -30,7 +30,7 @@ export {
   isAudioFileNotAvailableError,
   isAudioFileNotFoundError,
 } from './model/audio-file-errors';
-export { MeetingApiError } from './model/errors';
+export { isMeetingDraftNotConfirmedError, MeetingApiError } from './model/errors';
 export { getMeetingSummaryPhase } from './model/meeting-summary-phase';
 export { meetingKeys, PREFETCHED_MEETING_STALE_TIME } from './model/query-keys';
 export { deleteAudioFile } from './api/delete-audio-file';
@@ -39,6 +39,7 @@ export { getMeetingTranscript } from './api/get-meeting-transcript';
 export { useAudioDownloadUrl } from './model/useAudioDownloadUrl';
 export { useAudioFile } from './model/useAudioFile';
 export { useCreateMeeting } from './model/useCreateMeeting';
+export { useCreateMeetingFromDraft } from './model/useCreateMeetingFromDraft';
 export { useDeleteAudioFile } from './model/useDeleteAudioFile';
 export { useMeetingDetail } from './model/useMeetingDetail';
 export { useMeetingSummary } from './model/useMeetingSummary';
@@ -66,6 +67,7 @@ export type {
   AudioFileDeleteData,
   AudioFileStatus,
   CreateMeetingData,
+  CreateMeetingDraftRequest,
   CreateMeetingRequest,
   MeetingAttendeesRequest,
   MeetingDetailData,
