@@ -12,5 +12,4 @@ export const useAssistantChatTurns = (teamId: number) =>
     getNextPageParam: (lastPage) =>
       lastPage.hasNext && lastPage.nextCursor !== null ? lastPage.nextCursor : undefined,
     enabled: Number.isSafeInteger(teamId) && teamId > 0,
-    refetchOnMount: 'always',
   });

@@ -1,10 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { getAssistantChatEvents } from '../api/get-assistant-chat-events';
 import { getAssistantChatTurn } from '../api/get-assistant-chat-turn';
 import { postAssistantChatQuestion } from '../api/post-assistant-chat-question';
 import { AssistantChatApiError, toAssistantChatApiError } from './errors';
+import { assistantChatKeys } from './query-keys';
 import type {
   AssistantChatQuestionState,
   AssistantChatQuestionStatus,
@@ -146,6 +148,7 @@ const followQuestion = async (
 };
 
 export const useAssistantChatQuestion = (teamId: number) => {
+  const queryClient = useQueryClient();
   const [currentQuestion, setCurrentQuestion] = useState<AssistantChatQuestionState | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
 
@@ -163,11 +166,14 @@ export const useAssistantChatQuestion = (teamId: number) => {
         if (!controller.signal.aborted) setCurrentQuestion((prev) => prev && updater(prev));
       }).finally(() => {
         if (controllerRef.current === controller) controllerRef.current = null;
+        if (!controller.signal.aborted) {
+          void queryClient.invalidateQueries({ queryKey: assistantChatKeys.turns(teamId) });
+        }
       });
 
       return true;
     },
-    [],
+    [queryClient, teamId],
   );
 
   const sendQuestion = useCallback(
