@@ -12,6 +12,9 @@ export class MeetingApiError extends Error {
   }
 }
 
+export const isMeetingDraftNotConfirmedError = (error: unknown) =>
+  error instanceof MeetingApiError && error.code === 'ASSISTANT_MEETING_DRAFT_NOT_CONFIRMED';
+
 export const toMeetingApiError = (error: unknown, fallbackMessage: string): MeetingApiError => {
   if (axios.isAxiosError<{ error?: { code: string; message: string } }>(error)) {
     const apiError = error.response?.data?.error;

@@ -1,0 +1,40 @@
+export type AssistantChatMessageRole = 'user' | 'assistant';
+
+export type AssistantChatMessageStatus = 'streaming' | 'completed' | 'failed';
+
+export type AssistantChatMeetingDraftStatus =
+  'pending' | 'sending' | 'confirmed' | 'expired' | 'failed';
+
+export type AssistantChatHistoryStatus = 'loading' | 'error' | 'ready';
+
+export type AssistantChatPhase = 'SEARCHING_MEETINGS' | 'READING_MEETING' | 'PREPARING_MEETING';
+
+export interface AssistantChatMeetingDraft {
+  title: string;
+  purpose: string;
+  note: string | null;
+  targetDurationMinutes: number;
+  attendeeTeamMemberIds: number[];
+  customAttendeeNames: string[];
+  scheduledAt: string;
+}
+
+export interface AssistantChatMeetingDraftResult {
+  status: 'sending' | 'confirmed' | 'failed';
+  meetingId?: number;
+  errorMessage?: string;
+}
+
+export interface AssistantChatMessage {
+  id: string;
+  requestId?: number;
+  role: AssistantChatMessageRole;
+  text: string;
+  status: AssistantChatMessageStatus;
+  phase?: AssistantChatPhase;
+  meetingDraft?: AssistantChatMeetingDraft;
+  meetingDraftStatus?: AssistantChatMeetingDraftStatus;
+  meetingDraftError?: string;
+  referencedMeetingIds?: number[];
+  createdMeetingId?: number;
+}
