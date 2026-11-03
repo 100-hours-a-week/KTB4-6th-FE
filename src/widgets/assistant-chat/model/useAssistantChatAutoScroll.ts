@@ -16,7 +16,7 @@ export const useAssistantChatAutoScroll = (
   const containerRef = useRef<HTMLDivElement | null>(null);
   const indicatorRef = useRef<HTMLSpanElement>(null);
   const isAtBottomRef = useRef(true);
-  const offsetFromBottomRef = useRef(0);
+  const viewportTopFromBottomRef = useRef(0);
   const firstMessageId = messages[0]?.id;
   const lastMessage = messages.at(-1);
   const lastUserMessageId = messages.findLast((message) => message.role === 'user')?.id;
@@ -58,7 +58,7 @@ export const useAssistantChatAutoScroll = (
     const container = containerRef.current;
     if (!container || isAtBottomRef.current) return;
 
-    container.scrollTop = container.scrollHeight - offsetFromBottomRef.current;
+    container.scrollTop = container.scrollHeight - viewportTopFromBottomRef.current;
     updateIndicator();
   }, [firstMessageId, updateIndicator]);
 
@@ -85,7 +85,7 @@ export const useAssistantChatAutoScroll = (
     const distanceFromBottom =
       container.scrollHeight - container.scrollTop - container.clientHeight;
     isAtBottomRef.current = distanceFromBottom <= BOTTOM_THRESHOLD_PX;
-    offsetFromBottomRef.current = container.scrollHeight - container.scrollTop;
+    viewportTopFromBottomRef.current = container.scrollHeight - container.scrollTop;
     updateIndicator();
 
     if (container.scrollTop <= TOP_THRESHOLD_PX) onReachTop();
