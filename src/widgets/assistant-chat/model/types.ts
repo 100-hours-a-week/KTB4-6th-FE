@@ -19,12 +19,6 @@ export interface AssistantChatMeetingDraft {
   scheduledAt: string;
 }
 
-export interface AssistantChatReferencedMeeting {
-  meetingId: number;
-  title: string;
-  startedAt: string;
-}
-
 export interface AssistantChatMessage {
   id: string;
   role: AssistantChatMessageRole;
@@ -33,6 +27,6 @@ export interface AssistantChatMessage {
   phase?: AssistantChatPhase;
   meetingDraft?: AssistantChatMeetingDraft;
   meetingDraftStatus?: AssistantChatMeetingDraftStatus;
-  referencedMeetings?: AssistantChatReferencedMeeting[];
+  referencedMeetingIds?: number[];
   createdMeetingId?: number;
 }
