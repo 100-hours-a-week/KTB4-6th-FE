@@ -55,7 +55,10 @@ export const MeetingListPage = ({ teamId }: MeetingListPageProps) => {
         </div>
       )}
 
-      <div ref={scrollRootRef} className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+      <div
+        ref={scrollRootRef}
+        className="flex min-h-0 flex-1 flex-col overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
         {status === 'loading' ? (
           <MeetingListSkeleton />
         ) : status === 'error' ? (

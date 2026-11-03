@@ -68,7 +68,10 @@ export const CreditManagementPage = ({ teamId }: CreditManagementPageProps) => {
     <div className="flex min-h-0 flex-1 flex-col bg-cool-50">
       <CreditManagementHeader isMenuDisabled={!team} onMenuClick={() => setIsSidebarOpen(true)} />
 
-      <div ref={scrollRootRef} className="min-h-0 flex-1 overflow-y-auto">
+      <div
+        ref={scrollRootRef}
+        className="min-h-0 flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
         <div className="bg-cool-50 px-[22px] pt-4 pb-3.5">
           {credits ? (
             <CreditBalanceCard
