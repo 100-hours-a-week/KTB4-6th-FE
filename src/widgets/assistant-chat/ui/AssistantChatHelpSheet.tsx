@@ -7,20 +7,20 @@ import { cn, useAppFrameElement } from '@/shared/lib';
 
 const EXAMPLE_QUESTIONS = [
   {
-    question: '회의를 생성해줘',
-    description: '이름·시간·참여자를 대신 채워드려요',
+    title: '회의를 생성해줘',
+    question: '내일 오후 3시에 30분 주간 회의 잡아줘',
     Icon: CalendarPlus,
     tileClassName: 'bg-brand-100 text-brand-600',
   },
   {
-    question: '회의를 분석해줘',
-    description: '시간, 핵심 결정, 할 일을 정리해요',
+    title: '회의를 분석해줘',
+    question: '지난 회의 결정 사항이랑 할 일 정리해줘',
     Icon: ChartNoAxesColumn,
     tileClassName: 'bg-warning-bg text-warning',
   },
   {
-    question: '과거 회의를 찾아서 알려줘',
-    description: '키워드나 날짜로 지난 회의를 찾아요',
+    title: '과거 회의를 찾아서 알려줘',
+    question: '지난주에 배포 일정 얘기한 회의 찾아줘',
     Icon: Search,
     tileClassName: 'bg-success-bg text-success',
   },
@@ -78,7 +78,7 @@ export const AssistantChatHelpSheet = ({
               </Drawer.Close>
             </div>
 
-            {EXAMPLE_QUESTIONS.map(({ question, description, Icon, tileClassName }) => (
+            {EXAMPLE_QUESTIONS.map(({ title, question, Icon, tileClassName }) => (
               <button
                 key={question}
                 type="button"
@@ -96,9 +96,9 @@ export const AssistantChatHelpSheet = ({
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col gap-[5px]">
                   <span className="text-[15px] leading-[1.3] font-semibold tracking-[-0.02em] text-cool-900">
-                    {question}
+                    {title}
                   </span>
-                  <span className="text-xs leading-[1.4] text-cool-500">{description}</span>
+                  <span className="text-xs leading-[1.4] text-cool-500">예) {question}</span>
                 </span>
                 <ChevronRight
                   aria-hidden="true"
