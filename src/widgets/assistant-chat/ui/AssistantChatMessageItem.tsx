@@ -112,9 +112,9 @@ export const AssistantChatMessageItem = ({
         ) : (
           <TypingIndicator phase={message.phase} />
         )}
-        {message.referencedMeetings && message.referencedMeetings.length > 0 && (
+        {message.referencedMeetingIds && message.referencedMeetingIds.length > 0 && (
           <AssistantChatReferencedMeetings
-            meetings={message.referencedMeetings}
+            meetingIds={message.referencedMeetingIds}
             teamId={teamId}
             onMeetingLinkClick={onMeetingLinkClick}
           />

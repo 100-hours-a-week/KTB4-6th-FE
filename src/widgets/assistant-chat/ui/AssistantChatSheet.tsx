@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { Drawer } from '@base-ui/react/drawer';
 import { useAppFrameElement } from '@/shared/lib';
 import { useAssistantChatAutoScroll } from '../model/useAssistantChatAutoScroll';
+import { useAssistantChatConversation } from '../model/useAssistantChatConversation';
 import { useAssistantChatMemberNames } from '../model/useAssistantChatMemberNames';
-import { useAssistantChatTempFlow } from '../model/useAssistantChatTempFlow';
 import { AssistantChatComposer } from './AssistantChatComposer';
 import { AssistantChatHeader } from './AssistantChatHeader';
 import { AssistantChatHelpSheet } from './AssistantChatHelpSheet';
@@ -33,12 +33,12 @@ export const AssistantChatSheet = ({
     messages,
     historyStatus,
     isAnswering,
+    isLoadingOlderMessages,
     send,
     resendQuestion,
-    confirmMeetingDraft,
-    cancelMeetingDraft,
     reloadHistory,
-  } = useAssistantChatTempFlow();
+    loadOlderMessages,
+  } = useAssistantChatConversation(teamId);
   const memberNames = useAssistantChatMemberNames(
     teamId,
     messages.some((message) => message.meetingDraft),
@@ -46,6 +46,7 @@ export const AssistantChatSheet = ({
   const { setContainer, indicatorRef, handleScroll } = useAssistantChatAutoScroll(
     messages,
     historyStatus,
+    loadOlderMessages,
   );
 
   const handleOpenChange = (open: boolean, eventDetails: Drawer.Root.ChangeEventDetails) => {
@@ -87,12 +88,19 @@ export const AssistantChatSheet = ({
                     teamId={teamId}
                     memberNames={memberNames}
                     onResendQuestion={resendQuestion}
-                    onConfirmMeetingDraft={confirmMeetingDraft}
-                    onCancelMeetingDraft={cancelMeetingDraft}
+                    onConfirmMeetingDraft={() => {}}
+                    onCancelMeetingDraft={() => {}}
                     onMeetingLinkClick={onMeetingLinkClick}
                   />
                 )}
               </div>
+              {isLoadingOlderMessages && (
+                <span
+                  role="status"
+                  aria-label="이전 대화를 불러오고 있어요"
+                  className="pointer-events-none absolute top-2 left-1/2 size-5 -translate-x-1/2 rounded-full border-2 border-cool-200 border-t-brand-600 motion-safe:animate-spin"
+                />
+              )}
               <span
                 ref={indicatorRef}
                 aria-hidden="true"

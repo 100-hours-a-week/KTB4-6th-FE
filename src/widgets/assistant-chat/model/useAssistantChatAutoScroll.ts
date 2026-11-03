@@ -1,19 +1,23 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import type { AssistantChatHistoryStatus, AssistantChatMessage } from './types';
 
 const BOTTOM_THRESHOLD_PX = 80;
+const TOP_THRESHOLD_PX = 80;
 const INDICATOR_HEIGHT_PX = 60;
 const INDICATOR_INSET_PX = 16;
 
 export const useAssistantChatAutoScroll = (
   messages: AssistantChatMessage[],
   historyStatus: AssistantChatHistoryStatus,
+  onReachTop: () => void,
 ) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const indicatorRef = useRef<HTMLSpanElement>(null);
   const isAtBottomRef = useRef(true);
+  const viewportTopFromBottomRef = useRef(0);
+  const firstMessageId = messages[0]?.id;
   const lastMessage = messages.at(-1);
   const lastUserMessageId = messages.findLast((message) => message.role === 'user')?.id;
 
@@ -50,6 +54,14 @@ export const useAssistantChatAutoScroll = (
     isAtBottomRef.current = true;
   }, [lastUserMessageId]);
 
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    if (!container || isAtBottomRef.current) return;
+
+    container.scrollTop = container.scrollHeight - viewportTopFromBottomRef.current;
+    updateIndicator();
+  }, [firstMessageId, updateIndicator]);
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -73,7 +85,10 @@ export const useAssistantChatAutoScroll = (
     const distanceFromBottom =
       container.scrollHeight - container.scrollTop - container.clientHeight;
     isAtBottomRef.current = distanceFromBottom <= BOTTOM_THRESHOLD_PX;
+    viewportTopFromBottomRef.current = container.scrollHeight - container.scrollTop;
     updateIndicator();
+
+    if (container.scrollTop <= TOP_THRESHOLD_PX) onReachTop();
   };
 
   return { setContainer, indicatorRef, handleScroll };
