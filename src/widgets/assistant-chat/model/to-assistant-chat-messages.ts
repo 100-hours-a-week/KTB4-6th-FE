@@ -15,6 +15,7 @@ interface ConversationTurn {
   phase: AssistantChatPhase | null;
   referencedMeetingIds: number[];
   meetingDraft: AssistantChatMessage['meetingDraft'] | null;
+  createdMeetingId: number | null;
 }
 
 const fromTurn = (turn: AssistantChatTurnData): ConversationTurn => ({
@@ -27,6 +28,7 @@ const fromTurn = (turn: AssistantChatTurnData): ConversationTurn => ({
   phase: null,
   referencedMeetingIds: turn.referencedMeetingIds,
   meetingDraft: turn.meetingDraft,
+  createdMeetingId: turn.createdMeetingId,
 });
 
 const fromQuestion = (question: AssistantChatQuestionState): ConversationTurn => ({
@@ -39,6 +41,7 @@ const fromQuestion = (question: AssistantChatQuestionState): ConversationTurn =>
   phase: question.phase,
   referencedMeetingIds: question.referencedMeetingIds,
   meetingDraft: question.meetingDraft,
+  createdMeetingId: null,
 });
 
 const toMessages = (turn: ConversationTurn): AssistantChatMessage[] => [
@@ -52,6 +55,7 @@ const toMessages = (turn: ConversationTurn): AssistantChatMessage[] => [
     phase: turn.phase ?? undefined,
     referencedMeetingIds: turn.referencedMeetingIds,
     meetingDraft: turn.meetingDraft ?? undefined,
+    createdMeetingId: turn.createdMeetingId ?? undefined,
   },
 ];
 
@@ -67,6 +71,10 @@ const withDraftStatus = (
       meetingDraftError: result.errorMessage,
       createdMeetingId: result.meetingId,
     };
+  }
+
+  if (message.createdMeetingId !== undefined) {
+    return { ...message, meetingDraftStatus: 'confirmed' };
   }
 
   return { ...message, meetingDraftStatus: isLatestDraft ? 'pending' : 'expired' };
