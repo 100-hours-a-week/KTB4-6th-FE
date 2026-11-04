@@ -83,6 +83,46 @@
   --color-danger-bg: #fbebe9;
 }
 
+@theme {
+  --animate-meety-peek: meety-peek 3.2s ease-in-out infinite;
+  --animate-meety-wave: meety-wave 2.4s ease-in-out infinite;
+  --animate-meety-typing: meety-typing 1s ease-in-out infinite;
+
+  @keyframes meety-peek {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-3px);
+    }
+  }
+
+  @keyframes meety-wave {
+    0%,
+    60%,
+    100% {
+      transform: rotate(8deg);
+    }
+    30% {
+      transform: rotate(-4deg);
+    }
+  }
+
+  @keyframes meety-typing {
+    0%,
+    80%,
+    100% {
+      transform: translateY(0);
+      opacity: 0.35;
+    }
+    40% {
+      transform: translateY(-4px);
+      opacity: 1;
+    }
+  }
+}
+
 :root {
   /* 한글 UI 텍스트: Pretendard Variable(CDN, app/layout.tsx에서 로드). Inter/Geist는 한글 글리프가 없어 대체함. */
   --font-sans:

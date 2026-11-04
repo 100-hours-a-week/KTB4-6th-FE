@@ -65,7 +65,7 @@ export const DashboardPage = ({ teamId }: DashboardPageProps) => {
 
       <div
         ref={scrollRootRef}
-        className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-[22px] pt-[18px] pb-8"
+        className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-[22px] pt-[18px] pb-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {activeDashboard && summary ? (
           <>

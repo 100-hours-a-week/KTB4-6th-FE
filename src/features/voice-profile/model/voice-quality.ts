@@ -9,6 +9,8 @@ export interface VoiceQualityTracker {
   recent: PcmChunkStats[];
   sentenceChunks: number;
   sentenceSpeechChunks: number;
+  warning: VoiceQualityWarning | null;
+  warningHoldChunks: number;
 }
 
 const INT16_FULL_SCALE = 32_768;
@@ -17,18 +19,18 @@ const SILENCE_DB = -100;
 
 const RECENT_CHUNKS = 30;
 const MIN_RECENT_CHUNKS = 15;
-const SPEECH_DB = -50;
-const QUIET_SPEECH_DB = -45;
-const NOISY_FLOOR_DB = -35;
+const SPEECH_DB = -40;
 const CLIPPING_RATIO = 0.02;
-const MIN_SPEECH_CHUNKS = 8;
-const NO_SPEECH_MIN_CHUNKS = 50;
+const NO_SPEECH_MIN_CHUNKS = 30;
 const NO_SPEECH_RATIO = 0.08;
+const WARNING_HOLD_CHUNKS = 30;
 
 export const EMPTY_VOICE_QUALITY_TRACKER: VoiceQualityTracker = {
   recent: [],
   sentenceChunks: 0,
   sentenceSpeechChunks: 0,
+  warning: null,
+  warningHoldChunks: 0,
 };
 
 export const analyzePcmChunk = (samples: Int16Array): PcmChunkStats => {
@@ -48,25 +50,7 @@ export const analyzePcmChunk = (samples: Int16Array): PcmChunkStats => {
   };
 };
 
-export const trackPcmChunk = (
-  tracker: VoiceQualityTracker,
-  stats: PcmChunkStats,
-): VoiceQualityTracker => ({
-  recent: [...tracker.recent, stats].slice(-RECENT_CHUNKS),
-  sentenceChunks: tracker.sentenceChunks + 1,
-  sentenceSpeechChunks: tracker.sentenceSpeechChunks + (stats.levelDb >= SPEECH_DB ? 1 : 0),
-});
-
-export const startNextSentence = (tracker: VoiceQualityTracker): VoiceQualityTracker => ({
-  ...tracker,
-  sentenceChunks: 0,
-  sentenceSpeechChunks: 0,
-});
-
-const percentile = (sortedValues: number[], ratio: number) =>
-  sortedValues[Math.min(sortedValues.length - 1, Math.floor(sortedValues.length * ratio))];
-
-export const evaluateVoiceQuality = ({
+const detectVoiceQuality = ({
   recent,
   sentenceChunks,
   sentenceSpeechChunks,
@@ -83,13 +67,32 @@ export const evaluateVoiceQuality = ({
     return 'no-speech';
   }
 
-  const levels = recent.map((stats) => stats.levelDb).sort((a, b) => a - b);
-  const speechLevels = levels.filter((level) => level >= SPEECH_DB);
-  if (speechLevels.length >= MIN_SPEECH_CHUNKS && percentile(speechLevels, 0.8) < QUIET_SPEECH_DB) {
-    return 'too-quiet';
-  }
-
-  if (percentile(levels, 0.2) > NOISY_FLOOR_DB) return 'noisy';
-
   return null;
 };
+
+export const trackPcmChunk = (
+  tracker: VoiceQualityTracker,
+  stats: PcmChunkStats,
+): VoiceQualityTracker => {
+  const next = {
+    ...tracker,
+    recent: [...tracker.recent, stats].slice(-RECENT_CHUNKS),
+    sentenceChunks: tracker.sentenceChunks + 1,
+    sentenceSpeechChunks: tracker.sentenceSpeechChunks + (stats.levelDb >= SPEECH_DB ? 1 : 0),
+  };
+  const detected = detectVoiceQuality(next);
+
+  if (detected) return { ...next, warning: detected, warningHoldChunks: WARNING_HOLD_CHUNKS };
+  if (tracker.warningHoldChunks > 1) {
+    return { ...next, warningHoldChunks: tracker.warningHoldChunks - 1 };
+  }
+  return { ...next, warning: null, warningHoldChunks: 0 };
+};
+
+export const startNextSentence = (tracker: VoiceQualityTracker): VoiceQualityTracker => ({
+  ...tracker,
+  sentenceChunks: 0,
+  sentenceSpeechChunks: 0,
+});
+
+export const evaluateVoiceQuality = (tracker: VoiceQualityTracker) => tracker.warning;

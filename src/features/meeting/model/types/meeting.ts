@@ -16,6 +16,10 @@ export interface MeetingAttendeesRequest {
 
 export type CreateMeetingRequest = MeetingInfoRequest & MeetingAttendeesRequest;
 
+export type CreateMeetingDraftRequest = Omit<CreateMeetingRequest, 'note'> & {
+  note: string | null;
+};
+
 export interface CreateMeetingData {
   meetingId: number;
   teamId: number;

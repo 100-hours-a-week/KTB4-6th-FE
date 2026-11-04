@@ -88,7 +88,7 @@ export const VoiceConsentPage = ({ teamId, isFullView }: VoiceConsentPageProps) 
   }
 
   return (
-    <main className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-white px-6 pt-6 pb-8">
+    <main className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-white px-6 pt-6 pb-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <header className="flex items-center gap-2">
         {showFullView ? (
           <Link
@@ -114,20 +114,28 @@ export const VoiceConsentPage = ({ teamId, isFullView }: VoiceConsentPageProps) 
       </header>
 
       <section className="mt-10">
-        <h1 className="text-[clamp(16px,5vw,20px)] leading-[1.4] font-bold tracking-tight text-cool-900">
-          <span className="block">[선택]</span>
-          <span className="mt-1 block whitespace-nowrap">음성 정보 수집·이용동의 (민감정보)</span>
-        </h1>
-        <p className="mt-4 text-sm leading-6 text-cool-600">
-          내 목소리를 등록하면 회의록에서 내 발언을 구분할 수 있어요.
-        </p>
+        <div className="flex flex-col items-center text-center">
+          <span className="rounded-full bg-brand-100 px-2.5 py-1 text-xs font-semibold text-brand-600">
+            선택
+          </span>
+          <h1 className="mt-3 text-[clamp(16px,5vw,20px)] leading-[1.4] font-bold tracking-tight whitespace-nowrap text-cool-900">
+            음성 정보 수집·이용동의 (민감정보)
+          </h1>
+          <p className="mt-3 text-sm leading-6 break-keep text-cool-600">
+            내 목소리를 등록하면 회의록에서 내 발언을 구분할 수 있어요.
+          </p>
+        </div>
 
         {showFullView ? (
           <dl className="mt-8 divide-y divide-cool-100 rounded-xl border border-cool-100 px-4">
             {consentDetails.map(({ label, value }) => (
-              <div key={label} className="py-4">
-                <dt className="text-sm font-semibold text-cool-900">{label}</dt>
-                <dd className="mt-2 text-sm leading-6 text-cool-600">{value}</dd>
+              <div key={label} className="flex gap-4 py-4">
+                <dt className="w-[60px] shrink-0 text-sm leading-6 font-semibold text-cool-500">
+                  {label}
+                </dt>
+                <dd className="min-w-0 flex-1 text-sm leading-6 break-keep text-cool-800">
+                  {value}
+                </dd>
               </div>
             ))}
           </dl>
