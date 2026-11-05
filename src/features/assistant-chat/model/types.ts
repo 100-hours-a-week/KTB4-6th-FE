@@ -40,6 +40,7 @@ export interface AssistantChatTurnData {
   status: AssistantChatRequestStatus;
   failureCode: AssistantChatFailureCode | null;
   meetingDraft: AssistantChatMeetingDraftData | null;
+  createdMeetingId: number | null;
   referencedMeetingIds: number[];
   createdAt: string;
   updatedAt: string;
