@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { getTranscriptScrollBehavior } from './get-transcript-scroll-behavior';
 export const useTranscriptAutoFollow = (activeEntryId: string | null, isEnabled: boolean) => {
   const containerRef = useRef<HTMLElement>(null);
   const [isFollowing, setIsFollowing] = useState(true);
@@ -41,12 +42,12 @@ export const useTranscriptAutoFollow = (activeEntryId: string | null, isEnabled:
       }
     }
 
-    const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      ? 'auto'
-      : 'smooth';
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const getBehavior = (distance: number) =>
+      prefersReducedMotion ? 'auto' : getTranscriptScrollBehavior(distance, container.clientHeight);
 
     if (!activeEntryId) {
-      container.scrollTo({ top: 0, behavior });
+      container.scrollTo({ top: 0, behavior: getBehavior(container.scrollTop) });
       return;
     }
 
@@ -60,7 +61,10 @@ export const useTranscriptAutoFollow = (activeEntryId: string | null, isEnabled:
     const offsetToCenter =
       itemRect.top - containerRect.top - (container.clientHeight - itemRect.height) / 2;
 
-    container.scrollTo({ top: container.scrollTop + offsetToCenter, behavior });
+    container.scrollTo({
+      top: container.scrollTop + offsetToCenter,
+      behavior: getBehavior(offsetToCenter),
+    });
   }, [activeEntryId, isEnabled, isFollowing]);
 
   const resumeFollowing = () => setIsFollowing(true);

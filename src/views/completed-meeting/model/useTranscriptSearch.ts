@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useMeetingTranscriptSearch } from '@/features/meeting';
+import { getTranscriptScrollBehavior } from './get-transcript-scroll-behavior';
 import type { TranscriptEntry } from './types';
 
 interface UseTranscriptSearchParams {
@@ -41,10 +42,21 @@ export const useTranscriptSearch = ({ meetingId, entries }: UseTranscriptSearchP
   useEffect(() => {
     if (!currentMatchId) return;
 
-    const item = document.querySelector<HTMLElement>(
-      `[data-tab="transcript"] [data-entry-id="${CSS.escape(currentMatchId)}"]`,
+    const container = document.querySelector<HTMLElement>('[data-tab="transcript"]');
+    const item = container?.querySelector<HTMLElement>(
+      `[data-entry-id="${CSS.escape(currentMatchId)}"]`,
     );
-    item?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (!container || !item) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const itemRect = item.getBoundingClientRect();
+    const offsetToCenter =
+      itemRect.top - containerRect.top - (container.clientHeight - itemRect.height) / 2;
+
+    item.scrollIntoView({
+      behavior: getTranscriptScrollBehavior(offsetToCenter, container.clientHeight),
+      block: 'center',
+    });
   }, [currentMatchId]);
 
   const goToNextMatch = () => {

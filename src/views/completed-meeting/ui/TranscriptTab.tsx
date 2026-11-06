@@ -8,6 +8,8 @@ import type { TranscriptEntry } from '../model/types';
 import { TranscriptEmptyState } from './TranscriptEmptyState';
 import { TranscriptItem } from './TranscriptItem';
 
+const CHUNK_SIZE = 50;
+
 interface TranscriptTabProps {
   meetingId: number;
   entries: TranscriptEntry[];
@@ -94,18 +96,27 @@ export const TranscriptTab = ({
       {entries.length === 0 ? (
         <TranscriptEmptyState />
       ) : (
-        <ul className="flex flex-col gap-2">
-          {entries.map((entry) => (
-            <TranscriptItem
-              key={entry.id}
-              meetingId={meetingId}
-              entry={entry}
-              isActive={entry.id === activeEntryId}
-              isSearchMatch={entry.id === currentMatchId}
-              isDeepLinkTarget={entry.id === highlightedEntryId}
-            />
+        <div className="flex flex-col gap-2">
+          {Array.from({ length: Math.ceil(entries.length / CHUNK_SIZE) }, (_, chunkIndex) => (
+            <ul
+              key={chunkIndex}
+              className="flex flex-col gap-2 [contain-intrinsic-size:auto_4342px] [content-visibility:auto]"
+            >
+              {entries
+                .slice(chunkIndex * CHUNK_SIZE, (chunkIndex + 1) * CHUNK_SIZE)
+                .map((entry) => (
+                  <TranscriptItem
+                    key={entry.id}
+                    meetingId={meetingId}
+                    entry={entry}
+                    isActive={entry.id === activeEntryId}
+                    isSearchMatch={entry.id === currentMatchId}
+                    isDeepLinkTarget={entry.id === highlightedEntryId}
+                  />
+                ))}
+            </ul>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );
