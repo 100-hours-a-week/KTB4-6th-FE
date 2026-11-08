@@ -19,7 +19,8 @@ export interface CurrentMeetingViewModel {
   recordingStartedByTeamMemberId: number | null;
   recordingSessionId: number | null;
   recordingStartedAt: string | null;
-  elapsedSeconds: number;
+  recordingPausedAt: string | null;
+  recordingTotalPausedDurationMs: number | null;
   recordingStatus: 'waiting' | 'recording' | 'paused' | 'ending';
   transcripts: TranscriptSegment[];
 }
