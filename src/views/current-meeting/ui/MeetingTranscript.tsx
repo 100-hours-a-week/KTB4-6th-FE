@@ -25,9 +25,8 @@ export const MeetingTranscript = () => {
   const previousSegmentCount = useRef(segments.length);
   const [latestHighlightedSegmentId, setLatestHighlightedSegmentId] = useState<string | null>(null);
   const latestSegmentId = segments.at(-1)?.id;
-  const { containerRef, unseenCount, handleScroll, scrollToLatest } = useTranscriptAutoScroll(
-    segments.length,
-  );
+  const { containerRef, listRef, unseenCount, handleScroll, scrollToLatest } =
+    useTranscriptAutoScroll(segments.length);
   const citationHighlightedSegmentId = useTranscriptCitationNavigation({
     containerRef,
     segments,
@@ -87,7 +86,7 @@ export const MeetingTranscript = () => {
           </p>
         )}
 
-        <div className="mt-2 flex flex-col gap-1.5">
+        <div ref={listRef} className="mt-2 flex flex-col gap-1.5">
           {Array.from({ length: Math.ceil(segments.length / CHUNK_SIZE) }, (_, chunkIndex) => (
             <ol
               key={chunkIndex}
