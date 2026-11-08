@@ -11,7 +11,6 @@ import {
 import type { TeamMemberData } from '@/features/team-management';
 import { mergeTranscriptSegments } from './merge-transcript-segments';
 import type { CurrentMeetingViewModel } from './current-meeting';
-import { useElapsedSeconds } from './useElapsedSeconds';
 
 export const useCurrentMeetingData = (
   meetingId: number,
@@ -30,12 +29,6 @@ export const useCurrentMeetingData = (
   if (!hasSettledTranscriptHistory && !transcriptHistoryQuery.isPending) {
     setHasSettledTranscriptHistory(true);
   }
-  const elapsedSeconds = useElapsedSeconds({
-    recordingStatus: currentMeetingQuery.data?.recordingStatus ?? null,
-    startedAt: currentMeetingQuery.data?.recordingStartedAt ?? null,
-    pausedAt: currentMeetingQuery.data?.recordingPausedAt ?? null,
-    totalPausedDurationMs: currentMeetingQuery.data?.recordingTotalPausedDurationMs ?? null,
-  });
   const recordingStartedByTeamMemberId =
     currentMeetingQuery.data?.recordingStartedByTeamMemberId ?? null;
   const recorderName =
@@ -54,7 +47,8 @@ export const useCurrentMeetingData = (
         recordingStartedByTeamMemberId: currentMeetingQuery.data.recordingStartedByTeamMemberId,
         recordingSessionId: currentMeetingQuery.data.recordingSessionId,
         recordingStartedAt: currentMeetingQuery.data.recordingStartedAt,
-        elapsedSeconds,
+        recordingPausedAt: currentMeetingQuery.data.recordingPausedAt,
+        recordingTotalPausedDurationMs: currentMeetingQuery.data.recordingTotalPausedDurationMs,
         recordingStatus:
           currentMeetingQuery.data.meetingStatus === 'WAITING'
             ? 'waiting'

@@ -18,7 +18,6 @@ import { useRecordingObjectLostAutoEnd } from '../model/useRecordingObjectLostAu
 import { useRecordingStartedNotice } from '../model/useRecordingStartedNotice';
 import { useRecordingStatusSync } from '../model/useRecordingStatusSync';
 import { useRecordingStorageNotice } from '../model/useRecordingStorageNotice';
-import { useTargetTimeReachedNotice } from '../model/useTargetTimeReachedNotice';
 import { CurrentMeetingDialogs } from './CurrentMeetingDialogs';
 import { CurrentMeetingHeader } from './CurrentMeetingHeader';
 import { CurrentMeetingLoadingState } from './CurrentMeetingLoadingState';
@@ -74,14 +73,6 @@ export const CurrentMeetingPage = ({
   });
   const redirectAfterMeetingDeleted = useMeetingDeletedRedirect(teamId);
   const recordingStartedNotice = useRecordingStartedNotice(meetingId);
-  useTargetTimeReachedNotice({
-    elapsedSeconds: recording.meeting?.elapsedSeconds ?? null,
-    targetMinutes: recording.meeting?.targetMinutes ?? null,
-    isRecording:
-      recording.meeting?.recordingStatus === 'recording' &&
-      !recording.isCompleted &&
-      !recording.isServerCompleted,
-  });
   const recordingStorageNotice = useRecordingStorageNotice(meetingId);
   const meetingInfoEdit = useMeetingInfoEdit({ meetingId, meeting: recording.meeting });
   const { isOpen: isRecordingObjectLostNoticeOpen, isResuming: isResumingRecording } =
