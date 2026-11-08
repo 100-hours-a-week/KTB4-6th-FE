@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type RefObject } from 'react';
+import { getScrollBehaviorByDistance } from '@/shared/lib';
 import type { TranscriptSegment } from './current-meeting';
 
 interface UseTranscriptCitationNavigationParams {
@@ -44,7 +45,13 @@ export const useTranscriptCitationNavigation = ({
 
       handledSegmentIdRef.current = targetSegmentId;
       setCitationHighlightedSegmentId(targetSegmentId);
-      container.scrollTo({ top: Math.max(0, targetScrollTop), behavior: 'smooth' });
+      container.scrollTo({
+        top: Math.max(0, targetScrollTop),
+        behavior: getScrollBehaviorByDistance(
+          targetScrollTop - container.scrollTop,
+          container.clientHeight,
+        ),
+      });
     });
 
     return () => window.cancelAnimationFrame(frameId);

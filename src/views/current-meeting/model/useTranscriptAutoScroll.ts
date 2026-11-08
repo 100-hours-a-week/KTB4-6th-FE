@@ -1,16 +1,13 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { getScrollBehaviorByDistance } from '@/shared/lib';
 
-// 맨 아래에서 이 거리 안이면 "최신 발화를 보고 있는 상태"로 본다.
 const BOTTOM_THRESHOLD_PX = 80;
 
-/**
- * 새 녹취가 추가되면 맨 아래로 따라가되, 사용자가 위로 올라가 읽는 중이면 화면을 빼앗지 않는다.
- * 읽는 중에 쌓인 새 녹취 수는 unseenCount로 알려주고, scrollToLatest로 최신 위치로 돌아간다.
- */
 export const useTranscriptAutoScroll = (itemCount: number) => {
   const containerRef = useRef<HTMLElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [countWhenLeftBottom, setCountWhenLeftBottom] = useState(itemCount);
 
@@ -20,6 +17,19 @@ export const useTranscriptAutoScroll = (itemCount: number) => {
     const container = containerRef.current;
     container?.scrollTo({ top: container.scrollHeight });
   }, [itemCount, isAtBottom]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    const list = listRef.current;
+    if (!isAtBottom || !container || !list) return;
+
+    const observer = new ResizeObserver(() => {
+      container.scrollTo({ top: container.scrollHeight });
+    });
+    observer.observe(list);
+
+    return () => observer.disconnect();
+  }, [isAtBottom]);
 
   const handleScroll = () => {
     const container = containerRef.current;
@@ -37,11 +47,19 @@ export const useTranscriptAutoScroll = (itemCount: number) => {
 
   const scrollToLatest = () => {
     const container = containerRef.current;
-    container?.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+    if (!container) return;
+
+    const distanceFromBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight;
+    container.scrollTo({
+      top: container.scrollHeight,
+      behavior: getScrollBehaviorByDistance(distanceFromBottom, container.clientHeight),
+    });
   };
 
   return {
     containerRef,
+    listRef,
     unseenCount: isAtBottom ? 0 : Math.max(0, itemCount - countWhenLeftBottom),
     handleScroll,
     scrollToLatest,

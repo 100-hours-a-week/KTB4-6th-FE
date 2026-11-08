@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useMeetingTranscriptSearch } from '@/features/meeting';
-import { getTranscriptScrollBehavior } from './get-transcript-scroll-behavior';
+import { getScrollBehaviorByDistance } from '@/shared/lib';
 import type { TranscriptEntry } from './types';
 
 interface UseTranscriptSearchParams {
@@ -54,7 +54,7 @@ export const useTranscriptSearch = ({ meetingId, entries }: UseTranscriptSearchP
       itemRect.top - containerRect.top - (container.clientHeight - itemRect.height) / 2;
 
     item.scrollIntoView({
-      behavior: getTranscriptScrollBehavior(offsetToCenter, container.clientHeight),
+      behavior: getScrollBehaviorByDistance(offsetToCenter, container.clientHeight),
       block: 'center',
     });
   }, [currentMatchId]);
