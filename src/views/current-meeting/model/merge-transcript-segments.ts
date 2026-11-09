@@ -33,11 +33,6 @@ const toTranscriptSegmentFromLive = (
   text: transcript.text,
 });
 
-/**
- * 늦게 입장하거나 새로고침한 참여자도 이전 발화를 볼 수 있도록, 조회로 받아온 과거 전사와
- * SSE로 실시간 수신한 전사를 회의 안 발화 순서(sequenceNumber) 기준으로 합친다.
- * 같은 순번이 양쪽에 다 있으면 하나로 취급한다.
- */
 export const mergeTranscriptSegments = (
   historySegments: MeetingTranscriptSegmentData[],
   liveTranscripts: TranscriptCreatedEventData[],

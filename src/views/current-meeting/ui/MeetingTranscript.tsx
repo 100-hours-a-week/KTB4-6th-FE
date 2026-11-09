@@ -2,16 +2,19 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { ArrowDown } from 'lucide-react';
-import { cn } from '@/shared/lib';
+import type { TranscriptSegment } from '../model/current-meeting';
 import { useCurrentMeetingContext } from '../model/current-meeting-context';
 import { useTranscriptAutoScroll } from '../model/useTranscriptAutoScroll';
 import { useTranscriptCitationNavigation } from '../model/useTranscriptCitationNavigation';
-
-const formatTimestamp = (seconds: number) =>
-  [Math.floor(seconds / 60), seconds % 60].map((part) => String(part).padStart(2, '0')).join(':');
+import { TranscriptChunk } from './TranscriptChunk';
 
 const HIGHLIGHT_DURATION_MS = 1200;
 const CHUNK_SIZE = 50;
+
+const findIdInChunk = (chunkSegments: TranscriptSegment[], segmentId: string | null) =>
+  segmentId !== null && chunkSegments.some((segment) => segment.id === segmentId)
+    ? segmentId
+    : null;
 
 export const MeetingTranscript = () => {
   const { recording, targetTranscriptSegmentId } = useCurrentMeetingContext();
@@ -87,37 +90,27 @@ export const MeetingTranscript = () => {
         )}
 
         <div ref={listRef} className="mt-2 flex flex-col gap-1.5">
-          {Array.from({ length: Math.ceil(segments.length / CHUNK_SIZE) }, (_, chunkIndex) => (
-            <ol
-              key={chunkIndex}
-              className="flex flex-col gap-1.5 [contain-intrinsic-size:auto_4052px] [content-visibility:auto]"
-            >
-              {segments
-                .slice(chunkIndex * CHUNK_SIZE, (chunkIndex + 1) * CHUNK_SIZE)
-                .map((segment) => (
-                  <li
-                    key={segment.id}
-                    data-transcript-segment-id={segment.id}
-                    className={cn(
-                      'grid grid-cols-[76px_minmax(0,1fr)] gap-2 rounded-xl border border-transparent bg-white p-3 transition-colors duration-700',
-                      latestHighlightedSegmentId === segment.id && 'border-brand-200 bg-brand-50',
-                      citationHighlightedSegmentId === segment.id &&
-                        'border-brand-400 bg-brand-100 ring-1 ring-brand-400',
-                    )}
-                  >
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold break-keep text-brand-600">
-                        {segment.speakerName ?? '발화자 확인 중'}
-                      </p>
-                      <time className="mt-1 block font-mono text-xs text-cool-500">
-                        {formatTimestamp(segment.startedAtSeconds)}
-                      </time>
-                    </div>
-                    <p className="text-sm leading-6 break-keep text-cool-900">{segment.text}</p>
-                  </li>
-                ))}
-            </ol>
-          ))}
+          {Array.from({ length: Math.ceil(segments.length / CHUNK_SIZE) }, (_, chunkIndex) => {
+            const chunkSegments = segments.slice(
+              chunkIndex * CHUNK_SIZE,
+              (chunkIndex + 1) * CHUNK_SIZE,
+            );
+
+            return (
+              <TranscriptChunk
+                key={chunkIndex}
+                segments={chunkSegments}
+                latestHighlightedSegmentId={findIdInChunk(
+                  chunkSegments,
+                  latestHighlightedSegmentId,
+                )}
+                citationHighlightedSegmentId={findIdInChunk(
+                  chunkSegments,
+                  citationHighlightedSegmentId,
+                )}
+              />
+            );
+          })}
         </div>
 
         {segments.length === 0 && !isHistoryPending && (
