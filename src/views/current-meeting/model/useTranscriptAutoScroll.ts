@@ -23,7 +23,13 @@ export const useTranscriptAutoScroll = (itemCount: number) => {
     const list = listRef.current;
     if (!isAtBottom || !container || !list) return;
 
+    let previousScrollHeight = container.scrollHeight;
     const observer = new ResizeObserver(() => {
+      const distanceBeforeResize =
+        previousScrollHeight - container.scrollTop - container.clientHeight;
+      previousScrollHeight = container.scrollHeight;
+      if (distanceBeforeResize > BOTTOM_THRESHOLD_PX) return;
+
       container.scrollTo({ top: container.scrollHeight });
     });
     observer.observe(list);
