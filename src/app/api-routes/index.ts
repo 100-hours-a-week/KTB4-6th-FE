@@ -1,4 +1,5 @@
-export { hasAccessTokenCookie } from './auth/auth-cookies';
+export { getAccessTokenCookie, hasAccessTokenCookie } from './auth/auth-cookies';
+export { findActiveTeam } from './auth/find-active-team';
 export { kakaoOAuthCallback } from './auth/kakao-oauth-callback';
 export { logoutHandler } from './auth/logout';
 export { refreshTokensHandler } from './auth/refresh-tokens';
