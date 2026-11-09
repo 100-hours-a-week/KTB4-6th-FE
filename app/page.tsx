@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { findActiveTeamId, getAccessTokenCookie, hasAccessTokenCookie } from '@/app/api-routes';
+import { findActiveTeam, getAccessTokenCookie, hasAccessTokenCookie } from '@/app/api-routes';
 import { WelcomePage } from '@/views/welcome';
 
 interface WelcomeProps {
@@ -16,10 +16,10 @@ export default async function Welcome({ searchParams }: WelcomeProps) {
   const cookieStore = await cookies();
   const accessToken = getAccessTokenCookie(cookieStore);
 
-  if (accessToken) {
-    const activeTeamId = await findActiveTeamId(accessToken);
+  const activeTeam = accessToken ? await findActiveTeam(accessToken) : null;
 
-    if (activeTeamId !== null) redirect(`/teams/${activeTeamId}`);
+  if (activeTeam?.hasActiveTeam && activeTeam.teamId !== null) {
+    redirect(`/teams/${activeTeam.teamId}`);
   }
 
   const authState = hasAccessTokenCookie(cookieStore) ? 'authenticated' : 'unauthenticated';
@@ -36,7 +36,7 @@ export default async function Welcome({ searchParams }: WelcomeProps) {
   return (
     <WelcomePage
       authState={authState}
-      isTeamSpaceSheetInitiallyOpen={teamSpace === 'start'}
+      isTeamSpaceSheetInitiallyOpen={teamSpace === 'start' || activeTeam?.hasActiveTeam === false}
       loginError={loginErrorMessage}
       isAuthRequiredNotice={isAuthRequiredNotice}
     />
