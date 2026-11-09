@@ -62,7 +62,7 @@ export interface MeetingDetailData {
   createdByTeamMemberId: number;
   title: string;
   purpose: string;
-  note: string;
+  note: string | null;
   scheduledAt: string;
   targetDurationMinutes: number;
   status: 'WAITING' | 'IN_PROGRESS' | 'COMPLETED';

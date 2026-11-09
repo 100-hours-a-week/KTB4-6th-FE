@@ -41,7 +41,7 @@ export const MeetingInfoEditDialog = ({
     ...toScheduleFormValues(meeting.scheduledAt),
     duration: String(meeting.targetDurationMinutes),
     purpose: meeting.purpose,
-    note: meeting.note,
+    note: meeting.note ?? '',
   };
 
   const handleSubmit = (values: CreateMeetingFormValues) => {
