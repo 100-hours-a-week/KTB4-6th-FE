@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { oauthLogin } from '@/features/auth/index.server';
 import { setAuthCookies } from './auth-cookies';
+import { findActiveTeam } from './find-active-team';
 
 export const kakaoOAuthCallback = async (request: NextRequest) => {
   const searchParams = request.nextUrl.searchParams;
@@ -21,10 +22,14 @@ export const kakaoOAuthCallback = async (request: NextRequest) => {
       provider: 'kakao',
       authorizationCode: code,
     });
+    const activeTeam = await findActiveTeam(authData.accessToken);
     const response = new NextResponse(null, {
       status: 303,
       headers: {
-        Location: '/',
+        Location:
+          activeTeam?.hasActiveTeam && activeTeam.teamId !== null
+            ? `/teams/${activeTeam.teamId}`
+            : '/',
       },
     });
     setAuthCookies(response, authData);
