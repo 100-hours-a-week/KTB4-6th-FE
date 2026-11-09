@@ -40,6 +40,10 @@ export const setAuthCookies = (response: NextResponse, tokens: AuthCookieTokens)
 export const hasAccessTokenCookie = (cookieStore: { has: (name: string) => boolean }) =>
   cookieStore.has(AUTH_COOKIE_NAMES.accessToken);
 
+export const getAccessTokenCookie = (cookieStore: {
+  get: (name: string) => { value: string } | undefined;
+}) => cookieStore.get(AUTH_COOKIE_NAMES.accessToken)?.value;
+
 export const clearAuthCookies = (response: NextResponse) => {
   setAuthCookies(response, {
     accessToken: '',
