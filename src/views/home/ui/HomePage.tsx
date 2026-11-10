@@ -1,28 +1,35 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useActiveMeeting, useHome } from '@/features/home';
 import { useHasUnreadNotification } from '@/features/notification';
 import { NavigationSidebar } from '@/widgets/navigation-sidebar';
 import { CreateMeetingButton } from './CreateMeetingButton';
 import { HomeErrorState } from './HomeErrorState';
 import { HomeHeader } from './HomeHeader';
+import { HomeNotice } from './HomeNotice';
 import { HomePageSkeleton } from './HomePageSkeleton';
 import { HomeVoiceEnrollSheet } from './HomeVoiceEnrollSheet';
 import { MeetingListSection } from './MeetingListSection';
 import { TeamSummaryCard } from './TeamSummaryCard';
 import { toHomeViewModel } from '../model/home-view-model';
-import { useHomeNotice } from '../model/useHomeNotice';
 import { useRedirectToActiveTeam } from '../model/useRedirectToActiveTeam';
 import { useRedirectToVoiceConsent } from '../model/useRedirectToVoiceConsent';
 
 interface HomePageProps {
   teamId: number;
-  notice?: string;
 }
 
-export const HomePage = ({ teamId, notice }: HomePageProps) => {
-  useHomeNotice({ teamId, notice });
+export const HomePage = ({ teamId }: HomePageProps) => (
+  <>
+    <Suspense fallback={null}>
+      <HomeNotice teamId={teamId} />
+    </Suspense>
+    <HomeContent teamId={teamId} />
+  </>
+);
+
+const HomeContent = ({ teamId }: HomePageProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { data: home, dataUpdatedAt, isFetching, isError, refetch } = useHome({ isEnabled: true });
 
