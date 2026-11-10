@@ -1,7 +1,4 @@
 import type { ReactNode } from 'react';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
-import { hasAccessTokenCookie } from '@/app/api-routes';
 import { AuthTokenKeeper, NotificationRealtimeConnection } from '@/app/providers';
 import { NotificationBannerHost } from '@/app/ui';
 
@@ -9,11 +6,7 @@ interface TeamsLayoutProps {
   children: ReactNode;
 }
 
-export default async function TeamsLayout({ children }: TeamsLayoutProps) {
-  const cookieStore = await cookies();
-
-  if (!hasAccessTokenCookie(cookieStore)) redirect('/?authRequired=1');
-
+export default function TeamsLayout({ children }: TeamsLayoutProps) {
   return (
     <>
       {children}
