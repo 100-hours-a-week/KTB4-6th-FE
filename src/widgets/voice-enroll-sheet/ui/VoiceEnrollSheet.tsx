@@ -43,7 +43,9 @@ export const VoiceEnrollSheet = ({
     failure: registrationFailure,
   });
   const isBlocked = phase === 'unsupported' || phase === 'unavailable' || phase === 'consent';
-  const canClose = isBlocked || (mode === 'edit' && phase !== 'processing' && phase !== 'done');
+  const hasFailed = phase === 'denied' || phase === 'failed';
+  const canClose =
+    isBlocked || hasFailed || (mode === 'edit' && phase !== 'processing' && phase !== 'done');
 
   const restart = () => {
     registration.reset();

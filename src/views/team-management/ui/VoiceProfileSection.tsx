@@ -4,7 +4,7 @@ import { Menu } from '@base-ui/react/menu';
 import { Mic, MoreVertical } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useHome } from '@/features/home';
+import { useHome, useMarkHomeVoiceProfileRegistered } from '@/features/home';
 import { useAppFrameElement } from '@/shared/lib';
 import { useAppToast } from '@/shared/ui';
 import { VoiceEnrollSheet } from '@/widgets/voice-enroll-sheet';
@@ -22,10 +22,13 @@ export const VoiceProfileSection = ({ teamId }: VoiceProfileSectionProps) => {
   const { data: home, isError, isFetching, refetch } = useHome({ isEnabled: true });
   const hasCurrentHome = home?.team.teamId === teamId;
   const hasVoiceConsent = hasCurrentHome && home.hasVoiceConsent;
+  const hasVoiceProfile = hasCurrentHome && home.hasVoiceProfile;
   const isConsentStatusReady = hasCurrentHome && !isError;
+  const markVoiceProfileRegistered = useMarkHomeVoiceProfileRegistered();
 
   const handleDone = () => {
     setIsEnrollSheetOpen(false);
+    markVoiceProfileRegistered();
     const { text, variant } = teamManagementToastMessages.voiceProfileReenrollSuccess;
     showToast(text, variant);
   };
@@ -48,7 +51,7 @@ export const VoiceProfileSection = ({ teamId }: VoiceProfileSectionProps) => {
           disabled={!isConsentStatusReady || !hasVoiceConsent}
           className="min-h-10 shrink-0 rounded-lg border border-cool-300 bg-white px-3 text-xs font-semibold text-cool-600 transition-colors hover:border-cool-500 hover:bg-cool-50 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          다시 등록
+          {hasVoiceProfile ? '다시 등록' : '등록하기'}
         </button>
         <Menu.Root>
           <Menu.Trigger
