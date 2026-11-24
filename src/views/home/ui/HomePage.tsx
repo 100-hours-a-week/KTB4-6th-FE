@@ -1,93 +1,39 @@
-'use client';
-
-import { Suspense, useState } from 'react';
-import { useActiveMeeting, useHome } from '@/features/home';
-import { useHasUnreadNotification } from '@/features/notification';
-import { NavigationSidebar } from '@/widgets/navigation-sidebar';
-import { CreateMeetingButton } from './CreateMeetingButton';
-import { HomeErrorState } from './HomeErrorState';
-import { HomeHeader } from './HomeHeader';
+import { Suspense } from 'react';
+import { cookies } from 'next/headers';
+import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query';
+import { getHomeOnServer, homeKeys } from '@/features/home/index.server';
+import { HomeContent } from './HomeContent';
 import { HomeNotice } from './HomeNotice';
 import { HomePageSkeleton } from './HomePageSkeleton';
-import { HomeVoiceEnrollSheet } from './HomeVoiceEnrollSheet';
-import { MeetingListSection } from './MeetingListSection';
-import { TeamSummaryCard } from './TeamSummaryCard';
-import { toHomeViewModel } from '../model/home-view-model';
-import { useRedirectToActiveTeam } from '../model/useRedirectToActiveTeam';
-import { useRedirectToVoiceConsent } from '../model/useRedirectToVoiceConsent';
 
 interface HomePageProps {
   teamId: number;
 }
+
+const PrefetchedHomeContent = async ({ teamId }: HomePageProps) => {
+  const accessToken = (await cookies()).get('accessToken')?.value;
+  const queryClient = new QueryClient();
+
+  if (accessToken) {
+    await getHomeOnServer(accessToken)
+      .then((home) => queryClient.setQueryData(homeKeys.all, home))
+      .catch(() => undefined);
+  }
+
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <HomeContent teamId={teamId} />
+    </HydrationBoundary>
+  );
+};
 
 export const HomePage = ({ teamId }: HomePageProps) => (
   <>
     <Suspense fallback={null}>
       <HomeNotice teamId={teamId} />
     </Suspense>
-    <HomeContent teamId={teamId} />
+    <Suspense fallback={<HomePageSkeleton />}>
+      <PrefetchedHomeContent teamId={teamId} />
+    </Suspense>
   </>
 );
-
-const HomeContent = ({ teamId }: HomePageProps) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { data: home, dataUpdatedAt, isFetching, isError, refetch } = useHome({ isEnabled: true });
-
-  const { activeMeeting, isPending: isActiveMeetingPending } = useActiveMeeting(teamId);
-  const hasUnreadNotification = useHasUnreadNotification(teamId);
-
-  useRedirectToActiveTeam({
-    activeTeamId: home?.team.teamId,
-    dataUpdatedAt,
-    isError,
-    isFetching,
-    refetch,
-    urlTeamId: teamId,
-  });
-  const canShowHome = useRedirectToVoiceConsent({
-    teamId,
-    hasVoiceConsent: home?.team.teamId === teamId ? home.hasVoiceConsent : undefined,
-  });
-
-  if (!home || home.team.teamId !== teamId) {
-    if (isError && !isFetching) {
-      return <HomeErrorState />;
-    }
-
-    return <HomePageSkeleton />;
-  }
-
-  if (!canShowHome) return <HomePageSkeleton />;
-
-  const { team, meetings } = toHomeViewModel(home);
-
-  return (
-    <div className="flex min-h-0 flex-1 flex-col bg-cool-50">
-      <HomeHeader
-        teamId={teamId}
-        hasUnreadNotification={hasUnreadNotification}
-        onMenuClick={() => setIsSidebarOpen(true)}
-      />
-      <TeamSummaryCard team={team} />
-      <CreateMeetingButton
-        teamId={teamId}
-        activeMeetingId={activeMeeting?.meetingId ?? null}
-        isDisabled={isActiveMeetingPending}
-      />
-      <MeetingListSection meetings={meetings} teamId={teamId} />
-
-      <NavigationSidebar
-        isOpen={isSidebarOpen}
-        onOpenChange={setIsSidebarOpen}
-        teamId={teamId}
-        teamName={team.name}
-      />
-
-      <HomeVoiceEnrollSheet
-        teamId={teamId}
-        hasVoiceProfile={home.hasVoiceProfile}
-        hasVoiceConsent={home.hasVoiceConsent}
-      />
-    </div>
-  );
-};
