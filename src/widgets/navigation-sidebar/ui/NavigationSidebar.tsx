@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { Drawer } from '@base-ui/react/drawer';
 import { Bug, Coins, Home, LayoutDashboard, ListChecks, Radio, Users, X } from 'lucide-react';
 import { useActiveMeeting } from '@/features/home';
@@ -11,6 +11,7 @@ import { useAppToast } from '@/shared/ui';
 import { BugReportDialog } from './BugReportDialog';
 import { SidebarMoreMenu } from './SidebarMoreMenu';
 import { SidebarNavItem } from './SidebarNavItem';
+import { SidebarNavLink } from './SidebarNavLink';
 
 interface NavigationSidebarProps {
   isOpen: boolean;
@@ -30,7 +31,6 @@ export const NavigationSidebar = ({
   const { data: credits } = useTeamCredits(teamId);
   const { activeMeeting, isPending: isActiveMeetingPending } = useActiveMeeting(teamId);
   const { showToast } = useAppToast();
-  const router = useRouter();
   const pathname = usePathname();
   const homePath = `/teams/${teamId}`;
   const managePath = `${homePath}/manage`;
@@ -41,23 +41,7 @@ export const NavigationSidebar = ({
     ? `${homePath}/meetings/${activeMeeting.meetingId}`
     : null;
 
-  const navigateTo = (path: string) => {
-    if (pathname === path) {
-      onOpenChange(false);
-      return;
-    }
-
-    router.push(path);
-  };
-
-  const handleCurrentMeetingClick = () => {
-    if (currentMeetingPath) {
-      navigateTo(currentMeetingPath);
-      return;
-    }
-
-    showToast('진행 중인 회의가 없어요');
-  };
+  const closeSidebar = () => onOpenChange(false);
 
   const teamNameCharacters = Array.from(teamName);
   const displayTeamName =
@@ -93,42 +77,56 @@ export const NavigationSidebar = ({
             </div>
 
             <nav className="mt-6 flex flex-col gap-1">
-              <SidebarNavItem
+              <SidebarNavLink
+                href={homePath}
                 icon={<Home className="size-5" strokeWidth={2} />}
                 label="홈"
                 isActive={pathname === homePath}
-                onClick={() => navigateTo(homePath)}
+                onActiveClick={closeSidebar}
               />
-              <SidebarNavItem
+              <SidebarNavLink
+                href={managePath}
                 icon={<Users className="size-5" strokeWidth={2} />}
                 label="팀"
                 isActive={pathname === managePath}
-                onClick={() => navigateTo(managePath)}
+                onActiveClick={closeSidebar}
               />
-              <SidebarNavItem
-                icon={<Radio className="size-5" strokeWidth={2} />}
-                label="진행 중인 회의"
-                disabled={isActiveMeetingPending}
-                isActive={currentMeetingPath !== null && pathname === currentMeetingPath}
-                onClick={handleCurrentMeetingClick}
-              />
-              <SidebarNavItem
+              {currentMeetingPath ? (
+                <SidebarNavLink
+                  href={currentMeetingPath}
+                  icon={<Radio className="size-5" strokeWidth={2} />}
+                  label="진행 중인 회의"
+                  isActive={pathname === currentMeetingPath}
+                  onActiveClick={closeSidebar}
+                />
+              ) : (
+                <SidebarNavItem
+                  icon={<Radio className="size-5" strokeWidth={2} />}
+                  label="진행 중인 회의"
+                  disabled={isActiveMeetingPending}
+                  onClick={() => showToast('진행 중인 회의가 없어요')}
+                />
+              )}
+              <SidebarNavLink
+                href={meetingListPath}
                 icon={<ListChecks className="size-5" strokeWidth={2} />}
                 label="회의 목록"
                 isActive={pathname === meetingListPath}
-                onClick={() => navigateTo(meetingListPath)}
+                onActiveClick={closeSidebar}
               />
-              <SidebarNavItem
+              <SidebarNavLink
+                href={dashboardPath}
                 icon={<LayoutDashboard className="size-5" strokeWidth={2} />}
                 label="대시보드"
                 isActive={pathname === dashboardPath}
-                onClick={() => navigateTo(dashboardPath)}
+                onActiveClick={closeSidebar}
               />
-              <SidebarNavItem
+              <SidebarNavLink
+                href={creditManagePath}
                 icon={<Coins className="size-5" strokeWidth={2} />}
                 label="크레딧 내역"
                 isActive={pathname === creditManagePath}
-                onClick={() => navigateTo(creditManagePath)}
+                onActiveClick={closeSidebar}
               />
               <SidebarNavItem
                 icon={<Bug className="size-5" strokeWidth={2} />}
